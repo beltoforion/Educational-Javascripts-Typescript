@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <script src="../shared/vec2d.js"></script>
+  <script src="../shared/context2d.js"></script>
+  <script src="tides.js"></script>
+</head>
+
+<body bgcolor="#000">
+  <canvas id="cvTides" width="800" height="800"></canvas>
+  <script>
+        var canvas = document.getElementById("cvTides")
+        var tidalModel = null
+
+        window.onresize = onResize
+
+        function initSimulation() {
+                tidalModel = new TidalSimulation({ cvid               : 'cvTides',
+                                                   path               : './',	
+                                                   lookAtTarget       : 'CenterOfMass',
+                                                   autoMove           : true,
+                                                   setup              : 1,
+                                                   isRunning          : true,
+                                                   showSun            : true,
+                                                   scaleForceToModel  : false,
+                                                   showMoon           : true,
+                                                   showMoonOrbit      : true,
+                                                   showEarthOrbit     : true, 
+                                                   showSurfacePoints  : false,
+                                                   showGravAcc        : false,
+                                                   showCentAcc        : false,
+                                                   showTidalAcc       : true,
+                                                   showTidalAccSun    : true,
+                                                   showAccSum         : true,
+                                                   enableRotation     : true });
+             tidalModel.scaleDist = 0.0000011
+             tidalModel.scaleSize = 0.000016
+             tidalModel.ts = 86400 / 50
+             tidalModel.accMultiplier = 1700000
+             tidalModel.forceMultiplier = 20*tidalModel.accMultiplier
+             tidalModel.style.enableBackgroundImage = true                
+             tidalModel.style.colBack = 'rgba(5,10,20, 0.85)'
+        }
+
+        function init() {
+                canvas.width = window.innerWidth 
+                canvas.height = window.innerHeight
+                tidalModel.resizeToCanvas()
+        }
+
+        function onResize() {
+                init()
+        }
+
+        initSimulation()
+        init()
+  </script>
+</body>
+</html>

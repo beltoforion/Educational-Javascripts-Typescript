@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <script src="../shared/vec2d.js"></script>
+  <script src="../shared/context2d.js"></script>
+  <script src="tides.js"></script>
+</head>
+
+<body>
+  <div>
+    <h2>Example 3: Illustration of Tidal Forces</h2>
+    <p>
+    This is the demonstration page of the tidal simulation javascript applet. For more details about 
+    the please turn to the <a href="http://articles.beltoforion.de/article.php?a=tides_explained" target="_blank">original tidal simulation article.</a>
+    </p>
+    <table class="noborder">
+      <tr>
+        <td  class="noborder">
+          <canvas id="cvTides2" width="800" height="800"></canvas>
+        </td>
+
+        <td class="noborder">	
+          <form> 
+            <h2>Animation Settings</h2> 
+            <fieldset>
+                <b>Run / Stop</b><br/>
+                <button type="button" id="btnRun"        onClick="onClickRunStop()" style="width:120px; height:50px;">Run</button>
+                <button type="button" id="btnNeapTide"   onClick="onClickNeapTide()" style="width:120px; height:50px;">Neap Tide</button>
+                <button type="button" id="btnSpringTide" onClick="onClickSpringTide()" style="width:120px; height:50px;">Spring Tide</button>
+            </fieldset>
+
+            <fieldset> 
+              <b>Look at</b> 
+              <select id="cbViewPoint" name="viewpoint" onChange="onChangeViewPoint()">
+	        <option value="Earth">Earth</option>
+                <option value="CenterOfMass">Center of Mass</option>
+              </select>
+            </fieldset>
+
+            <fieldset>  
+              <b>Render Features</b><br/>
+              <input type="checkbox"  name="show orbits" value="true" id="cbShowOrbits"        onChange="onShowOrbits()"/> 
+              Show Orbits<br/>
+              <input type="checkbox"  name="show orbits" value="true" id="cbShowMoon"   onChange="onShowMoon()"/> 
+              Show Moon<br/>
+              <input type="checkbox"  name="show orbits" value="true" id="cbShowSun"    onChange="onShowSun()"/> 
+              Show Sun<br/>
+            </fieldset>
+
+            <fieldset>  
+	      <b>Force display</b><br/>
+              <input type="checkbox"  name="force" value="true" id="cbShowTidalAcc"      onChange="onShowTidalAcc()"/>
+              Show Tidal Acceleration (Moon)<br/>
+              <input type="checkbox"  name="force" value="true" id="cbShowTidalAccSun"   onChange="onShowTidalAccSun()"/>
+              Show Tidal Acceleration (Sun)<br/>
+              <input type="checkbox"  name="force" value="true" id="cbShowOcean"         onChange="onShowOcean()"/>
+              Show Ocean<br/>
+              <input type="checkbox"  name="force" value="true" id="cbShowGravAcc"       onChange="onShowGravAcc()"/>
+              Show Gravitational Acceleration (Moon)<br/>
+              <input type="checkbox"  name="force" value="true" id="cbShowCentAcc"       onChange="onShowCentAcc()"/>
+              Show Centrifugal Acceleration<br/>
+              <input type="checkbox"  name="show orbits" value="true" id="cbShowSurfacePoints" onChange="onShowSurfacePoints()"/> 
+              Show Centrifugal Acceleration Sample Points<br/>
+              <input type="checkbox"  name="force" value="true" id="cbScaleForceToModel" onChange="onScaleForceToModel()"/>
+              Match Vector Directions to Model Scale<br/>
+            </fieldset>
+
+            <fieldset>  
+              <b>Misc</b><br/>
+              <input type="checkbox"  name="show orbits" value="true" id="cbEnableRotation"        onChange="onEnableRotation()"/> 
+              Enable Rotation<br/>
+            </fieldset>
+
+          </form>
+        </td>
+      </tr>
+  </table>
+</div>
+    <script>
+        var tidalModel = new TidalSimulation({	
+	        cvid			: 'cvTides2',
+        	path			: './',	
+		timestep	        : 86400/10,
+		lookAtTarget	        : 'CenterOfMass',
+	        autoMove	        : true,
+           	setup		      	: 1,
+           	isRunning	      	: true,
+           	showSun		      	: true,
+           	scaleForceToModel	: false,
+          	showMoon	      	: true,
+           	showMoonOrbit	        : true,
+           	showEarthOrbit		: true, 
+           	showSurfacePoints	: false,
+           	showGravAcc		: false,
+          	showCentAcc	        : false,
+          	showTidalAcc	        : true,
+           	showTidalAccSun		: true,
+          	showAccSum		: true,
+           	enableRotation		: true 
+        });
+
+        updateControls()
+
+        function updateControls() {
+        		// Set up formular controls
+        		document.getElementById("cbViewPoint").value            = tidalModel.config.lookAtTarget;
+        		document.getElementById("cbShowOrbits").checked         = tidalModel.config.showEarthOrbit || model2.config.showMoonOrbit;
+        		document.getElementById("cbShowSurfacePoints").checked  = tidalModel.config.showSurfacePoints;
+        		document.getElementById("cbShowTidalAcc").checked       = tidalModel.config.showTidalAcc;
+        		document.getElementById("cbShowTidalAccSun").checked    = tidalModel.config.showTidalAccSun;
+        		document.getElementById("cbShowOcean").checked          = tidalModel.config.showAccSum;
+        		document.getElementById("cbShowGravAcc").checked        = tidalModel.config.showGravAcc;
+        		document.getElementById("cbShowCentAcc").checked        = tidalModel.config.showCentAcc;
+        		document.getElementById("cbShowMoon").checked           = tidalModel.config.showMoon;
+        		document.getElementById("cbShowSun").checked            = tidalModel.config.showSun;
+        		document.getElementById("cbEnableRotation").checked     = tidalModel.config.enableRotation;
+        		document.getElementById("cbScaleForceToModel").checked  = tidalModel.config.scaleForceToModel;
+
+            if (tidalModel.config.autoMove) {
+                document.getElementById("btnRun").innerHTML  = "Stop";
+            } else {
+                document.getElementById("btnRun").innerHTML  = "Run";
+            }
+        }
+
+        function onChangeViewPoint() {
+            tidalModel.config.lookAtTarget = document.getElementById("cbViewPoint").value;
+        }
+
+        function onShowOrbits() {
+            var check = document.getElementById("cbShowOrbits").checked;
+            tidalModel.config.showEarthOrbit = check;
+            tidalModel.config.showMoonOrbit = check;
+        }
+
+        function onShowSurfacePoints() {
+            tidalModel.config.showSurfacePoints = document.getElementById("cbShowSurfacePoints").checked;
+        }
+
+        function onShowTidalAcc() {
+            tidalModel.config.showTidalAcc = document.getElementById("cbShowTidalAcc").checked;
+        }
+
+        function onShowTidalAccSun() {
+            tidalModel.config.showTidalAccSun = document.getElementById("cbShowTidalAccSun").checked;
+        }
+
+        function onShowOcean() {
+            tidalModel.config.showAccSum = document.getElementById("cbShowOcean").checked;
+        }
+
+        function onShowGravAcc() {
+            tidalModel.config.showGravAcc = document.getElementById("cbShowGravAcc").checked;
+        }
+
+        function onShowCentAcc() {
+            tidalModel.config.showCentAcc = document.getElementById("cbShowCentAcc").checked;
+        }
+
+        function onShowSun() {
+            tidalModel.config.showSun = document.getElementById("cbShowSun").checked;
+        }
+
+        function onShowMoon() {
+            tidalModel.config.showMoon = document.getElementById("cbShowMoon").checked;
+        }
+
+        function onScaleForceToModel() {
+            tidalModel.setScaleForceToModel(document.getElementById("cbScaleForceToModel").checked);
+        }
+
+        function onEnableRotation() {
+            tidalModel.config.enableRotation = document.getElementById("cbEnableRotation").checked;
+        }
+
+        function onClickRunStop() {
+            if (tidalModel.config.autoMove == false) {
+                tidalModel.config.autoMove = true
+            } else {
+                tidalModel.config.autoMove = false
+            }
+            updateControls()
+        }
+
+        function onClickNeapTide() {
+            tidalModel.config.autoMove = false
+            tidalModel.setPositions(Math.PI, Math.PI*1.5)
+            tidalModel.update()
+            tidalModel.render()
+            updateControls()
+        }
+
+        function onClickSpringTide() {
+            tidalModel.config.autoMove = false
+            tidalModel.setPositions(Math.PI*.5, Math.PI*1.5)
+            tidalModel.update()
+            tidalModel.render()
+            updateControls()
+        }
+	</script>
+</body>
+</html>
