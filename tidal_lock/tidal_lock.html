@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <script src="../shared/vec2d.js"></script>
+  <script src="../shared/context2d.js"></script>
+  <script src="simulation.js"></script>
+  <script src="tidal_lock.js"></script>
+</head>
+
+<body>
+  <div>
+    <table class="noborder">
+      <tr>
+        <td  class="noborder">
+          <canvas id="cvMain" width="800" height="800"></canvas>
+        </td>
+
+        <td class="noborder">	
+          <form> 
+            <h2>Animation Settings</h2> 
+            <fieldset>
+                <b>Run / Stop</b><br/>
+                <button type="button" id="btnRun"        onClick="onClickRunStop()" style="width:120px; height:50px;">Run</button>
+            </fieldset>
+          </form>
+        </td>
+      </tr>
+  </table>
+</div>
+    <script>
+        var tidalLock = new TidalLock({	
+	        cvid			: 'cvMain',
+        	path			: './',	
+    		  timestep  : 86400/10,
+        });
+
+        updateControls()
+
+        function updateControls() {
+        		// Set up formular controls
+        		document.getElementById("cbViewPoint").value            = tidalModel.config.lookAtTarget;
+        		document.getElementById("cbShowOrbits").checked         = tidalModel.config.showEarthOrbit || model2.config.showMoonOrbit;
+        		document.getElementById("cbShowSurfacePoints").checked  = tidalModel.config.showSurfacePoints;
+        		document.getElementById("cbShowTidalAcc").checked       = tidalModel.config.showTidalAcc;
+        		document.getElementById("cbShowTidalAccSun").checked    = tidalModel.config.showTidalAccSun;
+        		document.getElementById("cbShowOcean").checked          = tidalModel.config.showAccSum;
+        		document.getElementById("cbShowGravAcc").checked        = tidalModel.config.showGravAcc;
+        		document.getElementById("cbShowCentAcc").checked        = tidalModel.config.showCentAcc;
+        		document.getElementById("cbShowMoon").checked           = tidalModel.config.showMoon;
+        		document.getElementById("cbShowSun").checked            = tidalModel.config.showSun;
+        		document.getElementById("cbEnableRotation").checked     = tidalModel.config.enableRotation;
+        		document.getElementById("cbScaleForceToModel").checked  = tidalModel.config.scaleForceToModel;
+
+            if (tidalModel.config.autoMove) {
+                document.getElementById("btnRun").innerHTML  = "Stop";
+            } else {
+                document.getElementById("btnRun").innerHTML  = "Run";
+            }
+        }
+
+        function onClickRunStop() {
+            if (tidalModel.config.autoMove == false) {
+                tidalModel.config.autoMove = true
+            } else {
+                tidalModel.config.autoMove = false
+            }
+            updateControls()
+        }
+	</script>
+</body>
+</html>
