@@ -16,13 +16,19 @@ class Chart {
 
     private lines : Phaser.Polygon;
 
-    private colAxis : number = 0xffd900;
+//    private colAxis : number = 0xffd900;
+    private colAxis : number = 0xffffff;
 
     private colCurve : number = 0x0085ff; // 0xd900ff;
 
     private ymin : number = 0;
 
     private ymax : number = 1;
+
+    private xAxisTitle : Phaser.Text;
+
+    private yAxisTitle : Phaser.Text;
+
 
     public constructor(game : Phaser.Game,  width : number, height : number) {
         this.width = width;
@@ -39,6 +45,13 @@ class Chart {
         this.xpos = xpos;
         this.ypos = ypos;
         this.grafix = this.game.add.graphics(this.xpos, this.ypos);
+        
+        var style = { font: "24px Arial", fill: "#ffffff", wordWrap: true, align: "center", backgroundColor: "#000000" };
+        this.xAxisTitle = this.game.add.text(this.xpos + this.width/2, this.ypos + this.height + 24, "Zeit", style);
+        this.xAxisTitle.anchor = new Phaser.Point(0.5, 0.5);  
+        this.yAxisTitle = this.game.add.text(this.xpos - 24, this.ypos + this.height/2, "Helligkeit", style);
+        this.yAxisTitle.anchor = new Phaser.Point(0.5, 0.5);
+        this.yAxisTitle.angle = 270;
     }
 
     private renderAxis() {

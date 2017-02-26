@@ -5,7 +5,7 @@
             "name": "Launch Chrome against localhost, with sourcemaps",
             "type": "chrome",
             "request": "launch",
-            "url": "file://${workspaceRoot}/exoplanets_transit.html",
+            "url": "file://${workspaceRoot}/exoplanet_transit.html",
             "sourceMaps": true,
             "webRoot": "${workspaceRoot}"
         },

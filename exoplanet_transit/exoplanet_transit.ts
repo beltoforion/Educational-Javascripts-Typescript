@@ -20,6 +20,8 @@ class TransitSimulator {
 
     private relArea : number;
 
+    private tick : number = 0;
+
     public constructor() {
       this.game = new Phaser.Game(800, 
                                   600, 
@@ -57,7 +59,7 @@ class TransitSimulator {
       let height = 200;
       this.chart = new Chart(this.game, this.game.world.width - 2*margin, height);
       this.chart.create(margin, this.game.world.height - margin - height);
-      this.chart.setYRange(0.96, 1.01);
+      this.chart.setYRange(0.8, 1.1);
 
       this.curve = new Array<Phaser.Point>();
     }
@@ -74,36 +76,37 @@ class TransitSimulator {
 
       let maxBri : number = 1;
       let minBri : number = 1 - (areaJup / areaSun);
-      let noise : number = 0.005;
+      let noise : number = 0.01;
 
       if ( distSurface > radJup) {
         // Full brightness 
         return maxBri + noise * this.game.rnd.frac();
       } else if (distSurface > 0 && distSurface <= radJup) {
         let perc =  (distSurface / radJup);
-        let delta = (maxBri-minBri)
-//        let v = (1 - perc);
-
         let v =  Math.pow((1-perc) , 4);
-
-        // transition zone
+        let delta = (maxBri-minBri)
         return maxBri - v * delta + noise * this.game.rnd.frac();
       } else {
-        return minBri + noise * this.game.rnd.frac();
+        let x = this.jupiter.x - this.sun.x;
+        let c = Math.sqrt(Math.pow(this.sizeSun/2,2) - Math.pow(x, 2)) * 0.0005; 
+        return minBri - c + noise * this.game.rnd.frac();
       }
     }
 
     private update() {
       this.jupiter.x += 1;
+      this.tick += 1;
 
       if (this.jupiter.x > 800) {
         this.jupiter.x = 0;
         this.curve = [];
       }
 
-      if (this.jupiter.x > this.chart.xpos && this.jupiter.x < (this.game.world.width - this.chart.xpos)) {
-        let bri = this.calcBrightness(this.jupiter.x, this.jupiter.y);
-        this.curve.push(new Phaser.Point(this.jupiter.x - 50, bri));
+      if (this.tick%5==0 && 
+          this.jupiter.x > this.chart.xpos && 
+          this.jupiter.x < (this.game.world.width - this.chart.xpos)) {
+          let bri = this.calcBrightness(this.jupiter.x, this.jupiter.y);
+          this.curve.push(new Phaser.Point(this.jupiter.x - 50, bri));
       }
     }
 

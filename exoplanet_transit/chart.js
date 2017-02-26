@@ -1,7 +1,8 @@
 /// <reference path="../shared/phaser-2.6.2/typescript/phaser.d.ts"/> 
 var Chart = (function () {
     function Chart(game, width, height) {
-        this.colAxis = 0xffd900;
+        //    private colAxis : number = 0xffd900;
+        this.colAxis = 0xffffff;
         this.colCurve = 0x0085ff; // 0xd900ff;
         this.ymin = 0;
         this.ymax = 1;
@@ -17,6 +18,12 @@ var Chart = (function () {
         this.xpos = xpos;
         this.ypos = ypos;
         this.grafix = this.game.add.graphics(this.xpos, this.ypos);
+        var style = { font: "24px Arial", fill: "#ffffff", wordWrap: true, align: "center", backgroundColor: "#000000" };
+        this.xAxisTitle = this.game.add.text(this.xpos + this.width / 2, this.ypos + this.height + 24, "Zeit", style);
+        this.xAxisTitle.anchor = new Phaser.Point(0.5, 0.5);
+        this.yAxisTitle = this.game.add.text(this.xpos - 24, this.ypos + this.height / 2, "Helligkeit", style);
+        this.yAxisTitle.anchor = new Phaser.Point(0.5, 0.5);
+        this.yAxisTitle.angle = 270;
     };
     Chart.prototype.renderAxis = function () {
         this.grafix.lineStyle(3, this.colAxis, 1);
