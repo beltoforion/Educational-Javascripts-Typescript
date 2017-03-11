@@ -1,7 +1,8 @@
 # beltoforion.github.io
 This is the demonstration page for the educational javascripts. This
-is the new version of the repositors which has been converted to Typescript.
-I recommend using Visual Studio Code and Chrome for testing and debugging:
+is a new version of the educational javascript repository which has 
+been converted to Typescript. I recommend using Visual Studio Code 
+and Chrome for testing and debugging:
 
 https://code.visualstudio.com
 
@@ -18,3 +19,7 @@ http://articles.beltoforion.de/article.php?a=tides_explained
 
 - Analytic Solution of the damped harmonic oszillator (german only):	
 http://beltoforion.de/article.php?a=harmonischer_oszillator&hl=de
+
+- Applet for Visualizing Exoplanet transits
+
+- Applet for Visualizing Exoplanet discovery with radial velocity method
