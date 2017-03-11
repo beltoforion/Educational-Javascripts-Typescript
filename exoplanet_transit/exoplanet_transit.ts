@@ -1,6 +1,5 @@
 /// <reference path="../shared/phaser-2.6.2/typescript/phaser.d.ts"/> 
 /// <reference path="./chart.ts"/>
-
 class TransitSimulator {
     private game : Phaser.Game;
 
@@ -22,25 +21,32 @@ class TransitSimulator {
 
     private tick : number = 0;
 
-    public constructor() {
-      this.game = new Phaser.Game(800, 
-                                  600, 
-                                  Phaser.CANVAS, 
-                                  'transit-simulator', 
+    private config : any;
+
+    public constructor(cfg : any) {
+
+      this.config = cfg;
+
+      this.game = new Phaser.Game(cfg.width, 
+                                  cfg.height, 
+                                  Phaser.CANVAS,
+                                  cfg.cvid, 
                                   { 
                                     preload: () => this.preload(), 
                                     create:  () => this.create(), 
                                     update:  () => this.update(), 
                                     render:  () => this.render() 
                                   });
+
+      this.game.stage.disableVisibilityChange = true;
     }
 
-    private preload() {
-      this.game.load.image('jupiter', 'assets/sprites/jupiter.png');
-      this.game.load.image('sun', 'assets/sprites/sun.png');
+    private preload() : void {
+      this.game.load.image('jupiter', this.config.assetpath + 'assets/sprites/jupiter.png');
+      this.game.load.image('sun', this.config.assetpath + 'assets/sprites/sun.png');
     }
 
-    private create() {
+    private create() : void {
 
       this.relArea = (this.sizeJupiter * this.sizeJupiter) / (this.sizeSun * this.sizeSun);
 
@@ -48,23 +54,24 @@ class TransitSimulator {
       this.sun.anchor = new Phaser.Point(0.5, 0.5);  
       this.sun.scale.setTo(this.sizeSun/this.sun.width, this.sizeSun/this.sun.width);
       this.sun.x = this.game.world.centerX;
-      this.sun.y = this.game.world.centerY - 100;
+      this.sun.y = this.game.world.centerY - 150;
 
       this.jupiter = this.game.add.sprite(100, 100, 'jupiter');
       this.jupiter.anchor = new Phaser.Point(0.5, 0.5);  
       this.jupiter.scale.setTo(this.sizeJupiter/this.jupiter.width, this.sizeJupiter/this.jupiter.width);
       this.jupiter.y = this.sun.y;
+      this.jupiter.x = 70;
 
-      let margin = 50;
+      let margin = 70;
       let height = 200;
-      this.chart = new Chart(this.game, this.game.world.width - 2*margin, height);
+      this.chart = new Chart(this.game, this.game.world.width - 2*margin, height, this.config.font);
       this.chart.create(margin, this.game.world.height - margin - height);
       this.chart.setYRange(0.8, 1.1);
 
       this.curve = new Array<Phaser.Point>();
     }
 
-    private calcBrightness(xpos : number, ypos : number) {
+    private calcBrightness(xpos : number, ypos : number) : number {
       let dist = Math.sqrt(Math.pow(this.sun.x - this.jupiter.x, 2) + Math.pow(this.sun.y - this.jupiter.y, 2));
       let radSun = this.sizeSun/2;
       let radJup = this.sizeJupiter/2; 
@@ -93,24 +100,25 @@ class TransitSimulator {
       }
     }
 
-    private update() {
+    private update() : void {
       this.jupiter.x += 1;
       this.tick += 1;
 
-      if (this.jupiter.x > 800) {
+      if (this.jupiter.x > this.config.width) {
         this.jupiter.x = 0;
         this.curve = [];
       }
 
-      if (this.tick%5==0 && 
-          this.jupiter.x > this.chart.xpos && 
-          this.jupiter.x < (this.game.world.width - this.chart.xpos)) {
+      if (   this.tick % 5 == 0 
+          && this.jupiter.x > this.chart.xpos 
+          && this.jupiter.x < (this.game.world.width - this.chart.xpos)) {
           let bri = this.calcBrightness(this.jupiter.x, this.jupiter.y);
           this.curve.push(new Phaser.Point(this.jupiter.x - 50, bri));
+          console.log(this.curve.length);
       }
     }
 
-    private render() {
+    private render() : void {
       if (this.jupiter.x > this.chart.xpos && this.jupiter.x < (this.game.world.width - this.chart.xpos)) {
         this.chart.render(this.curve);
       }
@@ -121,6 +129,8 @@ class TransitSimulator {
 // Start the simulation
 // 
 
+/*
 window.onload = () => {
   var game = new TransitSimulator();
 };
+*/

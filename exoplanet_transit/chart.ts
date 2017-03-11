@@ -16,7 +16,6 @@ class Chart {
 
     private lines : Phaser.Polygon;
 
-//    private colAxis : number = 0xffd900;
     private colAxis : number = 0xffffff;
 
     private colCurve : number = 0x0085ff; // 0xd900ff;
@@ -29,11 +28,13 @@ class Chart {
 
     private yAxisTitle : Phaser.Text;
 
+    private font : string;
 
-    public constructor(game : Phaser.Game,  width : number, height : number) {
+    public constructor(game : Phaser.Game,  width : number, height : number, font : string) {
         this.width = width;
         this.height = height;
         this.game = game;
+        this.font = font;
     }
 
     public setYRange(ymin : number, ymax : number) {
@@ -46,10 +47,13 @@ class Chart {
         this.ypos = ypos;
         this.grafix = this.game.add.graphics(this.xpos, this.ypos);
         
-        var style = { font: "24px Arial", fill: "#ffffff", wordWrap: true, align: "center", backgroundColor: "#000000" };
-        this.xAxisTitle = this.game.add.text(this.xpos + this.width/2, this.ypos + this.height + 24, "Zeit", style);
+        var style = { font: this.font, fill: "#ffffff", wordWrap: true, align: "center", backgroundColor: "#000000" };
+        let dummy = this.game.add.text(-100, -100, "foobar", style);
+
+        this.xAxisTitle = this.game.add.text(this.xpos + this.width/2, this.ypos + this.height + dummy.height, "Zeit", style);
         this.xAxisTitle.anchor = new Phaser.Point(0.5, 0.5);  
-        this.yAxisTitle = this.game.add.text(this.xpos - 24, this.ypos + this.height/2, "Helligkeit", style);
+        
+        this.yAxisTitle = this.game.add.text(this.xpos - dummy.height, this.ypos + this.height/2, "Helligkeit", style);
         this.yAxisTitle.anchor = new Phaser.Point(0.5, 0.5);
         this.yAxisTitle.angle = 270;
     }

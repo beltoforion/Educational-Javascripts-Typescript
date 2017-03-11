@@ -1,7 +1,6 @@
 /// <reference path="../shared/phaser-2.6.2/typescript/phaser.d.ts"/> 
 var Chart = (function () {
-    function Chart(game, width, height) {
-        //    private colAxis : number = 0xffd900;
+    function Chart(game, width, height, font) {
         this.colAxis = 0xffffff;
         this.colCurve = 0x0085ff; // 0xd900ff;
         this.ymin = 0;
@@ -9,6 +8,7 @@ var Chart = (function () {
         this.width = width;
         this.height = height;
         this.game = game;
+        this.font = font;
     }
     Chart.prototype.setYRange = function (ymin, ymax) {
         this.ymin = ymin;
@@ -18,10 +18,11 @@ var Chart = (function () {
         this.xpos = xpos;
         this.ypos = ypos;
         this.grafix = this.game.add.graphics(this.xpos, this.ypos);
-        var style = { font: "24px Arial", fill: "#ffffff", wordWrap: true, align: "center", backgroundColor: "#000000" };
-        this.xAxisTitle = this.game.add.text(this.xpos + this.width / 2, this.ypos + this.height + 24, "Zeit", style);
+        var style = { font: this.font, fill: "#ffffff", wordWrap: true, align: "center", backgroundColor: "#000000" };
+        var dummy = this.game.add.text(-100, -100, "foobar", style);
+        this.xAxisTitle = this.game.add.text(this.xpos + this.width / 2, this.ypos + this.height + dummy.height, "Zeit", style);
         this.xAxisTitle.anchor = new Phaser.Point(0.5, 0.5);
-        this.yAxisTitle = this.game.add.text(this.xpos - 24, this.ypos + this.height / 2, "Helligkeit", style);
+        this.yAxisTitle = this.game.add.text(this.xpos - dummy.height, this.ypos + this.height / 2, "Helligkeit", style);
         this.yAxisTitle.anchor = new Phaser.Point(0.5, 0.5);
         this.yAxisTitle.angle = 270;
     };

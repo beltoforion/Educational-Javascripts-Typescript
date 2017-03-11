@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <script src="../shared/phaser-2.6.2/build/phaser.js"></script>
+  <script src="./exoplanet_deltav.js"></script>
+</head>
+
+<body bgcolor="#000000"  style="background-image: url('./assets/background/earth.jpg');">
+  <div id='cvDeltaV' style="margin-top:50px; margin-left:150px;"></div>
+  <script>
+  var game = new RadialVelocitySimulator({ assetpath   : '',
+                                          cvid         : 'cvDeltaV',
+                                          sizeStar     : 130,
+                                          sizePlanet   : 30,
+                                          distStar     : 40,
+                                          font         : "30px Arial",
+                                          noBackground : true,
+                                          centerOfMassY : 400,
+                                          distPlanet   : 150,
+                                          width        : 800,
+                                          height       : 800});
+  </script>
+</body>
+
+</html>
