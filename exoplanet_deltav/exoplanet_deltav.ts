@@ -22,7 +22,11 @@ class RadialVelocitySimulator {
 
     private arrow : Phaser.Graphics;
 
+    private orbits : Phaser.Graphics;
+
     private colArrow : number = 0xffffff;
+
+    private colOrbits : number = 0x886633;
 
     private world : any;
 
@@ -57,6 +61,14 @@ class RadialVelocitySimulator {
     public constructor(cfg : any) {
 
       this.config = cfg;
+
+      if (cfg.noDeltaV==null) {
+        cfg.noDeltaV = false;
+      }
+
+      if (cfg.noSpectrum==null) {
+        cfg.noSpectrum = false;
+      }
 
       if (cfg.sizeStar!=null) {
         this.sizeStar = cfg.sizeStar;
@@ -103,7 +115,10 @@ class RadialVelocitySimulator {
 
     private create() : void {
 
-    if (this.config.noBackground==null || !this.config.noBackground) {
+      let center_x = this.game.world.width/2;
+      let center_y = this.centerOfMassY;
+
+      if (this.config.noBackground==null || !this.config.noBackground) {
         this.background = this.game.add.sprite(100, 100, 'background');
         let scale = this.game.world.width / this.background.width;
         this.background.anchor = new Phaser.Point(0.5, 1);  
@@ -111,6 +126,12 @@ class RadialVelocitySimulator {
         this.background.x = this.game.world.centerX;
         this.background.y = this.game.world.height + 40;
       }
+
+      this.orbits = this.game.add.graphics(0, 0);
+      this.orbits.alpha = 0.5;
+      this.orbits.lineStyle(2, this.colOrbits, 1);
+      this.orbits.drawCircle(center_x, center_y, 2 * this.distStar);
+      this.orbits.drawCircle(center_x, center_y, 2 * this.distPlanet);
 
       this.sun = this.game.add.sprite(100, 100, 'sun');
       this.sun.anchor = new Phaser.Point(0.5, 0.5);  
@@ -131,30 +152,32 @@ class RadialVelocitySimulator {
       this.center_of_mass = this.game.add.sprite(100, 100, 'center_of_mass');
       this.center_of_mass.scale.setTo(this.sizeCenterOfMass/this.center_of_mass.width, this.sizeCenterOfMass/this.center_of_mass.width);
       this.center_of_mass.anchor = new Phaser.Point(0.5, 0.5);
-      this.center_of_mass.x = this.game.world.width/2;
-      this.center_of_mass.y = this.centerOfMassY;
+      this.center_of_mass.x = center_x;
+      this.center_of_mass.y = center_y;
 
       var style = { font: this.config.font, fill: "#ffffff", wordWrap: true, align: "center" };
-      this.titleSpectrum = this.game.add.text(this.game.world.width/2, 40, "Sternenspektrum", style);
-      this.titleSpectrum.anchor = new Phaser.Point(0.5, 0.5);  
+      if (!this.config.noDeltaV) {
+        this.titleDeltaV = this.game.add.text(40, this.center_of_mass.y, "Radialgeschwindigkeit", style);
+        this.titleDeltaV.anchor = new Phaser.Point(0.5, 0.5);
+        this.titleDeltaV.angle = 270;
 
-      style = { font: this.config.font, fill: "#ffffff", wordWrap: true, align: "center" };    
-      this.titleDeltaV = this.game.add.text(40, this.center_of_mass.y, "Radialgeschwindigkeit", style);
-      this.titleDeltaV.anchor = new Phaser.Point(0.5, 0.5);
-      this.titleDeltaV.angle = 270;  
+        this.arrow = this.game.add.graphics(0, 0);
+      }  
 
-      this.spectrum = this.game.add.sprite(100, 100, 'spectrum');
-      this.spectrum.anchor = new Phaser.Point(0.5, 0.5);  
-      this.spectrum.y = this.titleSpectrum.y + this.titleDeltaV.height*1.3;
-      this.spectrum.x = this.game.world.width/2;
+      if (!this.config.noSpectrum) {
+        this.titleSpectrum = this.game.add.text(this.game.world.width/2, 40, "Sternenspektrum", style);
+        this.titleSpectrum.anchor = new Phaser.Point(0.5, 0.5);  
 
-      this.spectrum_lines = this.game.add.sprite(100, 100, 'spectrum_lines');
-      this.spectrum_lines.anchor = new Phaser.Point(0.5, 0.5);  
-      this.spectrum_lines.y = this.spectrum.y;
-      this.spectrum_lines.x = this.spectrum.x;
+        this.spectrum = this.game.add.sprite(100, 100, 'spectrum');
+        this.spectrum.anchor = new Phaser.Point(0.5, 0.5);  
+        this.spectrum.y = this.titleSpectrum.y + this.titleDeltaV.height*1.3;
+        this.spectrum.x = this.game.world.width/2;
 
-
-      this.arrow = this.game.add.graphics(0, 0);
+        this.spectrum_lines = this.game.add.sprite(100, 100, 'spectrum_lines');
+        this.spectrum_lines.anchor = new Phaser.Point(0.5, 0.5);  
+        this.spectrum_lines.y = this.spectrum.y;
+        this.spectrum_lines.x = this.spectrum.x;
+      }
     }
 
     private colorFromDeltaV(deltaV : number) : number {
@@ -169,6 +192,7 @@ class RadialVelocitySimulator {
 
     private update() : void {
       this.tick += 1;
+
       let c1 : number = 0.015;
       let c2 : number = 100;
       let c3 : number = 40;
@@ -178,8 +202,6 @@ class RadialVelocitySimulator {
       let newY : number = this.center_of_mass.y + this.distStar * Math.cos(angle);
 
       let deltaV : number = this.sun.y - newY;
-      this.sun.tint = this.colorFromDeltaV(deltaV);
-
       this.sun.x = newX;
       this.sun.y = newY;
 
@@ -192,35 +214,41 @@ class RadialVelocitySimulator {
       this.planet_shadow.angle = -angle * 180 / Math.PI + 180;
 
       // spectrum
-      this.spectrum_lines.x = this.spectrum.x + deltaV * c3;
-
-      // Delta - V
-      let arrow_size : number = 10;
-
-      let x1 : number = this.titleDeltaV.x + this.titleDeltaV.height;
-      let y1 : number = this.center_of_mass.y;
-      let x2 : number = x1;
-      let y2 : number = this.center_of_mass.y - deltaV * c2;
-
-      this.arrow.clear();
-      this.arrow.beginFill(this.colArrow);
-      this.arrow.lineStyle(3, this.colArrow, 1);
-      this.arrow.moveTo(x1, y1);
-      this.arrow.lineTo(x2, y2);
-
-      if (deltaV>0) {
-        this.arrow.lineTo(x2 - arrow_size/2, y2);
-        this.arrow.lineTo(x2, y2 - arrow_size);
-        this.arrow.lineTo(x2 + arrow_size/2, y2);
-        this.arrow.lineTo(x2, y2);
-      } else {
-        this.arrow.lineTo(x2 - arrow_size/2, y2);
-        this.arrow.lineTo(x2, y2 + arrow_size);
-        this.arrow.lineTo(x2 + arrow_size/2, y2);
-        this.arrow.lineTo(x2, y2);
+      if (!this.config.noSpectrum) {
+        this.spectrum_lines.x = this.spectrum.x + deltaV * c3;
       }
 
-      this.arrow.endFill();
+      // Delta - V
+      if (!this.config.noDeltaV) {
+        this.sun.tint = this.colorFromDeltaV(deltaV);
+
+        let arrow_size : number = 10;
+
+        let x1 : number = this.titleDeltaV.x + this.titleDeltaV.height;
+        let y1 : number = this.center_of_mass.y;
+        let x2 : number = x1;
+        let y2 : number = this.center_of_mass.y - deltaV * c2;
+
+        this.arrow.clear();
+        this.arrow.beginFill(this.colArrow);
+        this.arrow.lineStyle(3, this.colArrow, 1);
+        this.arrow.moveTo(x1, y1);
+        this.arrow.lineTo(x2, y2);
+
+        if (deltaV>0) {
+          this.arrow.lineTo(x2 - arrow_size/2, y2);
+          this.arrow.lineTo(x2, y2 - arrow_size);
+          this.arrow.lineTo(x2 + arrow_size/2, y2);
+          this.arrow.lineTo(x2, y2);
+        } else {
+          this.arrow.lineTo(x2 - arrow_size/2, y2);
+          this.arrow.lineTo(x2, y2 + arrow_size);
+          this.arrow.lineTo(x2 + arrow_size/2, y2);
+          this.arrow.lineTo(x2, y2);
+        }
+
+        this.arrow.endFill();
+      }
     }
 
     private render() : void {

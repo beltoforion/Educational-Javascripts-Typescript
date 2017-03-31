@@ -6,7 +6,7 @@
   <script src="./exoplanet_deltav.js"></script>
 </head>
 
-<body bgcolor="#000000" >
+<body bgcolor="#000000">
   <div id='cvDeltaV' style="margin-top:50px; margin-left:150px;"></div>
   <script>
   var game = new RadialVelocitySimulator({ assetpath   : '',
@@ -14,10 +14,12 @@
                                           sizeStar     : 130,
                                           sizePlanet   : 30,
                                           distStar     : 40,
+                                          distPlanet   : 180,
                                           font         : "30px Arial",
                                           noBackground : true,
+                                          noSpectrum   : true,
+                                          noDeltaV     : true,
                                           centerOfMassY : 400,
-                                          distPlanet   : 150,
                                           width        : 800,
                                           height       : 800});
   </script>
