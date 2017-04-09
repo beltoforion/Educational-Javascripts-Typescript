@@ -23,10 +23,20 @@ class TransitSimulator {
 
     private config : any;
 
+    private colCurve : number = 0x0085ff;
+
     public constructor(cfg : any) {
 
       this.config = cfg;
 
+      if (cfg.sizeSun!=null) {
+        this.sizeSun = cfg.sizeSun;
+      }
+
+      if (cfg.sizePlanet!=null) {
+        this.sizeJupiter = cfg.sizePlanet;
+      }
+      
       this.game = new Phaser.Game(cfg.width, 
                                   cfg.height, 
                                   Phaser.CANVAS,
@@ -38,7 +48,7 @@ class TransitSimulator {
                                     render:  () => this.render() 
                                   });
 
-      this.game.stage.disableVisibilityChange = true;
+//      this.game.stage.disableVisibilityChange = true;
     }
 
     private preload() : void {
@@ -66,7 +76,10 @@ class TransitSimulator {
       let height = 200;
       this.chart = new Chart(this.game, this.game.world.width - 2*margin, height, this.config.font);
       this.chart.create(margin, this.game.world.height - margin - height);
-      this.chart.setYRange(0.8, 1.1);
+      this.chart.setYRange(0.9, 1.05);
+      this.chart.setXRange(margin, this.game.world.width - margin);
+      this.chart.setXTitle("Zeit");
+      this.chart.setYTitle("Helligkeit");
 
       this.curve = new Array<Phaser.Point>();
     }
@@ -113,24 +126,12 @@ class TransitSimulator {
           && this.jupiter.x > this.chart.xpos 
           && this.jupiter.x < (this.game.world.width - this.chart.xpos)) {
           let bri = this.calcBrightness(this.jupiter.x, this.jupiter.y);
-          this.curve.push(new Phaser.Point(this.jupiter.x - 50, bri));
-          console.log(this.curve.length);
+          this.curve.push(new Phaser.Point(this.jupiter.x, bri));
       }
     }
 
     private render() : void {
-      if (this.jupiter.x > this.chart.xpos && this.jupiter.x < (this.game.world.width - this.chart.xpos)) {
-        this.chart.render(this.curve);
-      }
+      this.chart.clear();
+      this.chart.render(this.curve, this.colCurve);
     }
 }
-
-//
-// Start the simulation
-// 
-
-/*
-window.onload = () => {
-  var game = new TransitSimulator();
-};
-*/

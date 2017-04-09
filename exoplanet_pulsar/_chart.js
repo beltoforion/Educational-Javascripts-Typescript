@@ -2,6 +2,7 @@
 var Chart = (function () {
     function Chart(game, width, height, font) {
         this.colAxis = 0xffffff;
+        this.colCurve = 0x0085ff; // 0xd900ff;
         this.ymin = 0;
         this.ymax = 1;
         this.xmin = 0;
@@ -24,6 +25,9 @@ var Chart = (function () {
     Chart.prototype.setXRange = function (xmin, xmax) {
         this.xmin = xmin;
         this.xmax = xmax;
+    };
+    Chart.prototype.getXMax = function () {
+        return this.xmax;
     };
     Chart.prototype.create = function (xpos, ypos) {
         this.xpos = xpos;
@@ -64,25 +68,7 @@ var Chart = (function () {
         this.grafix.clear();
         this.renderAxis();
     };
-    Chart.prototype.render = function (data, color) {
-        var n = data.length;
-        if (n < 2)
-            return;
-        var yrng = (this.ymax - this.ymin);
-        var scale_y = this.height / yrng;
-        var xrng = (this.xmax - this.xmin);
-        var scale_x = this.width / xrng;
-        this.grafix.lineStyle(2, color, 1);
-        for (var i = 2; i < data.length; ++i) {
-            var x0 = (data[i - 2].x - this.xmin) * scale_x;
-            var y0 = (data[i - 2].y - this.ymin) * scale_y;
-            var x1 = (data[i - 1].x - this.xmin) * scale_x;
-            var y1 = (data[i - 1].y - this.ymin) * scale_y;
-            this.grafix.moveTo(x0, this.height - y0);
-            this.grafix.lineTo(x1, this.height - y1);
-        }
-    };
-    Chart.prototype.render2 = function (data, color, data2, color2) {
+    Chart.prototype.render = function (data, color, data2, color2) {
         var n = data.length;
         if (n < 2)
             return;
@@ -114,4 +100,4 @@ var Chart = (function () {
     };
     return Chart;
 }());
-//# sourceMappingURL=chart.js.map
+//# sourceMappingURL=_chart.js.map

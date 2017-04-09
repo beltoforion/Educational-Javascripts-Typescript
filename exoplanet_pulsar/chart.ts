@@ -39,11 +39,11 @@ class Chart {
         this.font = font;
     }
 
-    public setYTitle(title : string) {
+    public setYTitle(title : string) : void {
         this.yAxisTitle.text = title;
     }
 
-    public setXTitle(title : string) {
+    public setXTitle(title : string) : void {
         this.xAxisTitle.text = title;
     }
 
@@ -52,12 +52,16 @@ class Chart {
         this.ymax = ymax;
     }
 
-    public setXRange(xmin : number, xmax : number) : void{
+    public setXRange(xmin : number, xmax : number) : void {
         this.xmin = xmin;
         this.xmax = xmax;
     }
 
-    public create(xpos : number, ypos : number) {
+   public getXMax() : number {
+        return this.xmax;
+    }
+
+    public create(xpos : number, ypos : number) : void  {
         this.xpos = xpos;
         this.ypos = ypos;
         this.grafix = this.game.add.graphics(this.xpos, this.ypos);
@@ -73,7 +77,7 @@ class Chart {
         this.yAxisTitle.angle = 270;
     }
 
-    private renderAxis() {
+    private renderAxis() : void {
         this.grafix.lineStyle(3, this.colAxis, 1);
         this.grafix.moveTo(0, 0);
         this.grafix.lineTo(0, this.height);
@@ -97,16 +101,16 @@ class Chart {
         this.grafix.endFill();
     }
 
-    public update(data : Array<Phaser.Point>) {
+    public update(data : Array<Phaser.Point>) : void {
 
     }
 
-    public clear() {
+    public clear() : void {
         this.grafix.clear();
         this.renderAxis();
     }
 
-    public render(data : Array<Phaser.Point>, color : number) {
+    public render(data : Array<Phaser.Point>, color : number) : void {
         let n = data.length;
         if (n<2)
             return;
@@ -130,7 +134,7 @@ class Chart {
         }
     }
 
-        public render2(data : Array<Phaser.Point>, color : number, data2 : Array<Phaser.Point>, color2 : number) {
+    public render2(data : Array<Phaser.Point>, color : number, data2 : Array<Phaser.Point>, color2 : number) : void {
         let n = data.length;
         if (n<2)
             return;

@@ -18,6 +18,8 @@ class Chart {
 
     private colAxis : number = 0xffffff;
 
+    private colCurve : number = 0x0085ff; // 0xd900ff;
+
     private ymin : number = 0;
 
     private ymax : number = 1;
@@ -57,7 +59,11 @@ class Chart {
         this.xmax = xmax;
     }
 
-    public create(xpos : number, ypos : number) {
+    public getXMax() : number {
+        return this.xmax;
+    }
+
+    public create(xpos : number, ypos : number) : void {
         this.xpos = xpos;
         this.ypos = ypos;
         this.grafix = this.game.add.graphics(this.xpos, this.ypos);
@@ -106,31 +112,7 @@ class Chart {
         this.renderAxis();
     }
 
-    public render(data : Array<Phaser.Point>, color : number) {
-        let n = data.length;
-        if (n<2)
-            return;
-
-        let yrng = (this.ymax - this.ymin);
-        let scale_y = this.height / yrng;
- 
-        let xrng = (this.xmax - this.xmin);
-        let scale_x = this.width / xrng;
-
-        this.grafix.lineStyle(2, color, 1);
-        for (var i=2; i<data.length; ++i)
-        {
-            let x0 = (data[i-2].x - this.xmin) * scale_x;
-            let y0 = (data[i-2].y - this.ymin) * scale_y;
-            let x1 = (data[i-1].x - this.xmin) * scale_x;
-            let y1 = (data[i-1].y - this.ymin) * scale_y;
-        
-            this.grafix.moveTo(x0, this.height - y0);
-            this.grafix.lineTo(x1, this.height - y1);
-        }
-    }
-
-        public render2(data : Array<Phaser.Point>, color : number, data2 : Array<Phaser.Point>, color2 : number) {
+    public render(data : Array<Phaser.Point>, color : number, data2 : Array<Phaser.Point>, color2 : number) {
         let n = data.length;
         if (n<2)
             return;

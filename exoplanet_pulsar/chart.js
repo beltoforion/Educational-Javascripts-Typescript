@@ -25,6 +25,9 @@ var Chart = (function () {
         this.xmin = xmin;
         this.xmax = xmax;
     };
+    Chart.prototype.getXMax = function () {
+        return this.xmax;
+    };
     Chart.prototype.create = function (xpos, ypos) {
         this.xpos = xpos;
         this.ypos = ypos;
