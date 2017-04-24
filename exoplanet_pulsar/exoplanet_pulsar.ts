@@ -120,8 +120,7 @@ class PulsarTimingSimulator {
                                     create:  () => this.create(), 
                                     update:  () => this.update(), 
                                     render:  () => this.render() 
-                                  },
-                                  cfg.noBackground!=null && cfg.noBackground);
+                                  });
     }
 
     private preload() : void {
@@ -132,7 +131,6 @@ class PulsarTimingSimulator {
       this.game.load.image('planet_shadow', this.config.assetpath + 'assets/sprites/planet_shadow.png');
       this.game.load.image('pulsar', this.config.assetpath + 'assets/sprites/pulsar.png');
       this.game.load.image('center_of_mass', this.config.assetpath + 'assets/sprites/center_of_mass.png');
-
     }
 
     private create() : void {
@@ -141,11 +139,14 @@ class PulsarTimingSimulator {
       let center_right_x = this.game.world.width/2 + 250;
       let center_y = this.centerOfMassY;
 
+      this.game.stage.backgroundColor = "#000000";
+
       // 
       // Left Side
       //
       var style = { font: this.font, fill: "#ffffff", wordWrap: false, align: "center", backgroundColor: "#000000" };
-      this.caption_left = this.game.add.text(0, 0, "Pulsar mit Exoplanet", style);
+      this.caption_left = this.game.add.text(center_left_x, 20, "Pulsar mit Exoplanet", style);
+      this.caption_left.anchor = new Phaser.Point(0.5, 0.5);
 
       this.mask_left = this.game.add.graphics(0,0);
       this.mask_left.drawRect(0, 0, this.game.width/2, this.game.height / 2 + 100); 
@@ -158,7 +159,7 @@ class PulsarTimingSimulator {
 
       this.beam_left = this.game.add.sprite(100, 100, 'beam');
       this.beam_left.anchor = new Phaser.Point(0.5, 0.5);
-      this.beam_left.scale.setTo(1.5, 1);  
+      this.beam_left.scale.setTo(1.1, 0.6);  
       this.beam_left.x = this.game.world.centerX;
       this.beam_left.y = this.game.world.centerY - 100;
       this.beam_left.mask = this.mask_left;
@@ -191,13 +192,15 @@ class PulsarTimingSimulator {
       // Right Side
       //
        
-      this.caption_right = this.game.add.text(this.game.width/2, 0, "Pulsar ohne Exoplanet", style);
+      this.caption_right = this.game.add.text(center_right_x, 20, "Pulsar ohne Exoplanet", style);
+      this.caption_right.anchor = new Phaser.Point(0.5, 0.5);
+      
       this.mask_right = this.game.add.graphics(0,0);
       this.mask_right.drawRect(this.game.width/2, 0, this.game.width/2, this.mask_left.height); 
 
       this.beam_right = this.game.add.sprite(100, 100, 'beam2');
       this.beam_right.anchor = new Phaser.Point(0.5, 0.5);
-      this.beam_right.scale.setTo(1.5, 1);  
+      this.beam_right.scale.setTo(1.1, 0.6);  
       this.beam_right.x = center_right_x;
       this.beam_right.y = center_y;
       this.beam_right.mask = this.mask_right;
@@ -298,7 +301,11 @@ class PulsarTimingSimulator {
     }
 
     private render() : void {
-        this.chart.clear();
-        this.chart.render2(this.curve, 0x0085ff, this.curve2, 0x00ff85);
+
+        if (this.chart_x < 2) {
+          this.chart.clear();
+        } else {
+          this.chart.render2(this.curve, 0x0085ff, this.curve2, 0x00ff85);
+        }
     }
 }

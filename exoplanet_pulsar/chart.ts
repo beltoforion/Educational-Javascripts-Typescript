@@ -75,6 +75,8 @@ class Chart {
         this.yAxisTitle = this.game.add.text(this.xpos - dummy.height, this.ypos + this.height/2, "Y-Axis", style);
         this.yAxisTitle.anchor = new Phaser.Point(0.5, 0.5);
         this.yAxisTitle.angle = 270;
+
+        this.renderAxis();
     }
 
     private renderAxis() : void {
@@ -146,31 +148,25 @@ class Chart {
         let scale_x = this.width / xrng;
 
         this.grafix.lineStyle(2, color, 1);
-        for (var i=2; i<data.length; ++i)
-        {
-            let x0 = (data[i-2].x - this.xmin) * scale_x;
-            let y0 = (data[i-2].y - this.ymin) * scale_y;
-            let x1 = (data[i-1].x - this.xmin) * scale_x;
-            let y1 = (data[i-1].y - this.ymin) * scale_y;
+        let x0 = (data[n-2].x - this.xmin) * scale_x;
+        let y0 = (data[n-2].y - this.ymin) * scale_y;
+        let x1 = (data[n-1].x - this.xmin) * scale_x;
+        let y1 = (data[n-1].y - this.ymin) * scale_y;
         
-            this.grafix.moveTo(x0, this.height - y0);
-            this.grafix.lineTo(x1, this.height - y1);
-        }
+        this.grafix.moveTo(x0, this.height - y0);
+        this.grafix.lineTo(x1, this.height - y1);
 
         //
         //  curve 2
         //
 
         this.grafix.lineStyle(2, color2, 1);
-        for (var i=2; i<data2.length; ++i)
-        {
-            let x0 = (data2[i-2].x - this.xmin) * scale_x;
-            let y0 = (data2[i-2].y - this.ymin) * scale_y;
-            let x1 = (data2[i-1].x - this.xmin) * scale_x;
-            let y1 = (data2[i-1].y - this.ymin) * scale_y;
+        x0 = (data2[n-2].x - this.xmin) * scale_x;
+        y0 = (data2[n-2].y - this.ymin) * scale_y;
+        x1 = (data2[n-1].x - this.xmin) * scale_x;
+        y1 = (data2[n-1].y - this.ymin) * scale_y;
         
-            this.grafix.moveTo(x0, this.height - y0);
-            this.grafix.lineTo(x1, this.height - y1);
-        }
+        this.grafix.moveTo(x0, this.height - y0);
+        this.grafix.lineTo(x1, this.height - y1);
     }
 }
