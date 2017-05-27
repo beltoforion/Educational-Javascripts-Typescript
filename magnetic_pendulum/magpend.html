@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8"/>
+  <script src="../shared/phaser-ce/phaser.min.js"></script>
+<!--  <script src="../shared/box2d.js"></script>
+  <script src="../shared/vec2d.js"></script>
+-->  
+  <script src="../shared/debug.js"></script>
+  <script src="./IntegratorRK4.js"></script>
+  <script src="./ModelMagPend.js"></script>
+  <script src="./IModel.js"></script>
+  <script src="./MagPend.js"></script>
+  <script src="./IIntegrator.js"></script>
+</head>
+
+<body>
+  <div id='cv' style="margin-top:50px; margin-left:150px;">
+
+  </div>
+  <div  style="margin-top:10px; margin-left:150px;">
+    <b>Low</b>
+    <input id="sliderFriction" type="range" min="0" max="100" style="width:300px; height:20px;" onchange="updateSlider(this.value)"/> 
+    <b>High</b>
+  </div>
+  <div style="margin-top:10px; margin-left:150px;" id="frictionValue"></div>
+
+  <script>
+    var magpend = new MagPend({ assetpath     : "",
+                             cvid          : 'cv',
+                             font          : "24px Arial",
+                             width         : 600,
+                             height        : 600});
+
+    function updateSlider(v) {
+
+      let friction = Math.pow(10, -3.5 + (v/100) * 1.5);
+      magpend.setFriction(friction);
+
+      var sliderDiv = document.getElementById("frictionValue");
+        sliderDiv.innerHTML = friction.toPrecision(2);
+    }
+  </script>
+</body>
+
+</html>

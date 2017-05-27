@@ -11,7 +11,7 @@ class ModelMagPend implements IModel, IRenderer {
 
     private engine : IIntegrator;
 
-    private friction : number;
+    public friction : number;
 
     private x : number [] =  [];
 
@@ -23,10 +23,12 @@ class ModelMagPend implements IModel, IRenderer {
 
     private col : number[] = [
                 ModelMagPend.rgb2hex(255, 255, 255),
+                ModelMagPend.rgb2hex(200,  30,  30),
+                ModelMagPend.rgb2hex( 30, 200,  30),
+                ModelMagPend.rgb2hex( 30,  30, 200),
                 ModelMagPend.rgb2hex(179, 178,  86),
                 ModelMagPend.rgb2hex(131, 255,   0),
                 ModelMagPend.rgb2hex(255, 194,   0),
-                ModelMagPend.rgb2hex(255,   0,   0),
                 ModelMagPend.rgb2hex(255,   0, 162),
                 ModelMagPend.rgb2hex(152,   0, 255),
                 ModelMagPend.rgb2hex(  0,  67, 255),
@@ -40,9 +42,7 @@ class ModelMagPend implements IModel, IRenderer {
 
     private abort : boolean = false;
 
-    private restIdx : number = 0;
-
-    private aoi : Box2d = new Box2d();
+    public restIdx : number = 0;
 
     private game : Phaser.Game;
 
@@ -51,32 +51,21 @@ class ModelMagPend implements IModel, IRenderer {
     constructor(game : Phaser.Game) {
         this.game = game;
 
-        this.aoi.set(new Vec2d( 1,  1), new Vec2d(-1, -1));
-
-        this.friction = 0.2;
+        this.friction = 0.001;
 
         // pendulum mount 
         this.x.push(0); 
         this.y.push(0); 
-        this.k.push(0.00001); 
+        this.k.push(0.00001); //0.00001); 
         this.r.push(20);
 
         // inner ring of magnets 
-        let rad : number = 200;
-        for (var i = 0; i < 360; i += 72) {
+        let rad : number = 300;
+        for (var i = 0; i < 360; i += 120 /* 72 */) {
             this.x.push(rad * Math.sin(i*Math.PI/180.0)); 
             this.y.push(rad * Math.cos(i*Math.PI/180.0)); 
-            this.k.push(500); 
-            this.r.push(40);
-        }
-
-        // outter ring of magnets
-        rad = 400;
-        for (var i = 36; i < 396; i += 72) {
-            this.x.push(rad * Math.sin(i*Math.PI/180.0)); 
-            this.y.push(rad * Math.cos(i*Math.PI/180.0)); 
-            this.k.push(500); 
-            this.r.push(40);
+            this.k.push(150); 
+            this.r.push(30);
         }
 
         // all arrays must hav equal length!
@@ -113,14 +102,15 @@ class ModelMagPend implements IModel, IRenderer {
                 acc_y += f * (yy - pos_y);
             } else {
                 let d : number = Math.sqrt( (xx - pos_x) * (xx - pos_x) +
-                                            (yy - pos_y) * (yy - pos_y) );
+                                            (yy - pos_y) * (yy - pos_y) + 
+                                            15 * 15);
 
                 if (d < r)
                     checkAbort = true;
       
-                let dddd : number = d*d; //*d*d;
-                acc_x += (f / (dddd + 0.001)) * (xx - pos_x);
-                acc_y += (f / (dddd + 0.001)) * (yy - pos_y);
+                let dddd : number = d*d*d; //*d;
+                acc_x += (f / dddd) * (xx - pos_x);
+                acc_y += (f / dddd) * (yy - pos_y);
             }
         }
 
@@ -134,7 +124,7 @@ class ModelMagPend implements IModel, IRenderer {
         deriv[2] = vel_x;
         deriv[3] = vel_y;
 
-        this.abort = checkAbort && ( (vel_x * vel_x + vel_y * vel_y) < 0.005);
+        this.abort = checkAbort && ( (vel_x * vel_x + vel_y * vel_y) < 4);
     }
 
 
@@ -150,24 +140,25 @@ class ModelMagPend implements IModel, IRenderer {
     }
 
     public isFinished(state : number[]) : boolean {
-        if (this.abort) {
-            let pos_x : number = state[2];
-            let pos_y : number = state[3];
+        if (!this.abort) 
+            return false;
 
-            let minDist : number = 999;
+        let pos_x : number = state[2];
+        let pos_y : number = state[3];
+
+        let minDist : number =  Number.MAX_VALUE;
             
-            let n = this.x.length;
-            for (var i = 0; i < n; ++i) {
-                let xx = this.x[n];
-                let yy = this.y[n];
+        let n = this.x.length;
+        for (var i = 0; i < n; ++i) {
+            let xx = this.x[i];
+            let yy = this.y[i];
 
-                let dist : number = Math.sqrt( (xx - pos_x) * (xx - pos_x) +
-                                               (yy - pos_y) * (yy - pos_y) );      
+            let dist : number = Math.sqrt( (xx - pos_x) * (xx - pos_x) +
+                                           (yy - pos_y) * (yy - pos_y) );      
 
-                if (dist < minDist) {
+            if (dist < minDist) {
                     this.restIdx = i;
                     minDist = dist;
-                }
             }
         }
 
@@ -198,7 +189,7 @@ class ModelMagPend implements IModel, IRenderer {
         let n = this.x.length;
         for (var i=1; i<n; ++i) {
             this.gfx.beginFill(this.col[i]);
-            this.gfx.drawCircle(this.x[i], this.y[i], this.r[i]);
+            this.gfx.drawCircle(this.x[i], this.y[i], 2*this.r[i]);
             this.gfx.endFill();            
         }
     }

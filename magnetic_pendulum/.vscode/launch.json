@@ -5,7 +5,7 @@
             "name": "Launch Chrome against localhost, with sourcemaps",
             "type": "chrome",
             "request": "launch",
-            "url": "file://${workspaceRoot}/tidal_lock.html",
+            "url": "file://${workspaceRoot}/magpend.html",
             "sourceMaps": true,
             "webRoot": "${workspaceRoot}"
         },
