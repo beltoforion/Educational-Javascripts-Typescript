@@ -4,11 +4,9 @@
 <head>
   <meta charset="utf-8"/>
   <script src="../shared/phaser-ce/phaser.min.js"></script>
-<!--  <script src="../shared/box2d.js"></script>
-  <script src="../shared/vec2d.js"></script>
--->  
   <script src="../shared/debug.js"></script>
   <script src="./IntegratorRK4.js"></script>
+  <script src="./IntegratorRK5.js"></script>
   <script src="./ModelMagPend.js"></script>
   <script src="./IModel.js"></script>
   <script src="./MagPend.js"></script>
@@ -16,15 +14,25 @@
 </head>
 
 <body>
-  <div id='cv' style="margin-top:50px; margin-left:150px;">
+  <div id="cv" class="phaser_div">
 
   </div>
-  <div  style="margin-top:10px; margin-left:150px;">
-    <b>Low</b>
-    <input id="sliderFriction" type="range" min="0" max="100" style="width:300px; height:20px;" onchange="updateSlider(this.value)"/> 
-    <b>High</b>
+  <div>
+    <div style="width:60px; float:left; text-align:center; margin:10px;">Friction:</div>
+    <div style="width:50px; float:left; text-align:center; margin:10px;">Low</div>
+    <input id="sliderFriction" type="range" min="0" max="100" style="width:300px; height:20px; float:left; margin:10px;" onchange="updateFrictionSlider(this.value)"/> 
+    <div style="width:50px; float:left; text-align:center; margin:10px;">High</div>
+    <div id="frictionValue" style="float:left; text-align:center; margin:10px;">xxxx</div>
   </div>
-  <div style="margin-top:10px; margin-left:150px;" id="frictionValue"></div>
+
+<!--
+  <div style="clear:both;">
+    <div style="width:100px; float:left; text-align:center; margin:10px;">Weak</div>
+    <input id="sliderStrength" type="range" min="0" max="100" style="width:300px; height:20px; float:left; margin:10px;" onchange="updateStrengthSlider(this.value)"/> 
+    <div style="width:100px; float:left; text-align:center; margin:10px;">Strong</div>
+  </div>
+  <div id="strengthValue" style="float:left; text-align:center; margin:10px;">yyyy</div>  
+-->
 
   <script>
     var magpend = new MagPend({ assetpath     : "",
@@ -33,13 +41,23 @@
                              width         : 600,
                              height        : 600});
 
-    function updateSlider(v) {
-
+    let sliderDiv = document.getElementById("frictionValue");
+    sliderDiv.innerHTML = magpend.model.friction.toPrecision(2);
+    
+    function updateFrictionSlider(v) {
       let friction = Math.pow(10, -3.5 + (v/100) * 1.5);
       magpend.setFriction(friction);
 
-      var sliderDiv = document.getElementById("frictionValue");
-        sliderDiv.innerHTML = friction.toPrecision(2);
+      let sliderDiv = document.getElementById("frictionValue");
+      sliderDiv.innerHTML = friction.toPrecision(2);
+    }
+
+    function updateStrengthSlider(v) {
+      let friction = Math.pow(10, -6 + (v/100) * 1.5);
+      magpend.setStrength(friction);
+
+      let sliderDiv = document.getElementById("strengthValue");
+      sliderDiv.innerHTML = friction.toPrecision(2);
     }
   </script>
 </body>

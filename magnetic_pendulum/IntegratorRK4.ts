@@ -74,6 +74,5 @@ class IntegratorRK4 implements IIntegrator {
         this.h = 2;
         this.time = 0;
         this.model = model;
-        model.setEngine(this);
     }
 }

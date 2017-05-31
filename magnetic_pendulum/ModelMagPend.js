@@ -91,16 +91,16 @@ var ModelMagPend = (function () {
         deriv[1] = acc_y;
         deriv[2] = vel_x;
         deriv[3] = vel_y;
-        this.abort = checkAbort && ((vel_x * vel_x + vel_y * vel_y) < 4);
+        this.abort = checkAbort && ((vel_x * vel_x + vel_y * vel_y) < 2);
     };
     ModelMagPend.prototype.getName = function () {
         return "Magnetic Pendulum";
     };
-    /**
-     * Dimension of the state vector of the model.
-     */
     ModelMagPend.prototype.getDim = function () {
         return 4;
+    };
+    ModelMagPend.prototype.setEngine = function (engine) {
+        this.engine = engine;
     };
     ModelMagPend.prototype.isFinished = function (state) {
         if (!this.abort)
@@ -121,12 +121,9 @@ var ModelMagPend = (function () {
         }
         return this.abort;
     };
-    ModelMagPend.prototype.setEngine = function (engine) {
-        this.engine = engine;
+    ModelMagPend.prototype.setPendStrength = function (strength) {
+        this.k[0] = strength;
     };
-    //---------------------------------------------------------------------------------------------
-    //  IRenderer interface
-    //---------------------------------------------------------------------------------------------
     ModelMagPend.prototype.create = function () {
         this.gfx = this.game.add.graphics(0, 0);
         // Pendulum Mount Point
@@ -143,10 +140,6 @@ var ModelMagPend = (function () {
             this.gfx.drawCircle(this.x[i], this.y[i], 2 * this.r[i]);
             this.gfx.endFill();
         }
-    };
-    ModelMagPend.prototype.update = function () {
-    };
-    ModelMagPend.prototype.render = function () {
     };
     return ModelMagPend;
 }());

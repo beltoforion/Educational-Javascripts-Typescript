@@ -38,7 +38,8 @@ var MagPend = (function () {
         var model = new ModelMagPend(this.game);
         this.model = model;
         this.renderer = model;
-        this.engine = new IntegratorRK4(this.model);
+        //        this.engine = new IntegratorRK4(this.model);
+        this.engine = new IntegratorRK5(this.model);
     }
     MagPend.rgb2hex = function (red, green, blue) {
         var rgb = blue | (green << 8) | (red << 16);
@@ -96,6 +97,9 @@ var MagPend = (function () {
             var y_1 = yy - (this.bitmap.height / 2);
             this.trace([0, 0, x_1 * xscale, y_1 * yscale], false);
             var idxMag = this.model.restIdx;
+            if (idxMag == -1) {
+                this.bitmap.setPixel(xx, yy, 0, 0, 0);
+            }
             if (idxMag == 1) {
                 this.bitmap.setPixel(xx, yy, 100, 0, 0);
             }
@@ -117,18 +121,23 @@ var MagPend = (function () {
         this.game.world.setBounds(-1000, -1000, 2000, 2000);
         this.game.world.scale.setTo(this.game.width / this.game.world.width, this.game.height / this.game.world.height);
         this.bitmap = this.game.make.bitmapData(100, 100);
-        this.bitmap.addToWorld(this.game.world.centerX, this.game.world.centerY, 0.5, 0.5, this.game.world.width / 100, this.game.world.height / 100);
+        this.bitmap.addToWorld(this.game.world.centerX, this.game.world.centerY, 0.5, 0.5, this.game.world.width / this.bitmap.width, this.game.world.height / this.bitmap.height);
         this.gfx = this.game.add.graphics(0, 0);
-        this.renderer.create();
+        this.model.create();
     };
     MagPend.prototype.render = function () {
-        this.renderer.render();
     };
     MagPend.prototype.setFriction = function (friction) {
         this.xx = 0;
         this.yy = 0;
         this.doScan = true;
         this.model.friction = friction;
+    };
+    MagPend.prototype.setStrength = function (strength) {
+        this.xx = 0;
+        this.yy = 0;
+        this.doScan = true;
+        this.model.setPendStrength(strength);
     };
     return MagPend;
 }());

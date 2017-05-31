@@ -11,7 +11,6 @@ var IntegratorRK4 = (function () {
         this.h = 2;
         this.time = 0;
         this.model = model;
-        model.setEngine(this);
     }
     IntegratorRK4.prototype.setStepSize = function (h) {
         this.h = h;

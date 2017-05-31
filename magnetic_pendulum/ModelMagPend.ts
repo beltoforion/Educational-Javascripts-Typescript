@@ -2,14 +2,12 @@
 /// <reference path="../shared/debug.ts"/>
 /// <reference path="./IModel.ts"/>
 
-class ModelMagPend implements IModel, IRenderer {
+class ModelMagPend implements IModel {
 
     public static rgb2hex(red : number, green : number, blue : number) : number {
         var rgb = blue | (green << 8) | (red << 16);
         return rgb;
     }
-
-    private engine : IIntegrator;
 
     public friction : number;
 
@@ -47,6 +45,8 @@ class ModelMagPend implements IModel, IRenderer {
     private game : Phaser.Game;
 
     private gfx : Phaser.Graphics;
+
+    private engine : IIntegrator;
 
     constructor(game : Phaser.Game) {
         this.game = game;
@@ -104,10 +104,9 @@ class ModelMagPend implements IModel, IRenderer {
                 let d : number = Math.sqrt( (xx - pos_x) * (xx - pos_x) +
                                             (yy - pos_y) * (yy - pos_y) + 
                                             15 * 15);
-
                 if (d < r)
                     checkAbort = true;
-      
+
                 let dddd : number = d*d*d; //*d;
                 acc_x += (f / dddd) * (xx - pos_x);
                 acc_y += (f / dddd) * (yy - pos_y);
@@ -124,7 +123,7 @@ class ModelMagPend implements IModel, IRenderer {
         deriv[2] = vel_x;
         deriv[3] = vel_y;
 
-        this.abort = checkAbort && ( (vel_x * vel_x + vel_y * vel_y) < 4);
+        this.abort = checkAbort && ( (vel_x * vel_x + vel_y * vel_y) < 2);
     }
 
 
@@ -132,11 +131,12 @@ class ModelMagPend implements IModel, IRenderer {
         return "Magnetic Pendulum";
     }
 
-    /**
-     * Dimension of the state vector of the model.
-     */
     public getDim() : number {
         return 4;
+    }
+
+    public setEngine(engine : IIntegrator) {
+        this.engine = engine;
     }
 
     public isFinished(state : number[]) : boolean {
@@ -165,14 +165,9 @@ class ModelMagPend implements IModel, IRenderer {
         return this.abort;
     }
 
-    public setEngine(engine : IIntegrator) : void {
-        this.engine = engine;
+    public setPendStrength(strength : number) : void {
+        this.k[0] = strength;
     }
-
-
-    //---------------------------------------------------------------------------------------------
-    //  IRenderer interface
-    //---------------------------------------------------------------------------------------------
 
     public create() : void {
         this.gfx = this.game.add.graphics(0,0);
@@ -192,11 +187,5 @@ class ModelMagPend implements IModel, IRenderer {
             this.gfx.drawCircle(this.x[i], this.y[i], 2*this.r[i]);
             this.gfx.endFill();            
         }
-    }
-
-    public update() : void {
-    }
-    
-    public render() : void {
     }
 }

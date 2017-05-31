@@ -37,8 +37,6 @@ class MagPend  {
 
     private model : ModelMagPend;
 
-    private renderer : IRenderer;
-
     private mouseX : number;
 
     private mouseY : number;
@@ -65,7 +63,8 @@ class MagPend  {
         this.model = model;
         this.renderer = model;
 
-        this.engine = new IntegratorRK4(this.model);
+//        this.engine = new IntegratorRK4(this.model);
+        this.engine = new IntegratorRK5(this.model);
     }
 
     private trace(state : number [], drawTrace : boolean) {
@@ -140,6 +139,11 @@ class MagPend  {
             this.trace([ 0, 0, x * xscale, y * yscale ], false);
   
             let idxMag = this.model.restIdx;
+
+            if (idxMag==-1) {
+                this.bitmap.setPixel(xx, yy, 0, 0, 0);
+            }
+
             if (idxMag==1) {
                 this.bitmap.setPixel(xx, yy, 100, 0, 0);
             }
@@ -170,16 +174,15 @@ class MagPend  {
         this.bitmap = this.game.make.bitmapData(100, 100);
         this.bitmap.addToWorld(this.game.world.centerX, 
                                this.game.world.centerY, 0.5, 0.5,
-                               this.game.world.width / 100, 
-                               this.game.world.height / 100);
+                               this.game.world.width / this.bitmap.width, 
+                               this.game.world.height / this.bitmap.height);
         
         this.gfx = this.game.add.graphics(0,0);
 
-        this.renderer.create();
+        this.model.create();
     }
 
     public render() : void {
-        this.renderer.render();
     }
 
     public setFriction(friction : number) : void {
@@ -187,5 +190,12 @@ class MagPend  {
         this.yy = 0;
         this.doScan = true;
         this.model.friction = friction;
+    }
+
+    public setStrength(strength : number) : void {
+        this.xx = 0;
+        this.yy = 0;
+        this.doScan = true;
+        this.model.setPendStrength(strength);
     }
 }
