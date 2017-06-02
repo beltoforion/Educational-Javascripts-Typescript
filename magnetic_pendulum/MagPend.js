@@ -28,6 +28,7 @@ var MagPend = (function () {
         this.xx = 0;
         this.yy = 0;
         this.doScan = true;
+        this.refLength = 0;
         this.game = new Phaser.Game(cfg.width, cfg.height, Phaser.AUTO, cfg.cvid, {
             preload: function () { return _this.preload(); },
             create: function () { return _this.create(); },
@@ -37,7 +38,6 @@ var MagPend = (function () {
         false); // antialiasing
         var model = new ModelMagPend(this.game);
         this.model = model;
-        this.renderer = model;
         //        this.engine = new IntegratorRK4(this.model);
         this.engine = new IntegratorRK5(this.model);
     }
@@ -62,8 +62,12 @@ var MagPend = (function () {
             this.gfx.clear();
             this.gfx.lineStyle(6, ModelMagPend.rgb2hex(255, 255, 0), 4);
         }
+        var length = 0;
         for (var ct = 0; isRunning; ++ct) {
             state = this.engine.singleStep();
+            var dx = state[0] * this.engine.getStepSize();
+            var dy = state[1] * this.engine.getStepSize();
+            length += Math.sqrt(dx * dx + dy * dy);
             if (ct == 0 && drawTrace) {
                 this.gfx.moveTo(state[2], state[3]);
             }
@@ -77,6 +81,7 @@ var MagPend = (function () {
         if (drawTrace) {
             this.game.debug.text("Stopped at Magnet: " + this.model.restIdx, 20, 40);
         }
+        return length;
     };
     MagPend.prototype.update = function () {
         var xscale = this.game.world.width / this.bitmap.width;
@@ -91,24 +96,15 @@ var MagPend = (function () {
                     this.doScan = false;
                 }
             }
-            var xx = this.xx;
-            var yy = this.yy;
-            var x_1 = xx - (this.bitmap.width / 2);
-            var y_1 = yy - (this.bitmap.height / 2);
-            this.trace([0, 0, x_1 * xscale, y_1 * yscale], false);
+            var updateRefLength = (this.yy == 0 && this.xx == 1);
+            var x_1 = this.xx - (this.bitmap.width / 2);
+            var y_1 = this.yy - (this.bitmap.height / 2);
+            var length_1 = this.trace([0, 0, x_1 * xscale, y_1 * yscale], false);
+            if (updateRefLength) {
+                this.refLength = length_1;
+            }
             var idxMag = this.model.restIdx;
-            if (idxMag == -1) {
-                this.bitmap.setPixel(xx, yy, 0, 0, 0);
-            }
-            if (idxMag == 1) {
-                this.bitmap.setPixel(xx, yy, 100, 0, 0);
-            }
-            if (idxMag == 2) {
-                this.bitmap.setPixel(xx, yy, 0, 100, 0);
-            }
-            if (idxMag == 3) {
-                this.bitmap.setPixel(xx, yy, 0, 0, 100);
-            }
+            this.putPixel(this.xx, this.yy, idxMag, length_1, this.refLength);
         }
         var x = this.game.input.mousePointer.worldX / this.game.world.scale.x;
         var y = this.game.input.mousePointer.worldY / this.game.world.scale.y;
@@ -138,6 +134,25 @@ var MagPend = (function () {
         this.yy = 0;
         this.doScan = true;
         this.model.setPendStrength(strength);
+    };
+    MagPend.prototype.putPixel = function (x, y, idx, length, refLength) {
+        refLength *= 1.2;
+        var bri = 1 / (Math.exp(Math.log(256) / (refLength * refLength) * (length * length)));
+        var baseBri = 255;
+        switch (idx) {
+            case -1:
+                this.bitmap.setPixel(x, y, 0, 0, 0);
+                return;
+            case 1:
+                this.bitmap.setPixel(x, y, baseBri * bri, 0, 0);
+                return;
+            case 2:
+                this.bitmap.setPixel(x, y, 0, baseBri * bri, 0);
+                return;
+            case 3:
+                this.bitmap.setPixel(x, y, 0, 0, baseBri * bri);
+                return;
+        }
     };
     return MagPend;
 }());

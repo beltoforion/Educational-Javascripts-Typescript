@@ -20,6 +20,9 @@ var IntegratorADB5 = (function () {
     IntegratorADB5.prototype.setStepSize = function (h) {
         this.h = h;
     };
+    IntegratorADB5.prototype.getStepSize = function () {
+        return this.h;
+    };
     IntegratorADB5.prototype.setModel = function (model) {
         this.model = model;
     };

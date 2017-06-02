@@ -29,6 +29,11 @@ class IntegratorRK5 implements IIntegrator {
         this.h = h;
     }
 
+    public getStepSize() : number
+    {
+            return this.h;
+    }
+
     public setModel(model : IModel) : void {
         this.model = model;
     }

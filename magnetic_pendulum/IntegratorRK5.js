@@ -17,6 +17,9 @@ var IntegratorRK5 = (function () {
     IntegratorRK5.prototype.setStepSize = function (h) {
         this.h = h;
     };
+    IntegratorRK5.prototype.getStepSize = function () {
+        return this.h;
+    };
     IntegratorRK5.prototype.setModel = function (model) {
         this.model = model;
     };

@@ -45,6 +45,12 @@ class MagPend  {
 
     private gfx : Phaser.Graphics;
 
+    private xx : number = 0;
+
+    private yy : number = 0;
+
+    private doScan : boolean = true;
+
     constructor(cfg : any) {
 
         this.game = new Phaser.Game(cfg.width, 
@@ -61,13 +67,12 @@ class MagPend  {
                                     false); // antialiasing
         let model = new ModelMagPend(this.game);
         this.model = model;
-        this.renderer = model;
 
 //        this.engine = new IntegratorRK4(this.model);
         this.engine = new IntegratorRK5(this.model);
     }
 
-    private trace(state : number [], drawTrace : boolean) {
+    private trace(state : number [], drawTrace : boolean) : number {
         let vx : number = state[0];
         let vy : number = state[1];
         let x  : number = state[2];
@@ -88,9 +93,14 @@ class MagPend  {
             this.gfx.clear();
             this.gfx.lineStyle(6, ModelMagPend.rgb2hex(255, 255, 0), 4);
         }
-            
+
+        let length : number = 0;            
         for (var ct = 0; isRunning; ++ct) {
             state = this.engine.singleStep();
+
+            let dx = state[0] * this.engine.getStepSize();
+            let dy = state[1] * this.engine.getStepSize();
+            length += Math.sqrt(dx * dx + dy * dy);
 
             if (ct==0 && drawTrace) {
                 this.gfx.moveTo(state[2], state[3]);
@@ -108,16 +118,16 @@ class MagPend  {
         if (drawTrace) {
             this.game.debug.text("Stopped at Magnet: " + this.model.restIdx, 20, 40);
         }
+
+        return length;
     }
 
-    private xx : number = 0;
-    private yy : number = 0;
-    private doScan : boolean = true;
+    private refLength : number = 0;
 
     public update() : void {
 
-        let xscale = this.game.world.width / this.bitmap.width;
-        let yscale = this.game.world.height / this.bitmap.height;
+        let xscale : number = this.game.world.width / this.bitmap.width;
+        let yscale : number = this.game.world.height / this.bitmap.height;
 
         for (var k=0; k<10 && this.doScan; ++k) {
             this.xx += 1;
@@ -131,30 +141,18 @@ class MagPend  {
                 }
             }
 
-            let xx = this.xx;
-            let yy = this.yy;
-            let x = xx - (this.bitmap.width / 2);
-            let y = yy - (this.bitmap.height / 2);
+            let updateRefLength : boolean = (this.yy==0 && this.xx==1);
+            let x : number  = this.xx - (this.bitmap.width / 2);
+            let y : number  = this.yy - (this.bitmap.height / 2);
+            let length : number = this.trace([ 0, 0, x * xscale, y * yscale ], false);
 
-            this.trace([ 0, 0, x * xscale, y * yscale ], false);
-  
-            let idxMag = this.model.restIdx;
-
-            if (idxMag==-1) {
-                this.bitmap.setPixel(xx, yy, 0, 0, 0);
+            if (updateRefLength) {
+                this.refLength = length;
             }
+            
+            let idxMag : number = this.model.restIdx;
 
-            if (idxMag==1) {
-                this.bitmap.setPixel(xx, yy, 100, 0, 0);
-            }
-
-            if (idxMag==2) {
-                this.bitmap.setPixel(xx, yy, 0, 100, 0);
-            }
-
-            if (idxMag==3) {
-                this.bitmap.setPixel(xx, yy, 0, 0, 100);
-            }
+            this.putPixel(this.xx, this.yy, idxMag, length, this.refLength);
         }
 
         let x : number = this.game.input.mousePointer.worldX / this.game.world.scale.x;
@@ -197,5 +195,29 @@ class MagPend  {
         this.yy = 0;
         this.doScan = true;
         this.model.setPendStrength(strength);
+    }
+
+    private putPixel(x : number, y : number, idx : number, length : number, refLength : number) : void {
+        refLength *= 1.2;
+        let bri : number = 1 / (Math.exp(Math.log(256) / (refLength*refLength) * (length * length)));
+        let baseBri : number = 255;        
+        
+        switch(idx) {
+            case -1:
+                this.bitmap.setPixel(x, y, 0, 0, 0);
+                return;
+
+            case 1:
+                this.bitmap.setPixel(x, y, baseBri * bri, 0, 0);
+                return;
+
+            case 2:
+                this.bitmap.setPixel(x, y, 0, baseBri * bri, 0);
+                return;
+        
+            case 3:
+                this.bitmap.setPixel(x, y, 0, 0, baseBri * bri);
+                return;
+        }
     }
 }
