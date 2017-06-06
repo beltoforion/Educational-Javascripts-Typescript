@@ -1,9 +1,9 @@
 //-------------------------------------------------------------------------------------------------
 //
-//      Simulating Tidal Locking of Planets
+//      Magnetic Pendulum Simulation
 //
 //      (C) Ingo Berg 2017
-//      http://articles.beltoforion.de/article.php?a=tides_explained
+//      http://articles.beltoforion.de/article.php?a=magnetic_pendulum
 //
 //      This program is free software: you can redistribute it and/or modify
 //      it under the terms of the GNU General Public License as published by
@@ -23,6 +23,8 @@
 /// <reference path="../shared/phaser-2.6.2/typescript/phaser.d.ts"/> 
 /// <reference path="../shared/box2d.ts"/>
 /// <reference path="./IntegratorRK4.ts"/>
+/// <reference path="./IntegratorRK5.ts"/>
+/// <reference path="./IntegratorADB5.ts"/>
 
 class MagPend  {
 
@@ -37,19 +39,19 @@ class MagPend  {
 
     private model : ModelMagPend;
 
-    private mouseX : number;
-
-    private mouseY : number;
-
     private bitmap : Phaser.BitmapData;
 
     private gfx : Phaser.Graphics;
 
-    private xx : number = 0;
-
     private yy : number = 0;
 
-    private doScan : boolean = true;
+    private refLength : number = 0;
+
+    private stickyTrace : boolean = true;
+
+    private xtrace : number = 0;
+
+    private ytrace : number = 0;
 
     constructor(cfg : any) {
 
@@ -70,6 +72,7 @@ class MagPend  {
 
 //        this.engine = new IntegratorRK4(this.model);
         this.engine = new IntegratorRK5(this.model);
+//        this.engine = new IntegratorADB5(this.model);        
     }
 
     private trace(state : number [], drawTrace : boolean) : number {
@@ -122,27 +125,15 @@ class MagPend  {
         return length;
     }
 
-    private refLength : number = 0;
-
     public update() : void {
 
         let xscale : number = this.game.world.width / this.bitmap.width;
         let yscale : number = this.game.world.height / this.bitmap.height;
 
-        for (var k=0; k<10 && this.doScan; ++k) {
-            this.xx += 1;
-            if (this.xx >= this.bitmap.width) {
-                this.xx = 0;
-                this.yy += 1;
-
-                if (this.yy >= this.bitmap.height) {
-                    this.yy = 0;
-                    this.doScan = false;
-                }
-            }
-
-            let updateRefLength : boolean = (this.yy==0 && this.xx==1);
-            let x : number  = this.xx - (this.bitmap.width / 2);
+        // update a single line
+        for (var xx=0; xx < this.bitmap.width && this.yy<=this.bitmap.height; ++xx) {
+            let updateRefLength : boolean = (this.yy==0 && xx==0);
+            let x : number  = xx - (this.bitmap.width / 2);
             let y : number  = this.yy - (this.bitmap.height / 2);
             let length : number = this.trace([ 0, 0, x * xscale, y * yscale ], false);
 
@@ -152,12 +143,20 @@ class MagPend  {
             
             let idxMag : number = this.model.restIdx;
 
-            this.putPixel(this.xx, this.yy, idxMag, length, this.refLength);
+            this.putPixel(xx, this.yy, idxMag, length, this.refLength);
         }
 
-        let x : number = this.game.input.mousePointer.worldX / this.game.world.scale.x;
-        let y : number = this.game.input.mousePointer.worldY / this.game.world.scale.y;
-        this.trace([ 0, 0, x, y ], true);
+        this.yy++;
+        this.yy = Math.min(this.yy, this.bitmap.height + 1);
+
+        if (this.game.input.pointer1.isDown) {
+            this.xtrace = this.game.input.pointer1.worldX / this.game.world.scale.x;
+            this.ytrace = this.game.input.pointer1.worldY / this.game.world.scale.y;
+        } else {
+            this.xtrace = this.game.input.mousePointer.worldX / this.game.world.scale.x;
+            this.ytrace = this.game.input.mousePointer.worldY / this.game.world.scale.y;
+        }
+        this.trace([ 0, 0, this.xtrace, this.ytrace ], true);
     }
 
     public preload() : void {
@@ -184,16 +183,12 @@ class MagPend  {
     }
 
     public setFriction(friction : number) : void {
-        this.xx = 0;
         this.yy = 0;
-        this.doScan = true;
         this.model.friction = friction;
     }
 
     public setStrength(strength : number) : void {
-        this.xx = 0;
         this.yy = 0;
-        this.doScan = true;
         this.model.setPendStrength(strength);
     }
 

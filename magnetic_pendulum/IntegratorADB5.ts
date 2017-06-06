@@ -49,12 +49,67 @@ class IntegratorADB5 implements IIntegrator {
     }
 
     public setInitialState(state : number []) : void {
+      let dim : number = this.state.length;
+      
+      for (var i = 0; i < dim; ++i)
+        this.state[i] = state[i];
+
+      this.time = 0;
+      let k1 : number [];
+      let k2 : number [];
+      let k3 : number [];
+      let k4 : number [];
+      let tmp : number [];
+
+      for (var n = 0; n < 4; ++n) {
+        // k1
+        this.model.eval(this.state, this.time, k1);
+        for (var i=0; i<dim; ++i)
+          tmp[i] = this.state[i] + this.h*0.5 * k1[i];
+
+        // k2
+        this.model.eval(tmp, this.time + this.h*0.5, k2);
+        for (var i = 0; i < dim; ++i)
+          tmp[i] = this.state[i] + this.h*0.5 * k2[i];
+
+        // k3
+        this.model.eval(tmp, this.time + this.h * 0.5, k3);
+        for (var i=0; i < dim; ++i)
+          tmp[i] = this.state[i] + this.h * k3[i];
+
+        // k4
+        this.model.eval(tmp, this.time + this.h, k4);
+        for (var i=0; i < dim; ++i) {
+          this.state[i] += this.h/6 * (k1[i] + 2*(k2[i] + k3[i]) + k4[i]);
+          this.f[n][i] = k1[i];
+        }
+
+        this.time += this.h;
+      }
+      
+      this.model.eval(this.state, this.time, this.f[4]);
     }
 
     public singleStep() : number [] {
-        return null;
-    }
+      let dim : number = this.state.length;
+      for (var i = 0; i < dim; ++i) {
+        this.state[i] += this.h  * (this.c[0] * this.f[4][i] -
+                                    this.c[1] * this.f[3][i] +
+                                    this.c[2] * this.f[2][i] -
+                                    this.c[3] * this.f[1][i] +
+                                    this.c[4] * this.f[0][i]);
 
+        this.f[0][i] = this.f[1][i];
+        this.f[1][i] = this.f[2][i];
+        this.f[2][i] = this.f[3][i];
+        this.f[3][i] = this.f[4][i];
+      }
+
+      this.time += this.h;
+      this.model.eval(this.state, this.time, this.f[4]);
+
+      return this.state;
+    } 
 }
 
 /*

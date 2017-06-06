@@ -1,9 +1,9 @@
 //-------------------------------------------------------------------------------------------------
 //
-//      Simulating Tidal Locking of Planets
+//      Magnetic Pendulum Simulation
 //
 //      (C) Ingo Berg 2017
-//      http://articles.beltoforion.de/article.php?a=tides_explained
+//      http://articles.beltoforion.de/article.php?a=magnetic_pendulum
 //
 //      This program is free software: you can redistribute it and/or modify
 //      it under the terms of the GNU General Public License as published by
@@ -22,13 +22,16 @@
 /// <reference path="../shared/phaser-2.6.2/typescript/phaser.d.ts"/> 
 /// <reference path="../shared/box2d.ts"/>
 /// <reference path="./IntegratorRK4.ts"/>
+/// <reference path="./IntegratorRK5.ts"/>
+/// <reference path="./IntegratorADB5.ts"/>
 var MagPend = (function () {
     function MagPend(cfg) {
         var _this = this;
-        this.xx = 0;
         this.yy = 0;
-        this.doScan = true;
         this.refLength = 0;
+        this.stickyTrace = true;
+        this.xtrace = 0;
+        this.ytrace = 0;
         this.game = new Phaser.Game(cfg.width, cfg.height, Phaser.AUTO, cfg.cvid, {
             preload: function () { return _this.preload(); },
             create: function () { return _this.create(); },
@@ -40,6 +43,7 @@ var MagPend = (function () {
         this.model = model;
         //        this.engine = new IntegratorRK4(this.model);
         this.engine = new IntegratorRK5(this.model);
+        //        this.engine = new IntegratorADB5(this.model);        
     }
     MagPend.rgb2hex = function (red, green, blue) {
         var rgb = blue | (green << 8) | (red << 16);
@@ -71,7 +75,7 @@ var MagPend = (function () {
             if (ct == 0 && drawTrace) {
                 this.gfx.moveTo(state[2], state[3]);
             }
-            if (this.model.isFinished(state) || ct > 30000) {
+            if (this.model.isFinished(state) || ct > 10000) {
                 isRunning = false;
             }
             if (drawTrace) {
@@ -86,29 +90,29 @@ var MagPend = (function () {
     MagPend.prototype.update = function () {
         var xscale = this.game.world.width / this.bitmap.width;
         var yscale = this.game.world.height / this.bitmap.height;
-        for (var k = 0; k < 10 && this.doScan; ++k) {
-            this.xx += 1;
-            if (this.xx >= this.bitmap.width) {
-                this.xx = 0;
-                this.yy += 1;
-                if (this.yy >= this.bitmap.height) {
-                    this.yy = 0;
-                    this.doScan = false;
-                }
-            }
-            var updateRefLength = (this.yy == 0 && this.xx == 1);
-            var x_1 = this.xx - (this.bitmap.width / 2);
-            var y_1 = this.yy - (this.bitmap.height / 2);
-            var length_1 = this.trace([0, 0, x_1 * xscale, y_1 * yscale], false);
+        // update a single line
+        for (var xx = 0; xx < this.bitmap.width && this.yy <= this.bitmap.height; ++xx) {
+            var updateRefLength = (this.yy == 0 && xx == 0);
+            var x = xx - (this.bitmap.width / 2);
+            var y = this.yy - (this.bitmap.height / 2);
+            var length_1 = this.trace([0, 0, x * xscale, y * yscale], false);
             if (updateRefLength) {
                 this.refLength = length_1;
             }
             var idxMag = this.model.restIdx;
-            this.putPixel(this.xx, this.yy, idxMag, length_1, this.refLength);
+            this.putPixel(xx, this.yy, idxMag, length_1, this.refLength);
         }
-        var x = this.game.input.mousePointer.worldX / this.game.world.scale.x;
-        var y = this.game.input.mousePointer.worldY / this.game.world.scale.y;
-        this.trace([0, 0, x, y], true);
+        this.yy++;
+        this.yy = Math.min(this.yy, this.bitmap.height + 1);
+        if (this.game.input.pointer1.isDown) {
+            this.xtrace = this.game.input.pointer1.worldX / this.game.world.scale.x;
+            this.ytrace = this.game.input.pointer1.worldY / this.game.world.scale.y;
+        }
+        else {
+            this.xtrace = this.game.input.mousePointer.worldX / this.game.world.scale.x;
+            this.ytrace = this.game.input.mousePointer.worldY / this.game.world.scale.y;
+        }
+        this.trace([0, 0, this.xtrace, this.ytrace], true);
     };
     MagPend.prototype.preload = function () {
     };
@@ -124,15 +128,11 @@ var MagPend = (function () {
     MagPend.prototype.render = function () {
     };
     MagPend.prototype.setFriction = function (friction) {
-        this.xx = 0;
         this.yy = 0;
-        this.doScan = true;
         this.model.friction = friction;
     };
     MagPend.prototype.setStrength = function (strength) {
-        this.xx = 0;
         this.yy = 0;
-        this.doScan = true;
         this.model.setPendStrength(strength);
     };
     MagPend.prototype.putPixel = function (x, y, idx, length, refLength) {
