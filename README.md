@@ -1,8 +1,8 @@
-# beltoforion.github.io
-This is the demonstration page for the educational javascripts. This
-is a new version of the educational javascript repository which has 
-been converted to Typescript. I recommend using Visual Studio Code 
-and Chrome for testing and debugging:
+# Educational-Javascripts (Typescript Versions)
+
+This archive contains the source code of the educational applects used on my webpage http://beltoforion.de. 
+
+This is a new version of the educational javascript repository which has been converted to Typescript. I recommend using Visual Studio Code and Chrome for testing and debugging:
 
 https://code.visualstudio.com
 
