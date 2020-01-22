@@ -30,7 +30,7 @@
     "web audio"
   ],
   "devDependencies": {
-    "eslint": "^3.3.1",
+    "eslint": "^6.8.0",
     "grunt": "^0.4.5",
     "grunt-contrib-clean": "^0.5.0",
     "grunt-contrib-concat": "^0.4.0",
