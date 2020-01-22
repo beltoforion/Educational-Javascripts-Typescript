@@ -15,7 +15,7 @@ http://beltoforion.de/article.php?a=game_of_life
 http://beltoforion.de/article.php?a=simulated_evolution
 
 - Explaining Tides with the Tidal Simulation Applet:<br/>
-http://beltoforion.de/article.php?a=tides_explained
+https://beltoforion.de/article.php?a=tides_explained&p=tides_applet
 
 - Analytic Solution of the damped harmonic oszillator (german only):<br/>
 http://beltoforion.de/article.php?a=harmonischer_oszillator&hl=de
