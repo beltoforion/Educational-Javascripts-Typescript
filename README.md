@@ -9,13 +9,13 @@ https://code.visualstudio.com
 For more details on the applets please refer to their original web pages:
 
 - John Conway's Game of Life:<br/>		
-http://articles.beltoforion.de/article.php?a=game_of_life	
+http://beltoforion.de/article.php?a=game_of_life	
 
 - Simulating basic evolution in a web browser:<br/>
-http://articles.beltoforion.de/article.php?a=simulated_evolution
+http://beltoforion.de/article.php?a=simulated_evolution
 
 - Explaining Tides with the Tidal Simulation Applet:<br/>
-http://articles.beltoforion.de/article.php?a=tides_explained
+http://beltoforion.de/article.php?a=tides_explained
 
 - Analytic Solution of the damped harmonic oszillator (german only):<br/>
 http://beltoforion.de/article.php?a=harmonischer_oszillator&hl=de
