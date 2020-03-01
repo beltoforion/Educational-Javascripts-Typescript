@@ -21,10 +21,10 @@ https://beltoforion.de/article.php?a=tides_explained&p=tides_applet
 http://beltoforion.de/article.php?a=harmonischer_oszillator&hl=de
 
 - Applet for Visualizing Exoplanet transits: (german)<br/>
-http://beltoforion.de/article.php?a=exoplaneten&hl=de&p=transitmethode&da=1&s=idPageTop#idPageTop
+https://beltoforion.de/de/exoplaneten/transitmethode.php
 
 - Applet for Visualizing Exoplanet discovery with radial velocity method: (german)<br/>
-http://beltoforion.de/article.php?a=exoplaneten&hl=de&p=methoden&da=1&s=idPageTop#idPageTop
+https://beltoforion.de/de/exoplaneten/radialgeschwindigkeitsmethode.php
 
 - Vislaulizing Exoplanet discovery via the Pulsar timing method: (german)<br/>
-http://beltoforion.de/article.php?a=exoplaneten&hl=de&p=pulsar_timing&da=1&s=idPageTop#idPageTop
+https://beltoforion.de/de/exoplaneten/pulsar_timing.php
