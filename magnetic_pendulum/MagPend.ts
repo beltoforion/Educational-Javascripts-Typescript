@@ -20,7 +20,7 @@
 //
 //-------------------------------------------------------------------------------------------------
 
-/// <reference path="../shared/phaser-2.6.2/typescript/phaser.d.ts"/> 
+/// <reference path="../shared/phaser-ce-2.14.0/typescript/phaser.d.ts"/> 
 /// <reference path="../shared/box2d.ts"/>
 /// <reference path="./IntegratorRK4.ts"/>
 /// <reference path="./IntegratorRK5.ts"/>

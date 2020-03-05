@@ -1,5 +1,5 @@
-/// <reference path="../shared/phaser-2.6.2/typescript/phaser.d.ts"/> 
-var RadialVelocitySimulator = (function () {
+/// <reference path="../shared/phaser-ce-2.14.0/typescript/phaser.d.ts"/> 
+var RadialVelocitySimulator = /** @class */ (function () {
     function RadialVelocitySimulator(cfg) {
         var _this = this;
         this.colArrow = 0xffffff;

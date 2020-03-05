@@ -19,12 +19,12 @@
 //      along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 //-------------------------------------------------------------------------------------------------
-/// <reference path="../shared/phaser-2.6.2/typescript/phaser.d.ts"/> 
+/// <reference path="../shared/phaser-ce-2.14.0/typescript/phaser.d.ts"/> 
 /// <reference path="../shared/box2d.ts"/>
 /// <reference path="./IntegratorRK4.ts"/>
 /// <reference path="./IntegratorRK5.ts"/>
 /// <reference path="./IntegratorADB5.ts"/>
-var MagPend = (function () {
+var MagPend = /** @class */ (function () {
     function MagPend(cfg) {
         var _this = this;
         this.yy = 0;
@@ -75,7 +75,7 @@ var MagPend = (function () {
             if (ct == 0 && drawTrace) {
                 this.gfx.moveTo(state[2], state[3]);
             }
-            if (this.model.isFinished(state) || ct > 10000) {
+            if (this.model.isFinished(state) || ct > 30000) {
                 isRunning = false;
             }
             if (drawTrace) {

@@ -1,4 +1,4 @@
-var DopplerRing = (function () {
+var DopplerRing = /** @class */ (function () {
     function DopplerRing() {
         this.x = 0;
         this.y = 0;

@@ -1,7 +1,7 @@
 /// <reference path="../shared/box2d.ts"/>
 /// <reference path="../shared/debug.ts"/>
 /// <reference path="./IModel.ts"/>
-var ModelMagPend = (function () {
+var ModelMagPend = /** @class */ (function () {
     function ModelMagPend(game) {
         this.x = [];
         this.y = [];
@@ -24,7 +24,8 @@ var ModelMagPend = (function () {
             ModelMagPend.rgb2hex(0, 64, 64),
             ModelMagPend.rgb2hex(133, 147, 142),
             ModelMagPend.rgb2hex(128, 0, 64),
-            ModelMagPend.rgb2hex(255, 0, 0)];
+            ModelMagPend.rgb2hex(255, 0, 0)
+        ];
         this.abort = false;
         this.restIdx = 0;
         this.game = game;

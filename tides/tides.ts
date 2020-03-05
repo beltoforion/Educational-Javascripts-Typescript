@@ -2,8 +2,8 @@
 //
 //      Tidal Simulation Applet for Javascript
 //
-//      (C) Ingo Berg 2016
-//      http://articles.beltoforion.de/article.php?a=tides_explained
+//      (C) Ingo Berg 2020
+//      https://beltoforion.de/article.php?a=tides_explained
 //
 //      This program is free software: you can redistribute it and/or modify
 //      it under the terms of the GNU General Public License as published by

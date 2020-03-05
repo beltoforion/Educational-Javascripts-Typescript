@@ -1,6 +1,6 @@
 /// <reference path="./IIntegrator.ts"/>
 /// <reference path="./IModel.ts"/>
-var IntegratorADB5 = (function () {
+var IntegratorADB5 = /** @class */ (function () {
     function IntegratorADB5(model) {
         this.state = [];
         this.f = [];
@@ -12,6 +12,7 @@ var IntegratorADB5 = (function () {
         this.c[4] = 251.0 / 720.0;
         for (var i = 0; i < 6; ++i) {
             this.f[i] = [];
+            //            std::memset(m_f[i], 0, m_dim * sizeof(double));
         }
         this.h = 2;
         this.time = 0;

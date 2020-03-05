@@ -1,11 +1,11 @@
-/// <reference path="../shared/phaser-2.6.2/typescript/phaser.d.ts"/> 
+/// <reference path="../shared/phaser-ce-2.14.0/typescript/phaser.d.ts"/> 
 /// <reference path="./doppler_ring.ts"/>
-var BackgroundStar = (function () {
+var BackgroundStar = /** @class */ (function () {
     function BackgroundStar() {
     }
     return BackgroundStar;
 }());
-var DopplerEffect = (function () {
+var DopplerEffect = /** @class */ (function () {
     function DopplerEffect(cfg) {
         var _this = this;
         this.colArrow = 0xffffff;

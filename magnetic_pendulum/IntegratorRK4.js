@@ -1,6 +1,6 @@
 /// <reference path="./IIntegrator.ts"/>
 /// <reference path="./IModel.ts"/>
-var IntegratorRK4 = (function () {
+var IntegratorRK4 = /** @class */ (function () {
     function IntegratorRK4(model) {
         this.state = [];
         this.tmp = [];

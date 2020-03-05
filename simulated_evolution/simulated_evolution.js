@@ -1,4 +1,4 @@
-var SimulatedEvolution = (function () {
+var SimulatedEvolution = /** @class */ (function () {
     function SimulatedEvolution(cfg) {
         // Colors
         this.colMicrobe = "rgb(50,100,255)";

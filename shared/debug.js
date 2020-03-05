@@ -1,4 +1,4 @@
-var Debug = (function () {
+var Debug = /** @class */ (function () {
     function Debug() {
     }
     Debug.assert = function (condition, message) {

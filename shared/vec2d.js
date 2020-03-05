@@ -1,4 +1,4 @@
-var Vec2d = (function () {
+var Vec2d = /** @class */ (function () {
     function Vec2d(x, y) {
         this.x = x;
         this.y = y;

@@ -1,4 +1,4 @@
-var Context2d = (function () {
+var Context2d = /** @class */ (function () {
     function Context2d() {
     }
     Context2d.Create = function (cv) {

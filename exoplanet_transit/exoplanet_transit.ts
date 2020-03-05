@@ -1,4 +1,4 @@
-/// <reference path="../shared/phaser-2.6.2/typescript/phaser.d.ts"/> 
+/// <reference path="../shared/phaser-ce-2.14.0/typescript/phaser.d.ts"/> 
 /// <reference path="./chart.ts"/>
 class TransitSimulator {
     private game : Phaser.Game;

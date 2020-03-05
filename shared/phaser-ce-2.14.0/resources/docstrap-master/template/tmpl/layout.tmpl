@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<?js var that = this; ?>
+<?js this.isSourceDoc = (docs && docs[0].kind === 'source'); ?>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title><?js= this.navOptions.systemName ?> <?js= title ?></title>
+	<link rel="stylesheet" href="styles/site.<?js= this.navOptions.theme ?>.css?<?js= this.navOptions.assetTimestamp ?>">
+</head>
+
+<body>
+
+<?js= this.partial('navbar.tmpl', this) ?>
+
+<div class="container-fluid" id="toc-content">
+	<div class="row">
+		<?js if (this.isSourceDoc) { ?>
+	  <div class="col-md-12">
+		<?js } else { ?>
+	  <div class="col-md-9 col-md-offset-3">
+		<?js } ?>
+			<div id="main"><?js= content ?></div>
+	    <?js= this.partial('footer.tmpl', this) ?>
+		</div>
+    <?js if (!this.isSourceDoc) { ?>
+      <?js= this.partial('toc-container.tmpl', this) ?>
+    <?js } ?>
+	</div>
+</div>
+
+<script defer src="scripts/bundle.js?<?js= this.navOptions.assetTimestamp ?>"></script>
+
+<?js if (this.navOptions.analytics && this.navOptions.analytics.ua && this.navOptions.analytics.domain) { ?>
+	<script>
+	(function (i, s, o, g, r, a, m) {
+	  i['GoogleAnalyticsObject'] = r;
+	  i[r] = i[r] || function () {
+	    (i[r].q = i[r].q || []).push(arguments);
+	  }, i[r].l = 1 * new Date();
+	  a = s.createElement(o),
+				m = s.getElementsByTagName(o)[0];
+	  a.async = 1;
+	  a.src = g;
+	  m.parentNode.insertBefore(a, m);
+	})(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+
+	ga('create', '<?js= this.navOptions.analytics.ua ?>', '<?js= this.navOptions.analytics.domain ?>');
+	ga('send', 'pageview');
+	</script>
+<?js } ?>
+
+</body>
+</html>

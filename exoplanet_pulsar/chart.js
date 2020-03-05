@@ -1,5 +1,5 @@
-/// <reference path="../shared/phaser-2.6.2/typescript/phaser.d.ts"/> 
-var Chart = (function () {
+/// <reference path="../shared/phaser-ce-2.14.0/typescript/phaser.d.ts"/> 
+var Chart = /** @class */ (function () {
     function Chart(game, width, height, font) {
         this.colAxis = 0xffffff;
         this.ymin = 0;

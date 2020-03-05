@@ -1,5 +1,5 @@
 
-/// <reference path="../shared/phaser-2.6.2/typescript/phaser.d.ts"/> 
+/// <reference path="../shared/phaser-ce-2.14.0/typescript/phaser.d.ts"/> 
 
 class Chart {
     private width : number;

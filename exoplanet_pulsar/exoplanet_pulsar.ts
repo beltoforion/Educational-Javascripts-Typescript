@@ -1,4 +1,4 @@
-/// <reference path="../shared/phaser-2.6.2/typescript/phaser.d.ts"/> 
+/// <reference path="../shared/phaser-ce-2.14.0/typescript/phaser.d.ts"/> 
 /// <reference path="./chart.ts"/>
 
 class PulsarTimingSimulator {
@@ -128,7 +128,6 @@ class PulsarTimingSimulator {
       this.game.load.image('beam2', this.config.assetpath + 'assets/sprites/beam2.png');      
       this.game.load.image('planet', this.config.assetpath + 'assets/sprites/planet.png');
       this.game.load.image('earth', this.config.assetpath + 'assets/sprites/earth.png');
-      this.game.load.image('planet_shadow', this.config.assetpath + 'assets/sprites/planet_shadow.png');
       this.game.load.image('pulsar', this.config.assetpath + 'assets/sprites/pulsar.png');
       this.game.load.image('center_of_mass', this.config.assetpath + 'assets/sprites/center_of_mass.png');
     }
@@ -196,7 +195,7 @@ class PulsarTimingSimulator {
       this.caption_right.anchor = new Phaser.Point(0.5, 0.5);
       
       this.mask_right = this.game.add.graphics(0,0);
-      this.mask_right.drawRect(this.game.width/2, 0, this.game.width/2, this.mask_left.height); 
+      this.mask_right.drawRect(this.game.width/2, 0, this.game.width/2, this.game.height / 2 + 100); 
 
       this.beam_right = this.game.add.sprite(100, 100, 'beam2');
       this.beam_right.anchor = new Phaser.Point(0.5, 0.5);
@@ -287,6 +286,7 @@ class PulsarTimingSimulator {
       this.pulsar_left.y = newY;
 
       this.beam_right.angle -= 3;
+
       this.beam_left.angle -= 3;
       this.beam_left.x = this.pulsar_left.x;
       this.beam_left.y = this.pulsar_left.y;
