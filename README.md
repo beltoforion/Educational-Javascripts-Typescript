@@ -8,8 +8,9 @@ https://code.visualstudio.com
 
 For more details on the applets please refer to their original web pages:
 
-- John Conway's Game of Life:<br/>		
-http://beltoforion.de/article.php?a=game_of_life	
+- John Conway's Game of Life:<br/>
+https://beltoforion.de/en/game_of_life/<br/>		
+https://beltoforion.de/de/game_of_life/		<br/>		
 
 - Simulating basic evolution in a web browser:<br/>
 http://beltoforion.de/article.php?a=simulated_evolution
