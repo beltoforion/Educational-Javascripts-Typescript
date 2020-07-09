@@ -4,6 +4,9 @@ This archive contains the source code of the educational applects used on my web
 
 https://code.visualstudio.com
 
+Demo:
+http://beltoforion.github.io/
+
 For more details on the applets please refer to their original web pages:
 
 - John Conway's Game of Life:<br/>
