@@ -13,7 +13,9 @@ https://beltoforion.de/en/game_of_life/<br/>
 https://beltoforion.de/de/game_of_life/		<br/>		
 
 - Simulating basic evolution in a web browser:<br/>
-http://beltoforion.de/article.php?a=simulated_evolution
+https://beltoforion.de/en/simulated_evolution/<br/>		
+https://beltoforion.de/de/simulierte_evolution/<br/>		
+
 
 - Explaining Tides with the Tidal Simulation Applet:<br/>
 https://beltoforion.de/article.php?a=tides_explained&p=tides_applet
