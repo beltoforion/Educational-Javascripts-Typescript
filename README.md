@@ -17,8 +17,9 @@ http://beltoforion.de/article.php?a=simulated_evolution
 - Explaining Tides with the Tidal Simulation Applet:<br/>
 https://beltoforion.de/article.php?a=tides_explained&p=tides_applet
 
-- Analytic Solution of the damped harmonic oszillator (german only):<br/>
-http://beltoforion.de/article.php?a=harmonischer_oszillator&hl=de
+- Analytic Solution of the damped harmonic oszillator:<br/>
+english: https://beltoforion.de/de/harmonischer_oszillator/<br/>
+german:  https://beltoforion.de/en/harmonic_oscillator/<br/>
 
 - Applet for Visualizing Exoplanet transits: (german)<br/>
 https://beltoforion.de/de/exoplaneten/transitmethode.php
