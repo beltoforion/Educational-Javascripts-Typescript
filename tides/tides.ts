@@ -3,7 +3,7 @@
 //      Tidal Simulation Applet for Javascript
 //
 //      (C) Ingo Berg 2020
-//      https://beltoforion.de/article.php?a=tides_explained
+//      https://beltoforion.de/en/tides
 //
 //      This program is free software: you can redistribute it and/or modify
 //      it under the terms of the GNU General Public License as published by
@@ -160,8 +160,6 @@ class TidalSimulation {
 
                 // Color and style definitions
                 this.style = {
-                        enableBackgroundImage : false,
-
                         colBack          : '#112255',
 
                         // Earth
@@ -278,7 +276,7 @@ class TidalSimulation {
                 }
         }
 
-        private setScaleForceToModel(stat : any) : void {
+        public setScaleForceToModel(stat : any) : void {
 
                 this.config.scaleForceToModel = stat;
 
@@ -804,12 +802,14 @@ class TidalSimulation {
 
 
         public render() {
-                if (this.style.enableBackgroundImage) {
+                if (this.config.showBackgroundImage) {
                         this.addBackground()
                 }
-
-                this.ctx.fillStyle = this.style.colBack
-                this.ctx.fillRect(0,0, this.w, this.h)
+                else
+                {
+                        this.ctx.fillStyle = this.style.colBack
+                        this.ctx.fillRect(0,0, this.w, this.h)
+                }
 
                 if (this.config.showSun) {
                         this.renderSun()

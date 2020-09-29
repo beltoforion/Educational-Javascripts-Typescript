@@ -12,7 +12,7 @@
     <h2>Example 3: Illustration of Tidal Forces</h2>
     <p>
     This is the demonstration page of the tidal simulation javascript applet. For more details about 
-    the please turn to the <a href="http://articles.beltoforion.de/article.php?a=tides_explained" target="_blank">original tidal simulation article.</a>
+    the please turn to the <a href="https://beltoforion.de/en/tides" target="_blank">original tidal simulation article.</a>
     </p>
     <table class="noborder">
       <tr>
@@ -70,6 +70,8 @@
               <b>Misc</b><br/>
               <input type="checkbox"  name="show orbits" value="true" id="cbEnableRotation"        onChange="onEnableRotation()"/> 
               Enable Rotation<br/>
+              <input type="checkbox"  name="show orbits" value="true" id="cbShowBackgoundImage"    onChange="onShowBackgroundImage()"/> 
+              Show Background Image<br/>
             </fieldset>
 
           </form>
@@ -79,43 +81,45 @@
 </div>
     <script>
         var tidalModel = new TidalSimulation({	
-	        cvid			: 'cvTides2',
-        	path			: './',	
-		timestep	        : 86400/10,
-		lookAtTarget	        : 'CenterOfMass',
+	        cvid				: 'cvTides2',
+        	path	 			: './',	
+			timestep	        : 86400/10,
+			lookAtTarget	    : 'CenterOfMass',
 	        autoMove	        : true,
            	setup		      	: 1,
            	isRunning	      	: true,
            	showSun		      	: true,
            	scaleForceToModel	: false,
           	showMoon	      	: true,
-           	showMoonOrbit	        : true,
+           	showMoonOrbit	    : true,
            	showEarthOrbit		: true, 
            	showSurfacePoints	: false,
-           	showGravAcc		: false,
+           	showGravAcc	   		: false,
           	showCentAcc	        : false,
-          	showTidalAcc	        : true,
+          	showTidalAcc	    : true,
            	showTidalAccSun		: true,
-          	showAccSum		: true,
-           	enableRotation		: true 
+          	showAccSum	        : true,
+           	enableRotation		: true,
+			showBackgroundImage : false
         });
 
         updateControls()
 
         function updateControls() {
         		// Set up formular controls
-        		document.getElementById("cbViewPoint").value            = tidalModel.config.lookAtTarget;
-        		document.getElementById("cbShowOrbits").checked         = tidalModel.config.showEarthOrbit || model2.config.showMoonOrbit;
-        		document.getElementById("cbShowSurfacePoints").checked  = tidalModel.config.showSurfacePoints;
-        		document.getElementById("cbShowTidalAcc").checked       = tidalModel.config.showTidalAcc;
-        		document.getElementById("cbShowTidalAccSun").checked    = tidalModel.config.showTidalAccSun;
-        		document.getElementById("cbShowOcean").checked          = tidalModel.config.showAccSum;
-        		document.getElementById("cbShowGravAcc").checked        = tidalModel.config.showGravAcc;
-        		document.getElementById("cbShowCentAcc").checked        = tidalModel.config.showCentAcc;
-        		document.getElementById("cbShowMoon").checked           = tidalModel.config.showMoon;
-        		document.getElementById("cbShowSun").checked            = tidalModel.config.showSun;
-        		document.getElementById("cbEnableRotation").checked     = tidalModel.config.enableRotation;
-        		document.getElementById("cbScaleForceToModel").checked  = tidalModel.config.scaleForceToModel;
+        		document.getElementById("cbViewPoint").value             = tidalModel.config.lookAtTarget;
+        		document.getElementById("cbShowOrbits").checked          = tidalModel.config.showEarthOrbit || model2.config.showMoonOrbit;
+        		document.getElementById("cbShowSurfacePoints").checked   = tidalModel.config.showSurfacePoints;
+        		document.getElementById("cbShowTidalAcc").checked        = tidalModel.config.showTidalAcc;
+        		document.getElementById("cbShowTidalAccSun").checked     = tidalModel.config.showTidalAccSun;
+        		document.getElementById("cbShowOcean").checked           = tidalModel.config.showAccSum;
+        		document.getElementById("cbShowGravAcc").checked         = tidalModel.config.showGravAcc;
+        		document.getElementById("cbShowCentAcc").checked         = tidalModel.config.showCentAcc;
+        		document.getElementById("cbShowMoon").checked            = tidalModel.config.showMoon;
+        		document.getElementById("cbShowSun").checked             = tidalModel.config.showSun;
+        		document.getElementById("cbScaleForceToModel").checked   = tidalModel.config.scaleForceToModel;
+        		document.getElementById("cbEnableRotation").checked      = tidalModel.config.enableRotation;				
+        		document.getElementById("cbShowBackgroundImage").checked = tidalModel.config.showBackgroundImage;								
 
             if (tidalModel.config.autoMove) {
                 document.getElementById("btnRun").innerHTML  = "Stop";
@@ -126,6 +130,11 @@
 
         function onChangeViewPoint() {
             tidalModel.config.lookAtTarget = document.getElementById("cbViewPoint").value;
+        }
+
+        function onShowBackgroundImage() {
+            var check = document.getElementById("cbShowBackgoundImage").checked;
+            tidalModel.config.showBackgroundImage = check;
         }
 
         function onShowOrbits() {
