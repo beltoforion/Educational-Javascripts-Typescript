@@ -1,4 +1,4 @@
-var DampedHarmonicOscillator = (function () {
+var DampedHarmonicOscillator = /** @class */ (function () {
     function DampedHarmonicOscillator(containerId) {
         this.container = document.getElementById(containerId);
     }
