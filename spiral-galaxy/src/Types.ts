@@ -17,7 +17,7 @@ export class Vec3 {
 }
 
 export class Color {
-    constructor(r: number, g:number, b:number, a:number = 0)
+    constructor(r: number = 1, g:number = 1, b:number = 1, a:number = 0)
     {
         this.r = r;
         this.g = g;
@@ -55,3 +55,17 @@ export class GalaxyParam {
     public dustRenderSize : number = 0;
     public baseTemp : number = 0;
 }
+
+export class VertexColor
+{
+	public pos : Vec3 = new Vec3();
+	public col : Color = new Color(0,0,0,0);
+};
+
+export class VertexStar
+{
+	public star : Star = new Star();
+	public col : Color = new Color();
+};
+
+

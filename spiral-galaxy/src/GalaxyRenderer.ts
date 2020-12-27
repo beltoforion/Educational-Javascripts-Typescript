@@ -2,7 +2,7 @@ import { mat4 } from 'gl-matrix'
 
 import { Vec3 } from './Types' 
 import { Helper } from './Helper'
-
+import { VertexBufferLines } from './VertexBufferLines'
 
 export class GalaxyRendererConfig {
     public cvid : string = "";
@@ -12,7 +12,11 @@ export class GalaxyRenderer {
     private config : GalaxyRendererConfig;
     private canvas : HTMLCanvasElement;
     private gl : WebGLRenderingContext;
-    private vertDensityWaves : any;
+
+	private vertDensityWaves : VertexBufferLines;
+	private vertAxis : VertexBufferLines ;
+	private vertVelocityCurve : VertexBufferLines;
+    private vertStars : any;
 
     private fov : number = 0;
 

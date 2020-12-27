@@ -1,2 +1,3 @@
 *.js.map
 spiral-galaxy/node_modules/*
+spiral-galaxy/debug.log
