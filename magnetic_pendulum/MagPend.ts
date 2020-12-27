@@ -2,8 +2,8 @@
 //
 //      Magnetic Pendulum Simulation
 //
-//      (C) Ingo Berg 2017
-//      http://articles.beltoforion.de/article.php?a=magnetic_pendulum
+//      (C) Ingo Berg 2021
+//      https://beltoforion.de/en/magnetic_pendulum/
 //
 //      This program is free software: you can redistribute it and/or modify
 //      it under the terms of the GNU General Public License as published by
