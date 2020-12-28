@@ -1,5 +1,7 @@
 import { Vec3, Color, VertexStar, Star } from './Types'
 import { mat4 } from 'gl-matrix'
+import { VertexBufferBase, AttributeDefinition } from './VertexBufferBase'
+
 
 export class VertexBufferStars extends VertexBufferBase<VertexStar>
 {
@@ -53,8 +55,6 @@ export class VertexBufferStars extends VertexBufferBase<VertexStar>
 	protected getVertexShaderSource() : string
 	{
 		return `
-			#version 440 core
-
 			uniform mat4 projMat;
 			uniform mat4 viewMat;
 			uniform int pertN;
@@ -131,7 +131,6 @@ export class VertexBufferStars extends VertexBufferBase<VertexStar>
 	protected getFragmentShaderSource() : string
 	{
 		return `
-			#version 440 core
 			in vec4 vertexColor;
 			flat in int vertexType;
 			flat in int features;

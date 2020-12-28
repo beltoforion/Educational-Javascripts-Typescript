@@ -1,4 +1,6 @@
-class AttributeDefinition
+import { mat4 } from 'gl-matrix'
+
+export class AttributeDefinition
 {
     constructor(
         attribIdx : number = 0,
@@ -19,7 +21,7 @@ class AttributeDefinition
 }
 
 
-abstract class VertexBufferBase<TVertex>
+export abstract class VertexBufferBase<TVertex>
 {
     private vbo : WebGLBuffer | null = null;
 	private ibo : WebGLBuffer | null = null;
@@ -112,6 +114,36 @@ abstract class VertexBufferBase<TVertex>
 		this.gl.detachShader(this.shaderProgram, fragmentShader);
 	}
 
+	public draw(matView : mat4, matProjection : mat4) : void
+	{
+		if (this.shaderProgram==null)
+			throw new Error("VertexBufferBase.draw(): shader program is null!");
+		
+		this.gl.useProgram(this.shaderProgram);
+
+		let viewMatIdx = this.gl.getUniformLocation(this.shaderProgram, "viewMat");
+		let projMatIdx = this.gl.getUniformLocation(this.shaderProgram, "projMat");
+/*
+		this.gl.uniformMatrix4fv(viewMatIdx, 1, GL_FALSE, glm::value_ptr(matView));
+		this.gl.uniformMatrix4fv(projMatIdx, 1, GL_FALSE, glm::value_ptr(matProjection));
+
+		this.onSetCustomShaderVariables();
+
+		this.gl.enable(this.gl.PRIMITIVE_RESTART);
+		this.gl.enable(this.gl.BLEND);
+		this.gl.primitiveRestartIndex(0xFFFF);
+
+		this.onBeforeDraw();
+
+		glBindVertexArray(_vao);
+		glDrawElements(_primitiveType, (int)_idx.size(), GL_UNSIGNED_INT, nullptr);
+		glBindVertexArray(0);
+
+		this.gl.disable(GL_BLEND);
+		glDisable(GL_PRIMITIVE_RESTART);
+*/		
+		this.gl.useProgram(0);
+	}
 /*
 	void Release()
 	{
@@ -188,32 +220,7 @@ abstract class VertexBufferBase<TVertex>
 	virtual void OnSetCustomShaderVariables()
 	{}
 
-	virtual void Draw(glm::mat4& matView, glm::mat4& matProjection)
-	{
-		glUseProgram(_shaderProgram);
 
-		GLuint viewMatIdx = glGetUniformLocation(_shaderProgram, "viewMat");
-		glUniformMatrix4fv(viewMatIdx, 1, GL_FALSE, glm::value_ptr(matView));
-
-		GLuint projMatIdx = glGetUniformLocation(_shaderProgram, "projMat");
-		glUniformMatrix4fv(projMatIdx, 1, GL_FALSE, glm::value_ptr(matProjection));
-
-		OnSetCustomShaderVariables();
-
-		glEnable(GL_PRIMITIVE_RESTART);
-		glEnable(GL_BLEND);
-		glPrimitiveRestartIndex(0xFFFF);
-
-		OnBeforeDraw();
-
-		glBindVertexArray(_vao);
-		glDrawElements(_primitiveType, (int)_idx.size(), GL_UNSIGNED_INT, nullptr);
-		glBindVertexArray(0);
-
-		glDisable(GL_BLEND);
-		glDisable(GL_PRIMITIVE_RESTART);
-		glUseProgram(0);
-	}
 
 	void ReleaseAttribArray() const 
 	{

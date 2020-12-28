@@ -1956,17 +1956,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "GalaxyRendererConfig": () => /* binding */ GalaxyRendererConfig,
 /* harmony export */   "GalaxyRenderer": () => /* binding */ GalaxyRenderer
 /* harmony export */ });
-/* harmony import */ var gl_matrix__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! gl-matrix */ "./node_modules/gl-matrix/esm/mat4.js");
+/* harmony import */ var gl_matrix__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! gl-matrix */ "./node_modules/gl-matrix/esm/mat4.js");
 /* harmony import */ var _Types__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Types */ "./src/Types.ts");
+/* harmony import */ var _VertexBufferLines__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./VertexBufferLines */ "./src/VertexBufferLines.ts");
 
 
-// namespace TestModule { 
-//     console.log("Hello world 1");
-//     console.log("Hello world 2"); 
-//     export function hello() {
-//         console.log("XXXX"); 
-//     }
-// }
+
 class GalaxyRendererConfig {
     constructor() {
         this.cvid = "";
@@ -1974,9 +1969,13 @@ class GalaxyRendererConfig {
 }
 class GalaxyRenderer {
     constructor(cfg) {
+        this.vertDensityWaves = null;
+        this.vertAxis = null;
+        this.vertVelocityCurve = null;
+        this.vertStars = null;
         this.fov = 0;
-        this.matProjection = gl_matrix__WEBPACK_IMPORTED_MODULE_1__.create();
-        this.matView = gl_matrix__WEBPACK_IMPORTED_MODULE_1__.create();
+        this.matProjection = gl_matrix__WEBPACK_IMPORTED_MODULE_2__.create();
+        this.matView = gl_matrix__WEBPACK_IMPORTED_MODULE_2__.create();
         this.camPos = new _Types__WEBPACK_IMPORTED_MODULE_0__.Vec3();
         this.camLookAt = new _Types__WEBPACK_IMPORTED_MODULE_0__.Vec3();
         this.camOrient = new _Types__WEBPACK_IMPORTED_MODULE_0__.Vec3();
@@ -1987,17 +1986,22 @@ class GalaxyRenderer {
         this.gl = this.canvas.getContext("webgl");
         if (this.gl === null)
             throw new Error("Unable to initialize WebGL. Your browser or machine may not support it.");
+        //	    this.vertDensityWaves.initialize();
+        this.vertAxis = new _VertexBufferLines__WEBPACK_IMPORTED_MODULE_1__.VertexBufferLines(this.gl, 1, this.gl.STATIC_DRAW);
+        //        this.vertDensityWaves = new VertexBufferLines(this.gl, 2, this.gl.STATIC_DRAW);
+        //	    this.vertVelocityCurve = new VertexBufferLines(this.gl, 1, this.gl.DYNAMIC_DRAW);
         this.initGL(this.gl);
     }
     initGL(gl) {
+        if (this.vertAxis == null)
+            throw new Error("initGL(): vertAxis is null!");
+        this.vertAxis.initialize();
+        //	    this.vertVelocityCurve.initialize();
+        //	    this.vertStars.initialize();
         gl.clearColor(0.0, 0.0, 0.0, 1.0);
         gl.clear(this.gl.COLOR_BUFFER_BIT);
         // GL initialization
         gl.viewport(0, 0, this.canvas.width, this.canvas.height);
-        //	    this.vertDensityWaves.initialize();
-        // _vertAxis.Initialize();
-        // _vertVelocityCurve.Initialize();
-        // _vertStars.Initialize();
         gl.disable(gl.DEPTH_TEST);
         gl.clearColor(0.0, .0, 0.08, 0.0);
         this.setCameraOrientation(new _Types__WEBPACK_IMPORTED_MODULE_0__.Vec3(0, 1, 0));
@@ -2009,11 +2013,7 @@ class GalaxyRenderer {
     adjustCamera() {
         let l = this.fov / 2.0;
         let aspect = this.canvas.width / this.canvas.height;
-        // new mvp matrices for glsl shaders via glm:
-        // _matProjection = glm::ortho(
-        // 	-l * aspect, l * aspect, 
-        // 	-l, l, 
-        //     -l, l);
+        gl_matrix__WEBPACK_IMPORTED_MODULE_2__.ortho(this.matProjection, -l * aspect, l * aspect, -l, l, -l, l);
         // glm::dvec3 camPos(_camPos.x, _camPos.y, _camPos.z);
         // glm::dvec3 camLookAt(_camLookAt.x, _camLookAt.y, _camLookAt.z);
         // glm::dvec3 camOrient(_camOrient.x, _camOrient.y, _camOrient.z);
@@ -2036,7 +2036,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "Vec3": () => /* binding */ Vec3,
 /* harmony export */   "Color": () => /* binding */ Color,
 /* harmony export */   "Star": () => /* binding */ Star,
-/* harmony export */   "GalaxyParam": () => /* binding */ GalaxyParam
+/* harmony export */   "GalaxyParam": () => /* binding */ GalaxyParam,
+/* harmony export */   "VertexColor": () => /* binding */ VertexColor,
+/* harmony export */   "VertexStar": () => /* binding */ VertexStar
 /* harmony export */ });
 class Vec2 {
     constructor() {
@@ -2055,7 +2057,7 @@ class Vec3 {
     }
 }
 class Color {
-    constructor(r, g, b, a = 0) {
+    constructor(r = 1, g = 1, b = 1, a = 0) {
         this.r = 0;
         this.g = 0;
         this.b = 0;
@@ -2091,6 +2093,190 @@ class GalaxyParam {
         this.pertAmp = 0;
         this.dustRenderSize = 0;
         this.baseTemp = 0;
+    }
+}
+class VertexColor {
+    constructor() {
+        this.pos = new Vec3();
+        this.col = new Color(0, 0, 0, 0);
+    }
+}
+;
+class VertexStar {
+    constructor() {
+        this.star = new Star();
+        this.col = new Color();
+    }
+}
+;
+
+
+/***/ }),
+
+/***/ "./src/VertexBufferBase.ts":
+/*!*********************************!*\
+  !*** ./src/VertexBufferBase.ts ***!
+  \*********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "AttributeDefinition": () => /* binding */ AttributeDefinition,
+/* harmony export */   "VertexBufferBase": () => /* binding */ VertexBufferBase
+/* harmony export */ });
+class AttributeDefinition {
+    constructor(attribIdx = 0, size = 0, type = 0, offset = 0) {
+        this.attribIdx = 0;
+        this.size = 0;
+        this.type = 0;
+        this.offset = 0;
+        this.attribIdx = attribIdx;
+        this.size = size;
+        this.type = type;
+        this.offset = offset;
+    }
+}
+class VertexBufferBase {
+    constructor(gl, bufferMode) {
+        this.vbo = null;
+        this.ibo = null;
+        this.vao = null;
+        this.vert = [];
+        this.idx = [];
+        this.shaderProgram = null;
+        this.primitiveType = 0;
+        this.bufferMode = 0;
+        this.attributes = [];
+        this.gl = gl;
+        this.bufferMode = bufferMode;
+    }
+    defineAttributes(attribList) {
+        this.attributes = [];
+        for (let i = 0; i < attribList.length; ++i) {
+            this.attributes.push(attribList[i]);
+        }
+    }
+    createShader(shaderType, shaderSource) {
+        let shader = this.gl.createShader(shaderType);
+        this.gl.shaderSource(shader, shaderSource);
+        this.gl.compileShader(shader);
+        let isCompiled = this.gl.getShaderParameter(shader, this.gl.COMPILE_STATUS);
+        if (!isCompiled) {
+            let msg = this.gl.getShaderInfoLog(shader);
+            // We don't need the shader anymore.
+            this.gl.deleteShader(shader);
+            throw new Error("VertexBuffer: Shader compilation failed: " + msg);
+        }
+        return shader;
+    }
+    initialize() {
+        this.vbo = this.gl.createBuffer();
+        this.ibo = this.gl.createBuffer();
+        this.vao = this.gl.createBuffer();
+        let srcVertex = this.getVertexShaderSource();
+        let vertexShader = this.createShader(this.gl.VERTEX_SHADER, srcVertex);
+        let srcFragment = this.getFragmentShaderSource();
+        let fragmentShader = this.createShader(this.gl.FRAGMENT_SHADER, srcFragment);
+        this.shaderProgram = this.gl.createProgram();
+        if (this.shaderProgram == null)
+            throw new Error("VertexBufferBase.initialize(): shaderProgram cannot be created!");
+        this.gl.attachShader(this.shaderProgram, vertexShader);
+        this.gl.attachShader(this.shaderProgram, fragmentShader);
+        this.gl.linkProgram(this.shaderProgram);
+        var linked = this.gl.getProgramParameter(this.shaderProgram, this.gl.LINK_STATUS);
+        if (!linked) {
+            let infoLog = this.gl.getProgramInfoLog(this.shaderProgram);
+            this.gl.deleteProgram(this.shaderProgram);
+            this.gl.deleteShader(vertexShader);
+            this.gl.deleteShader(fragmentShader);
+            throw new Error("VertexBufferBase.initialize():: shader program linking failed!\r\n" + infoLog);
+        }
+        // Always detach shaders after a successful link.
+        this.gl.detachShader(this.shaderProgram, vertexShader);
+        this.gl.detachShader(this.shaderProgram, fragmentShader);
+    }
+    draw(matView, matProjection) {
+        if (this.shaderProgram == null)
+            throw new Error("VertexBufferBase.draw(): shader program is null!");
+        this.gl.useProgram(this.shaderProgram);
+        let viewMatIdx = this.gl.getUniformLocation(this.shaderProgram, "viewMat");
+        let projMatIdx = this.gl.getUniformLocation(this.shaderProgram, "projMat");
+        /*
+                this.gl.uniformMatrix4fv(viewMatIdx, 1, GL_FALSE, glm::value_ptr(matView));
+                this.gl.uniformMatrix4fv(projMatIdx, 1, GL_FALSE, glm::value_ptr(matProjection));
+        
+                this.onSetCustomShaderVariables();
+        
+                this.gl.enable(this.gl.PRIMITIVE_RESTART);
+                this.gl.enable(this.gl.BLEND);
+                this.gl.primitiveRestartIndex(0xFFFF);
+        
+                this.onBeforeDraw();
+        
+                glBindVertexArray(_vao);
+                glDrawElements(_primitiveType, (int)_idx.size(), GL_UNSIGNED_INT, nullptr);
+                glBindVertexArray(0);
+        
+                this.gl.disable(GL_BLEND);
+                glDisable(GL_PRIMITIVE_RESTART);
+        */
+        this.gl.useProgram(0);
+    }
+}
+
+
+/***/ }),
+
+/***/ "./src/VertexBufferLines.ts":
+/*!**********************************!*\
+  !*** ./src/VertexBufferLines.ts ***!
+  \**********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "VertexBufferLines": () => /* binding */ VertexBufferLines
+/* harmony export */ });
+/* harmony import */ var _Types__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Types */ "./src/Types.ts");
+/* harmony import */ var _VertexBufferBase__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./VertexBufferBase */ "./src/VertexBufferBase.ts");
+
+
+class VertexBufferLines extends _VertexBufferBase__WEBPACK_IMPORTED_MODULE_1__.VertexBufferBase {
+    constructor(gl, lineWidth, bufferMode) {
+        super(gl, bufferMode);
+        this.lineWidth = 1;
+        this.attPosition = 0;
+        this.attColor = 1;
+        this.lineWidth = lineWidth;
+        this.defineAttributes([
+            new _VertexBufferBase__WEBPACK_IMPORTED_MODULE_1__.AttributeDefinition(this.attPosition, 3, gl.FLOAT, 0),
+            new _VertexBufferBase__WEBPACK_IMPORTED_MODULE_1__.AttributeDefinition(this.attColor, 4, gl.FLOAT, Object.keys(_Types__WEBPACK_IMPORTED_MODULE_0__.Vec3).length)
+        ]);
+    }
+    onBeforeDraw() {
+        this.gl.lineWidth(this.lineWidth);
+    }
+    getVertexShaderSource() {
+        return `
+			uniform mat4 projMat;
+			uniform mat4 viewMat;
+			layout(location = 0) in vec3 position;
+			layout(location = 1) in vec4 color;
+			out vec4 vertexColor;
+			void main()
+			{
+				gl_Position =  projMat * vec4(position, 1);
+				vertexColor = color;
+			}`;
+    }
+    getFragmentShaderSource() {
+        return `
+			out vec4 FragColor;
+			in vec4 vertexColor;
+			void main()
+			{
+				FragColor = vertexColor;
+			}`;
     }
 }
 

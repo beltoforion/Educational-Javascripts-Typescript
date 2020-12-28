@@ -1,11 +1,5 @@
-import { Vec3, Color } from './Types'
-
-class VertexColor
-{
-	public pos : Vec3 = new Vec3();
-	public col : Color = new Color(0,0,0,0);
-};
-
+import { Vec3, Color, VertexColor } from './Types'
+import { VertexBufferBase, AttributeDefinition } from './VertexBufferBase'
 
 export class VertexBufferLines extends VertexBufferBase<VertexColor>
 {
@@ -32,7 +26,6 @@ export class VertexBufferLines extends VertexBufferBase<VertexColor>
 	protected getVertexShaderSource() : string
 	{
         return `
-            #version 440 core
 			uniform mat4 projMat;
 			uniform mat4 viewMat;
 			layout(location = 0) in vec3 position;
@@ -48,7 +41,6 @@ export class VertexBufferLines extends VertexBufferBase<VertexColor>
     protected getFragmentShaderSource() : string
 	{
 		return `
-			#version 440 core
 			out vec4 FragColor;
 			in vec4 vertexColor;
 			void main()
