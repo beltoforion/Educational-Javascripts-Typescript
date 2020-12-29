@@ -170,8 +170,8 @@ export abstract class VertexBufferBase<TVertex extends VertexBase>
 			this.gl.deleteVertexArray(this.vao);
 	}
 
-	protected onSetCustomShaderVariables() : void
-	{}
+	protected onSetCustomShaderVariables() : void {
+	}
 
 	protected onBeforeDraw() : void	{
 	}
@@ -192,6 +192,8 @@ export abstract class VertexBufferBase<TVertex extends VertexBase>
 		this.onSetCustomShaderVariables();
 
 		this.gl.enable(this.gl.BLEND);
+		this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE);
+		this.gl.blendEquation(this.gl.FUNC_ADD);
 
 		this.onBeforeDraw();
 
@@ -241,36 +243,16 @@ export abstract class VertexBufferBase<TVertex extends VertexBase>
 		// Set up index buffer array
 		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.ibo);
 
-		let intArray = new Int32Array(idx.length);
-		for (let i = 0; i<vert.length; ++i)
-		{
+		let intArray = new Uint32Array(idx.length);
+		for (let i = 0; i<idx.length; ++i) {
 			intArray[i] = idx[i];
 		}
 		this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, intArray, this.gl.STATIC_DRAW);
 
 		let errc = this.gl.getError();
 		if (errc != this.gl.NO_ERROR)
-		{
 			throw Error("VertexBufferBase: Cannot create vbo! (Error " + errc + ")");
-		}
 
 		this.gl.bindVertexArray(null);
-	}
-
-	public updateBuffer(vert : TVertex[]) : void
-	{
-		if (this.bufferMode == this.gl.STATIC_DRAW)
-		 	throw Error("VertexBufferBase: static buffers cannot be updated!");
-
-		let numberOfFloats : number = vert[0].numberOfFloats();
-		let floatArray = new Float32Array(vert.length * numberOfFloats);
-		for (let i = 0; i<vert.length; ++i)
-		{
-			vert[i].writeTo(floatArray, i * numberOfFloats);
-		}
-	 
-		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vbo);
-		this.gl.bufferSubData(this.gl.ARRAY_BUFFER, 0, floatArray);
-		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
 	}
 }

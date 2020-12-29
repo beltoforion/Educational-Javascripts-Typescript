@@ -4,7 +4,6 @@ import { CumulativeDistributionFunction } from './CumulativeDistributionFunction
 
 export class Galaxy {
 
-    private _rad : number = 0;
     private _stars : Star[] = [];
 	private _elEx1 : number = 0;
 	private _elEx2 : number = 0;
@@ -35,20 +34,20 @@ export class Galaxy {
             ex2 : number = 1,
             numStars : number = 60000)
     {
-        this._elEx1 = ex1;
-        this._elEx2 = ex2;
-        this._angleOffset = deltaAng;
-        this._radCore = radCore;
-        this._radGalaxy = rad;
-        this._radFarField = this._radGalaxy * 2;
-        this._numStars =  numStars;
-        this._numH2 = 400;
-        this._pertN = 0;
-        this._pertAmp = 0;
-        this._hasDarkMatter = true;
-        this._baseTemp = 4000;
-        this._stars = [];
-        this._dustRenderSize = 70;
+        this._elEx1 = ex1
+        this._elEx2 = ex2
+        this._angleOffset = deltaAng
+        this._radCore = radCore
+        this._radGalaxy = rad
+        this._radFarField = rad * 2
+        this._numStars =  numStars
+        this._numH2 = 400
+        this._pertN = 0
+        this._pertAmp = 0
+        this._hasDarkMatter = true
+        this._baseTemp = 4000
+        this._stars = []
+        this._dustRenderSize = 70
     }
 
     private initStarsAndDust() : void
@@ -216,7 +215,7 @@ export class Galaxy {
         this._angleOffset = param.deltaAng;
         this._radCore = param.radCore;
         this._radGalaxy = param.rad;
-        this._radFarField = this._radGalaxy * 2;  // there is no science behind this threshold it just looks nice
+        this._radFarField = param.rad * 2;  // there is no science behind this threshold it just looks nice
         this._numStars = param.numStars;
         this._dustRenderSize = param.dustRenderSize;
         this._hasDarkMatter = param.hasDarkMatter;
@@ -233,12 +232,12 @@ export class Galaxy {
 
     get rad() : number
     {
-        return this._rad;
+        return this._radGalaxy;
     }
 
     set rad(value:number)
     {
-        this._rad = value;
+        this._radGalaxy = value;
     }
 
     get coreRad() : number 
@@ -333,7 +332,7 @@ export class Galaxy {
 
     public toggleDarkMatter() : void
     {
-        this._hasDarkMatter !== true;
+        this._hasDarkMatter = this._hasDarkMatter ? false : true;
         this.initStarsAndDust();
     }
 

@@ -27,6 +27,8 @@ export class VertexBufferLines extends VertexBufferBase<VertexColor>
 	{
 		return `#version 300 es 
 
+precision mediump float;
+
 uniform mat4 projMat;
 uniform mat4 viewMat;
 
@@ -38,6 +40,7 @@ out vec4 vertexColor;
 void main()
 {
 	gl_Position =  projMat * vec4(position, 1);
+	gl_PointSize = 2.0;
 	vertexColor = color;
 }`;
 	}

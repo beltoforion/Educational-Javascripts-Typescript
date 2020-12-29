@@ -1,6 +1,6 @@
 import { mat4,  vec3 } from 'gl-matrix'
 
-import { GalaxyParam, Vec3, VertexColor } from './Types' 
+import { Color, GalaxyParam, Vec3, VertexColor } from './Types' 
 import { Helper } from './Helper'
 import { VertexBufferLines } from './VertexBufferLines'
 import { VertexBufferStars } from './VertexBufferStars';
@@ -51,7 +51,7 @@ export class GalaxyRenderer {
     private flags : DisplayItem = DisplayItem.VELOCITY | DisplayItem.STARS | DisplayItem.AXIS | DisplayItem.HELP | DisplayItem.DUST | DisplayItem.H2 | DisplayItem.FILAMENTS;
 
 //    private renderUpdateHint : RenderUpdateHint = RenderUpdateHint.DENSITY_WAVES | RenderUpdateHint.AXIS | RenderUpdateHint.STARS | RenderUpdateHint.DUST | RenderUpdateHint.CREATE_VELOCITY_CURVE | RenderUpdateHint.CREATE_TEXT;
-    private renderUpdateHint : RenderUpdateHint = RenderUpdateHint.AXIS | RenderUpdateHint.CREATE_VELOCITY_CURVE;
+    private renderUpdateHint : RenderUpdateHint = RenderUpdateHint.DENSITY_WAVES | RenderUpdateHint.AXIS | RenderUpdateHint.CREATE_VELOCITY_CURVE;
 
     private galaxy : Galaxy = new Galaxy();
 
@@ -68,11 +68,52 @@ export class GalaxyRenderer {
         this.vertAxis = new VertexBufferLines(this.gl, 1, this.gl.STATIC_DRAW);
 	    this.vertVelocityCurve = new VertexBufferLines(this.gl, 1, this.gl.DYNAMIC_DRAW);
 
+        document.addEventListener('keydown', (event) => this.onKeydown(event));
+
         this.initGL(this.gl);
         this.initSimulation();
 
         // Start the main loop
         window.requestAnimationFrame((timeStamp) => this.mainLoop(timeStamp));
+    }
+
+    private onKeydown(event : KeyboardEvent) {
+        const keyName = event.key;
+        console.log("Key " + keyName + " pressed")
+
+        switch(keyName)
+        {
+            case 'F6':
+                this.flags ^= DisplayItem.DENSITY_WAVES;
+                break;
+
+            case '+':
+                this.scaleAxis(1.1);
+                this.setCameraOrientation(vec3.fromValues(0, 1, 0));
+                this.renderUpdateHint |= RenderUpdateHint.AXIS | RenderUpdateHint.DENSITY_WAVES;  // ruhDENSITY_WAVES only for the labels!
+                break;
+
+            case '-':
+                this.scaleAxis(0.9);
+                this.setCameraOrientation(vec3.fromValues(0, 1, 0));
+                this.renderUpdateHint |= RenderUpdateHint.AXIS | RenderUpdateHint.DENSITY_WAVES;  // ruhDENSITY_WAVES only for the labels!
+                break;    
+                
+            case 'v':
+                this.flags ^= DisplayItem.VELOCITY;
+                break;
+
+            case 'm':
+                this.galaxy.toggleDarkMatter();
+                this.renderUpdateHint |= RenderUpdateHint.STARS | RenderUpdateHint.DUST | RenderUpdateHint.CREATE_VELOCITY_CURVE;
+                break;
+        }
+    }
+
+    private scaleAxis(scale : number) : void
+    {
+        this.fov *= scale;
+	    this.adjustCamera();
     }
 
     private initSimulation() {
@@ -198,14 +239,104 @@ export class GalaxyRenderer {
     }
 
     private updateDensityWaves() : void {
-//        console.log("updating density waves.");
+        if (this.vertDensityWaves==null)
+            throw new Error("GalaxyRenderer.updateDensityWaves(): this.vertDensityWaves is null!")
+
+        console.log("updating density waves.");
+
+        let vert : VertexColor[] = []
+        let idx : number[] = []
+    
+        //
+        // First add the density waves
+        //
+
+        const num : number = 100;
+        let dr : number = this.galaxy.farFieldRad / num;
+        for (let i = 0; i <= num; ++i) {
+            let r : number = dr * (i + 1);
+            this.addEllipsisVertices(
+                vert,
+                idx,
+                r,
+                r * this.galaxy.getExcentricity(r),
+                Helper.RAD_TO_DEG * this.galaxy.getAngularOffset(r),
+                this.galaxy.pertN,
+                this.galaxy.pertAmp,
+                new Color(1, 1, 1, 0.2));
+        }
+
+        //
+        // Add three circles at the boundaries of core, galaxy and galactic medium
+        //
+
+        const pertNum : number = 0;
+        const pertAmp : number = 0;
+        let r : number = this.galaxy.coreRad;
+        this.addEllipsisVertices(vert, idx, r, r, 0, pertNum, pertAmp, new Color(1, 1, 0, 0.5));
+    
+        r = this.galaxy.rad;
+        this.addEllipsisVertices(vert, idx, r, r, 0, pertNum, pertAmp, new Color(0, 1, 0, 0.5 ));
+    
+        r = this.galaxy.farFieldRad;
+        this.addEllipsisVertices(vert, idx, r, r, 0, pertNum, pertAmp, new Color(1, 0, 0, 0.5));
+
+        this.vertDensityWaves.createBuffer(vert, idx, this.gl.LINE_STRIP);
+    
+        this.renderUpdateHint &= ~RenderUpdateHint.DENSITY_WAVES;
     }
 
+    private addEllipsisVertices(
+        vert : VertexColor[],
+        vertIdx : number[],
+        a : number,
+        b : number,
+        angle : number,
+        pertNum : number,
+        pertAmp : number,
+        col : Color) : void
+    {
+        const steps : number = 100;
+        const x : number = 0;
+        const y : number = 0;
+        
+        // Angle is given by Degree Value
+        let beta : number = -angle * Helper.DEG_TO_RAD;
+        let sinbeta : number = Math.sin(beta);
+        let cosbeta : number = Math.cos(beta);
+    
+        let firstPointIdx : number = vert.length;
+        for (let i = 0; i < 360; i += 360 / steps)
+        {
+            let alpha : number = i * Helper.DEG_TO_RAD;
+            let sinalpha = Math.sin(alpha);
+            let cosalpha = Math.cos(alpha);
+    
+            let fx : number = x + (a * cosalpha * cosbeta - b * sinalpha * sinbeta);
+            let fy : number = y + (a * cosalpha * sinbeta + b * sinalpha * cosbeta);
+    
+            if (pertNum > 0)
+            {
+                fx += ((a / pertAmp) * Math.sin(alpha * 2 * pertNum));
+                fy += ((a / pertAmp) * Math.cos(alpha * 2 * pertNum));
+            }
+    
+            vertIdx.push(vert.length);
+    
+            let vc : VertexColor = new VertexColor(fx, fy, 0, col.r, col.g, col.b, col.a);
+            vert.push(vc);
+        }
+    
+        // Close the loop and reset the element index array
+        vertIdx.push(firstPointIdx);
+        vertIdx.push(4294967295); 
+    }
+    
     private updateStars() : void {
 //        console.log("updating stars.");
     }
 
-    private updateVelocityCurve(updateOnly : boolean) : void {
+    private updateVelocityCurve() : void {
         if (this.vertVelocityCurve==null)
             throw new Error("GalaxyRenderer.updateVelocityCurve(): this.vertVelocityCurve is null!")
 
@@ -230,12 +361,8 @@ export class GalaxyRenderer {
             vert.push(new VertexColor(r,v * 10, 0,  cr, cg, cb, ca));
 	    }
 
-	    if (!updateOnly) {
-		    this.vertVelocityCurve.createBuffer(vert, idx, this.gl.POINTS);
-		    this.renderUpdateHint &= ~RenderUpdateHint.CREATE_VELOCITY_CURVE;
-    	} else {
-    		this.vertVelocityCurve.updateBuffer(vert);
-        }
+        this.vertVelocityCurve.createBuffer(vert, idx, this.gl.POINTS);
+        this.renderUpdateHint &= ~RenderUpdateHint.CREATE_VELOCITY_CURVE;
     }   
 
     private update() : void {
@@ -251,10 +378,7 @@ export class GalaxyRenderer {
             this.updateStars();
 
         if ((this.renderUpdateHint & RenderUpdateHint.CREATE_VELOCITY_CURVE) != 0)
-            this.updateVelocityCurve(false);
-
-        if ((this.flags & DisplayItem.VELOCITY) != 0)
-            this.updateVelocityCurve(true); // Update Data Only, no buffer recreation!
+            this.updateVelocityCurve();
 
         this.camOrient = vec3.fromValues(0, 1, 0 );
         this.camPos = vec3.fromValues(0, 0, 5000);
@@ -289,22 +413,11 @@ export class GalaxyRenderer {
         }
 
         if (this.vertDensityWaves!=null && this.flags & DisplayItem.DENSITY_WAVES)
-        {
             this.vertDensityWaves.draw(this.matView, this.matProjection);
-//            this.textGalaxyLabels.Draw(this.canvas.width, this.canvas.height, this.matView, this.matProjection);
-        }
     
         if (this.vertVelocityCurve!=null && this.flags & DisplayItem.VELOCITY)
-        {
-//            this.gl.poin .pointSize(2);
             this.vertVelocityCurve.draw(this.matView, this.matProjection);
-        }
-    
-        if (this.flags & DisplayItem.HELP) {
-        }
     }
-
-    private b : number = 0;
 
     public mainLoop(timestamp : any) {
         let error : boolean = false;
