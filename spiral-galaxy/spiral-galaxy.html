@@ -66,20 +66,20 @@
 		<fieldset>  
 			<i>Density Waves</i><br/>
 			<div>
-				<label for="slRad">Galaxy core radius</label><br/>
-				<input style="width:300px;" type="range" min="0" max="10000" class="slider" id="slRad">
-				<span id="labelRad"></span>
-			</div>
-
-			<div>
 				<label for="slCoreRad">Galaxy core radius</label><br/>
-				<input style="width:300px;" type="range" min="0" max="20000" class="slider" id="slCoreRad">
+				<input style="width:300px;" type="range" min="0.05" max="0.95" step="0.01" class="slider" id="slCoreRad">
 				<span id="labelCoreRad"></span>
 			</div>
 
 			<div>
+				<label for="slRad">Galaxy radius</label><br/>
+				<input style="width:300px;" type="range" min="1000" max="20000" class="slider" id="slRad">
+				<span id="labelRad"></span>
+			</div>
+
+			<div>
 				<label for="slAngOffset">Angular Offset</label><br/>
-				<input style="width:300px;" type="range" min="0" max="0.001" step="0.0001" class="slider" id="slAngOffset">
+				<input style="width:300px;" type="range" min="0.0001" max="0.0008" step="0.0001" class="slider" id="slAngOffset">
 				<span id="labelAngularOffset"></span>
 			</div>
 
@@ -94,6 +94,15 @@
 				<input style="width:300px;" type="range" min="0" max="2" step="0.01" class="slider" id="slOutterEx">
 				<span id="labelOutterEx"></span>
 			</div>
+
+			<div>
+				<label for="slPertN">Spiral Arms</label><br/>
+				<input style="width:300px;" type="range" min="0" max="4" step="1" class="slider" id="slPertN">
+				<span id="labelPertN"></span>
+			</div>
+
+			<button type="button" id="btnSpringTide" onClick="onUpdateDensityWaves()" style="width:120px; height:50px;">Update Density Waves</button>
+
 		</fieldset>
 	</form>
 </div>
@@ -102,28 +111,29 @@
 		{
 			class DensityWaveController {
 				constructor(galaxy) {
-					this.rad = galaxy.rad;
-					this.coreRad = galaxy.coreRad;
-					this.innerEx = galaxy.innerEx;
-					this.outterEx = galaxy.outterEx;
-					this.angularOffset = galaxy.angularOffset;
+					this.rad = galaxy.rad
+					this.coreRad = galaxy.coreRad / galaxy.rad
+					this.exInner = galaxy.exInner
+					this.exOuter = galaxy.exOuter
+					this.angleOffset = galaxy.angleOffset
+					this.pertN = galaxy.pertN
 				}
 
 				updateGalaxy(galaxy) {
-					galaxy.rad = this.rad;
-					galaxy.coreRad = this.coreRad;
-					galaxy.innerEx = this.innerEx;
-					galaxy.outterEx = this.outterEx;
-					galaxy.angularOffset = this.angularOffset;
+					galaxy.rad = this.rad
+					galaxy.coreRad = this.coreRad * this.rad
+					galaxy.exInner = this.exInner
+					galaxy.exOuter = this.exOuter
+					galaxy.angleOffset = this.angleOffset
+					galaxy.pertN = this.pertN
 				}
 			}
 
 			var renderer = window.GalaxyRenderer.galaxy;
-
+			var densityWaveController = new DensityWaveController(renderer.galaxy);
 			initialize(renderer);
 
 			function initialize(renderer) {
-				var densityWaveController = new DensityWaveController(renderer.galaxy);
 
         		// Display options
         		document.getElementById("cbShowDensityWaves").value = renderer.showDensityWaves
@@ -137,18 +147,19 @@
 				document.getElementById("cbShowVelocity").checked = renderer.showVelocity
 				document.getElementById("cbHasDarkMatter").checked = renderer.hasDarkMatter;
 
-				initilializeSlider('slFov', 'labelFov', renderer, 'fov')
-				initilializeSlider('slDustSize', 'labelDustRenderSize', renderer,'dustRenderSize')
+				initilializeSlider('slFov', 'labelFov', renderer, 'fov', null)
+				initilializeSlider('slDustSize', 'labelDustRenderSize', renderer,'dustRenderSize', null)
 
 				// Density Waves
-				initilializeSlider('slRad', 'labelRad', densityWaveController, 'rad')
-				initilializeSlider('slCoreRad', 'labelCoreRad', densityWaveController,'coreRad')
-				initilializeSlider('slAngOffset', 'labelAngularOffset', densityWaveController, 'angularOffset')
-				initilializeSlider('slInnerEx', 'labelInnerEx', densityWaveController, 'innerEx')
-				initilializeSlider('slOutterEx', 'labelOutterEx', densityWaveController, 'outterEx')
+				initilializeSlider('slRad', 'labelRad', densityWaveController, 'rad', onUpdateDensityWaves)
+				initilializeSlider('slCoreRad', 'labelCoreRad', densityWaveController,'coreRad', onUpdateDensityWaves)
+				initilializeSlider('slAngOffset', 'labelAngularOffset', densityWaveController, 'angleOffset', onUpdateDensityWaves)
+				initilializeSlider('slInnerEx', 'labelInnerEx', densityWaveController, 'exInner', onUpdateDensityWaves)
+				initilializeSlider('slOutterEx', 'labelOutterEx', densityWaveController, 'exOuter', onUpdateDensityWaves)
+				initilializeSlider('slPertN', 'labelPertN', densityWaveController, 'pertN', onUpdateDensityWaves)
 			}
 			
-			function initilializeSlider(id, idLabel, instance, prop) {
+			function initilializeSlider(id, idLabel, instance, prop, onUpdate) {
 				var slider = document.getElementById(id)
 				slider.value = instance[prop]
 				document.getElementById(idLabel).innerHTML = slider.value
@@ -157,8 +168,21 @@
 					instance[prop] = this.value;
 					
 					var label = document.getElementById(idLabel);
-					label.innerHTML = this.value;					
+					label.innerHTML = this.value;
+					
+					if (onUpdate!=null)
+						onUpdate()
 				} 
+			}
+
+			function onUpdateDensityWaves() {
+				renderer.updateDensityWaveParam(
+					densityWaveController.coreRad * densityWaveController.rad ,
+					densityWaveController.rad,
+					densityWaveController.angleOffset,
+					densityWaveController.exInner,
+					densityWaveController.exOuter,
+					densityWaveController.pertN);
 			}
 
 			function onSelectPreset() {

@@ -3115,9 +3115,13 @@ class Galaxy {
     }
     set rad(value) {
         this._radGalaxy = value;
+        this._radFarField = value * 2;
     }
     get coreRad() {
         return this._radCore;
+    }
+    set coreRad(value) {
+        this._radCore = value;
     }
     get farFieldRad() {
         return this._radFarField;
@@ -3154,11 +3158,23 @@ class Galaxy {
     getAngularOffset(rad) {
         return rad * this._angleOffset;
     }
+    get angleOffset() {
+        return this._angleOffset;
+    }
+    set angleOffset(angle) {
+        this._angleOffset = angle;
+    }
     get exInner() {
         return this._elEx1;
     }
+    set exInner(ex) {
+        this._elEx1 = ex;
+    }
     get exOuter() {
         return this._elEx2;
+    }
+    set exOuter(ex) {
+        this._elEx2 = ex;
     }
     get dustRenderSize() {
         return this._dustRenderSize;
@@ -3168,6 +3184,9 @@ class Galaxy {
     }
     get pertN() {
         return this._pertN;
+    }
+    set pertN(pertN) {
+        this._pertN = pertN;
     }
     get pertAmp() {
         return this._pertAmp;
@@ -3359,9 +3378,14 @@ class GalaxyRenderer {
         this.fov = this.galaxy.rad * 3;
         this.renderUpdateHint |= RenderUpdateHint.DENSITY_WAVES | RenderUpdateHint.STARS | RenderUpdateHint.CREATE_VELOCITY_CURVE;
     }
-    scaleAxis(scale) {
-        this.fov *= scale;
-        this.adjustCamera();
+    updateDensityWaveParam(coreRad, rad, angularOffset, innerEx, outterEx, pertN) {
+        this.galaxy.coreRad = coreRad;
+        this.galaxy.rad = rad;
+        this.galaxy.exInner = innerEx;
+        this.galaxy.exOuter = outterEx;
+        this.galaxy.angleOffset = angularOffset;
+        this.galaxy.pertN = pertN;
+        this.renderUpdateHint |= RenderUpdateHint.DENSITY_WAVES | RenderUpdateHint.CREATE_VELOCITY_CURVE;
     }
     initSimulation() {
         this.preset.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.GalaxyParam(13000, 4000, 0.0004, 0.85, 0.95, 100000, true, 2, 40, 58, 4000));

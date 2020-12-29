@@ -246,11 +246,17 @@ export class Galaxy {
     set rad(value:number)
     {
         this._radGalaxy = value;
+        this._radFarField = value * 2;
     }
 
     get coreRad() : number 
     {
         return this._radCore;
+    }
+
+    set coreRad(value:number)
+    {
+        this._radCore = value;
     }
 
     get farFieldRad() : number 
@@ -302,12 +308,28 @@ export class Galaxy {
         return rad * this._angleOffset;
     }
 
+    public get angleOffset() : number {
+        return this._angleOffset;
+    }
+
+    public set angleOffset(angle:number)  {
+        this._angleOffset = angle;
+    }
+
     public get exInner() : number {
         return this._elEx1;
     }
 
+    public set exInner(ex:number)  {
+        this._elEx1 = ex;
+    }
+
     public get exOuter() : number {
         return this._elEx2
+    }
+
+    public set exOuter(ex:number)  {
+        this._elEx2 = ex;
     }
 
     public get dustRenderSize() : number {
@@ -321,7 +343,11 @@ export class Galaxy {
     public get pertN() : number {
 	    return this._pertN
     }
-    
+
+    public set pertN(pertN:number) {
+	    this._pertN = pertN
+    }
+
     public get pertAmp() : number {
         return this._pertAmp
     }

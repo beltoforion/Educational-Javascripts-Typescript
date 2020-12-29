@@ -198,9 +198,20 @@ export class GalaxyRenderer {
         this.renderUpdateHint |= RenderUpdateHint.DENSITY_WAVES | RenderUpdateHint.STARS | RenderUpdateHint.CREATE_VELOCITY_CURVE;
     }
 
-    private scaleAxis(scale : number) : void {
-        this.fov *= scale;
-	    this.adjustCamera();
+    public updateDensityWaveParam(
+        coreRad: number, 
+        rad: number,  
+        angularOffset: number, 
+        innerEx: number, 
+        outterEx:number,
+        pertN:number) : void {
+        this.galaxy.coreRad = coreRad
+        this.galaxy.rad = rad
+        this.galaxy.exInner = innerEx
+        this.galaxy.exOuter = outterEx
+        this.galaxy.angleOffset = angularOffset
+        this.galaxy.pertN = pertN
+        this.renderUpdateHint |= RenderUpdateHint.DENSITY_WAVES | RenderUpdateHint.CREATE_VELOCITY_CURVE;
     }
 
     private initSimulation() {
