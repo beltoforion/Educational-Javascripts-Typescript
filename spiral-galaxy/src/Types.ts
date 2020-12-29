@@ -38,34 +38,95 @@ export class Star {
 	public a: number = 0;          // kleine halbachse
 	public b: number = 0;          // große halbachse
 	public temp: number = 0;       // star temperature
-	public  mag: number = 0;       // brightness;
+	public mag: number = 0;       // brightness;
 	public type: number = 0;	   // Type 0:star, 1:dust, 2 and 3: h2 regions	
 }
 
 export class GalaxyParam {
-    public rad : number = 0;
-    public radCore : number = 0;
-    public deltaAng : number = 0;
-    public ex1 : number = 0;
-    public ex2 : number = 0;
-    public numStars : number = 0;
-    public hasDarkMatter : boolean = true;
-    public pertN : number = 0;
-    public pertAmp : number = 0;
-    public dustRenderSize : number = 0;
-    public baseTemp : number = 0;
+    public rad : number = 0
+    public radCore : number = 0
+    public deltaAng : number = 0
+    public ex1 : number = 0
+    public ex2 : number = 0
+    public numStars : number = 0
+    public hasDarkMatter : boolean = true
+    public pertN : number = 0
+    public pertAmp : number = 0
+    public dustRenderSize : number = 0
+    public baseTemp : number = 0
 }
 
-export class VertexColor
+export abstract class VertexBase {
+    constructor() {}
+
+    public abstract writeTo(array : Float32Array, offset : number) : void
+    public abstract numberOfFloats() : number;
+}
+
+export class VertexColor extends VertexBase
 {
+    constructor(x : number, y : number, z : number, r : number, g : number, b : number, a : number)
+    {
+        super()
+
+        this.pos.x = x
+        this.pos.y = y
+        this.pos.z = z
+
+        this.col.r = r
+        this.col.g = g
+        this.col.b = b
+        this.col.a = a        
+    }
+
 	public pos : Vec3 = new Vec3();
-	public col : Color = new Color(0,0,0,0);
+    public col : Color = new Color(0,0,0,0);
+
+    public numberOfFloats() : number {
+        return 7
+    }
+
+    public writeTo(array : Float32Array, offset : number) {
+        array[offset + 0] = this.pos.x;
+        array[offset + 1] = this.pos.y;
+        array[offset + 2] = this.pos.z;
+
+        array[offset + 3] = this.col.r;
+        array[offset + 4] = this.col.g;
+        array[offset + 5] = this.col.b;
+        array[offset + 6] = this.col.a;
+    }
 };
 
-export class VertexStar
+export class VertexStar extends VertexBase
 {
-	public star : Star = new Star();
-	public col : Color = new Color();
+    
+	public star : Star = new Star()
+    public col : Color = new Color()
+
+    constructor() {
+        super()
+    }
+
+    public numberOfFloats() : number {
+        return 8 + 4;
+    }
+    
+    public writeTo(array : Float32Array, offset : number) {
+        array[offset + 0] = this.star.theta0
+        array[offset + 1] = this.star.velTheta
+        array[offset + 2] = this.star.tiltAngle
+        array[offset + 3] = this.star.a
+        array[offset + 4] = this.star.b
+        array[offset + 5] = this.star.temp
+        array[offset + 6] = this.star.mag
+        array[offset + 7] = this.star.type
+
+        array[offset + 8] = this.col.r
+        array[offset + 9] = this.col.g
+        array[offset + 10] = this.col.b
+        array[offset + 11] = this.col.a
+    }
 };
 
 

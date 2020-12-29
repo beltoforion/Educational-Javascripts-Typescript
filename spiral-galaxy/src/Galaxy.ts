@@ -1,7 +1,7 @@
 import { Star, GalaxyParam } from './Types'
 import { Helper } from './Helper'
 
-class Galaxy {
+export class Galaxy {
 
     private _rad : number = 0;
     private _stars : Star[] = [];

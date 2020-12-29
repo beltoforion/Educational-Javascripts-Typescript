@@ -1,5 +1,5 @@
 module.exports = {
-    entry: './src/GalaxyRenderer.ts',
+    entry: './src/index.ts',
     module: {
         rules: [
           {

@@ -7,14 +7,14 @@ export class VertexBufferLines extends VertexBufferBase<VertexColor>
     private readonly attPosition : number = 0;
     private readonly attColor : number = 1;
 
-	constructor(gl : WebGLRenderingContext, lineWidth : number, bufferMode : number)
+	constructor(gl : WebGL2RenderingContext, lineWidth : number, bufferMode : number)
 	{
         super(gl, bufferMode);
         this.lineWidth = lineWidth;
         
 		this.defineAttributes([ 
-			new AttributeDefinition(this.attPosition, 3, gl.FLOAT, 0),
-			new AttributeDefinition(this.attColor,    4, gl.FLOAT, Object.keys(Vec3).length)
+			new AttributeDefinition(this.attPosition, 3, 0),
+			new AttributeDefinition(this.attColor,    4, 3*4)
         ]);
     }
     
@@ -25,27 +25,36 @@ export class VertexBufferLines extends VertexBufferBase<VertexColor>
     
 	protected getVertexShaderSource() : string
 	{
-        return `
-			uniform mat4 projMat;
-			uniform mat4 viewMat;
-			layout(location = 0) in vec3 position;
-			layout(location = 1) in vec4 color;
-			out vec4 vertexColor;
-			void main()
-			{
-				gl_Position =  projMat * vec4(position, 1);
-				vertexColor = color;
-			}`;
+		return `#version 300 es 
+
+uniform mat4 projMat;
+uniform mat4 viewMat;
+
+layout(location = 0) in vec3 position;
+layout(location = 1) in vec4 color;
+
+out vec4 vertexColor;
+
+void main()
+{
+	gl_Position =  projMat * vec4(position, 1);
+	vertexColor = color;
+}`;
 	}
 
     protected getFragmentShaderSource() : string
 	{
-		return `
-			out vec4 FragColor;
-			in vec4 vertexColor;
-			void main()
-			{
-				FragColor = vertexColor;
-			}`;
+		return `#version 300 es 
+
+precision mediump float;
+
+out vec4 FragColor;
+
+in vec4 vertexColor;
+
+void main()
+{
+	FragColor = vertexColor;
+}`;
 	}
 }

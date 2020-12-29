@@ -1945,6 +1945,269 @@ var sub = subtract;
 
 /***/ }),
 
+/***/ "./src/Galaxy.ts":
+/*!***********************!*\
+  !*** ./src/Galaxy.ts ***!
+  \***********************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "Galaxy": () => /* binding */ Galaxy
+/* harmony export */ });
+/* harmony import */ var _Types__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Types */ "./src/Types.ts");
+/* harmony import */ var _Helper__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Helper */ "./src/Helper.ts");
+
+
+class Galaxy {
+    constructor(rad = 15000, radCore = 6000, deltaAng = 0.019, ex1 = 0.8, ex2 = 1, numStars = 60000) {
+        this._rad = 0;
+        this._stars = [];
+        this._elEx1 = 0;
+        this._elEx2 = 0;
+        this._angleOffset = 0;
+        this._radCore = 0;
+        this._radGalaxy = 0;
+        this._radFarField = 0;
+        this._dustRenderSize = 0;
+        this._numStars = 0;
+        this._numH2 = 0;
+        this._pertN = 0;
+        this._pertAmp = 0;
+        this._hasDarkMatter = true;
+        this._baseTemp = 0;
+        this._elEx1 = ex1;
+        this._elEx2 = ex2;
+        this._angleOffset = deltaAng;
+        this._radCore = radCore;
+        this._radGalaxy = rad;
+        this._radFarField = this._radGalaxy * 2;
+        this._numStars = numStars;
+        this._numH2 = 400;
+        this._pertN = 0;
+        this._pertAmp = 0;
+        this._hasDarkMatter = true;
+        this._baseTemp = 4000;
+        this._stars = [];
+        this._dustRenderSize = 70;
+    }
+    initStarsAndDust() {
+        this._stars = [];
+        // First star ist the black hole at the centre
+        let star = {
+            "a": 0,
+            "b": 0,
+            "tiltAngle": 0,
+            "theta0": 0,
+            "velTheta": 0,
+            "type": 0,
+            "temp": 6000,
+            "mag": 1
+        };
+        this._stars.push(star);
+        //
+        // 1.) Initialize the stars
+        //
+        let cdf = new CumulativeDistributionFunction();
+        cdf.setupRealistic(1.0, // maximum intensity
+        0.02, // k (bulge)
+        this._radGalaxy / 3.0, // disc scale length
+        this._radCore, // bulge radius
+        0, // start  of the intnesity curve
+        this._radFarField, // end of the intensity curve
+        1000); // number of supporting points
+        for (let i = 1; i < this._numStars; ++i) {
+            let rad = cdf.valFromProb(_Helper__WEBPACK_IMPORTED_MODULE_1__.Helper.rnum());
+            let star = new _Types__WEBPACK_IMPORTED_MODULE_0__.Star();
+            star.a = rad;
+            star.b = rad * this.getExcentricity(rad);
+            star.tiltAngle = this.getAngularOffset(rad);
+            star.theta0 = 360.0 * _Helper__WEBPACK_IMPORTED_MODULE_1__.Helper.rnum();
+            star.velTheta = this.getOrbitalVelocity(rad);
+            star.temp = 6000 + (4000 * _Helper__WEBPACK_IMPORTED_MODULE_1__.Helper.rnum() - 2000);
+            star.mag = 0.1 + 0.4 * _Helper__WEBPACK_IMPORTED_MODULE_1__.Helper.rnum();
+            star.type = 0;
+            // Make a small portion of the stars brighter
+            if (i < this._numStars / 60) {
+                star.mag = Math.min(star.mag + 0.1 + _Helper__WEBPACK_IMPORTED_MODULE_1__.Helper.rnum() * 0.4, 1.0);
+            }
+            this._stars.push(star);
+        }
+        //
+        // 2.) Initialise Dust:
+        //
+        //	The galaxy gets as many dust clouds as stars
+        let x = 0;
+        let y = 0;
+        let rad = 0;
+        for (let i = 0; i < this._numStars; ++i) {
+            if (i % 2 == 0) {
+                rad = cdf.valFromProb(_Helper__WEBPACK_IMPORTED_MODULE_1__.Helper.rnum());
+            }
+            else {
+                x = 2 * this._radGalaxy * _Helper__WEBPACK_IMPORTED_MODULE_1__.Helper.rnum() - this._radGalaxy;
+                y = 2 * this._radGalaxy * _Helper__WEBPACK_IMPORTED_MODULE_1__.Helper.rnum() - this._radGalaxy;
+                rad = Math.sqrt(x * x + y * y);
+            }
+            let dustParticle = new _Types__WEBPACK_IMPORTED_MODULE_0__.Star();
+            dustParticle.a = rad;
+            dustParticle.b = rad * this.getExcentricity(rad);
+            dustParticle.tiltAngle = this.getAngularOffset(rad);
+            dustParticle.theta0 = 360.0 * _Helper__WEBPACK_IMPORTED_MODULE_1__.Helper.rnum();
+            dustParticle.velTheta = this.getOrbitalVelocity((dustParticle.a + dustParticle.b) / 2.0);
+            dustParticle.type = 1;
+            // I want the outer parts to appear blue, the inner parts yellow. I'm imposing
+            // the following temperature distribution (no science here it just looks right)
+            dustParticle.temp = this._baseTemp + rad / 4.5;
+            dustParticle.mag = 0.02 + 0.15 * _Helper__WEBPACK_IMPORTED_MODULE_1__.Helper.rnum();
+            this._stars.push(dustParticle);
+        }
+        //
+        // 3.) Initialize additional dust filaments
+        //
+        for (let i = 0; i < this._numStars / 100; ++i) {
+            rad = cdf.valFromProb(_Helper__WEBPACK_IMPORTED_MODULE_1__.Helper.rnum());
+            x = 2 * this._radGalaxy * _Helper__WEBPACK_IMPORTED_MODULE_1__.Helper.rnum() - this._radGalaxy;
+            y = 2 * this._radGalaxy * _Helper__WEBPACK_IMPORTED_MODULE_1__.Helper.rnum() - this._radGalaxy;
+            rad = Math.sqrt(x * x + y * y);
+            let theta = 360.0 * _Helper__WEBPACK_IMPORTED_MODULE_1__.Helper.rnum();
+            let mag = 0.1 + 0.05 * _Helper__WEBPACK_IMPORTED_MODULE_1__.Helper.rnum();
+            let a = rad;
+            let b = rad * this.getExcentricity(rad);
+            let num = 100 * _Helper__WEBPACK_IMPORTED_MODULE_1__.Helper.rnum();
+            let temp = this._baseTemp + rad / 4.5 - 2000;
+            for (let i = 0; i < num; ++i) {
+                rad = rad + 200 - 400 * _Helper__WEBPACK_IMPORTED_MODULE_1__.Helper.rnum();
+                let dustParticle = new _Types__WEBPACK_IMPORTED_MODULE_0__.Star();
+                dustParticle.a = rad;
+                dustParticle.b = rad * this.getExcentricity(rad);
+                dustParticle.tiltAngle = this.getAngularOffset(rad);
+                dustParticle.theta0 = theta + 10 - 20 * _Helper__WEBPACK_IMPORTED_MODULE_1__.Helper.rnum();
+                dustParticle.velTheta = this.getOrbitalVelocity((dustParticle.a + dustParticle.b) / 2.0);
+                // I want the outer parts to appear blue, the inner parts yellow. I'm imposing
+                // the following temperature distribution (no science here it just looks right)
+                dustParticle.temp = this._baseTemp + rad / 4.5 - 1000;
+                ;
+                dustParticle.mag = mag + 0.025 * _Helper__WEBPACK_IMPORTED_MODULE_1__.Helper.rnum();
+                dustParticle.type = 2;
+                this._stars.push(dustParticle);
+            }
+        }
+        //
+        // 4.) Initialise H2 regions
+        // 
+        for (let i = 0; i < this._numH2; ++i) {
+            x = 2 * this._radGalaxy * _Helper__WEBPACK_IMPORTED_MODULE_1__.Helper.rnum() - this._radGalaxy;
+            y = 2 * this._radGalaxy * _Helper__WEBPACK_IMPORTED_MODULE_1__.Helper.rnum() - this._radGalaxy;
+            rad = Math.sqrt(x * x + y * y);
+            let particleH2 = new _Types__WEBPACK_IMPORTED_MODULE_0__.Star();
+            particleH2.a = rad;
+            particleH2.b = rad * this.getExcentricity(rad);
+            particleH2.tiltAngle = this.getAngularOffset(rad);
+            particleH2.theta0 = 360.0 * _Helper__WEBPACK_IMPORTED_MODULE_1__.Helper.rnum();
+            particleH2.velTheta = this.getOrbitalVelocity((particleH2.a + particleH2.b) / 2.0);
+            particleH2.temp = 6000 + (6000 * _Helper__WEBPACK_IMPORTED_MODULE_1__.Helper.rnum()) - 3000;
+            particleH2.mag = 0.1 + 0.05 * _Helper__WEBPACK_IMPORTED_MODULE_1__.Helper.rnum();
+            particleH2.type = 3;
+            this._stars.push(particleH2);
+            // Push particle again with type 4 (bright red core of an h2 region)
+            particleH2.type = 4;
+            this._stars.push(particleH2);
+        }
+    }
+    reset(param) {
+        this._baseTemp = param.baseTemp;
+        this._elEx1 = param.ex1;
+        this._elEx2 = param.ex2;
+        this._elEx2 = param.ex2;
+        this._angleOffset = param.deltaAng;
+        this._radCore = param.radCore;
+        this._radGalaxy = param.rad;
+        this._radFarField = this._radGalaxy * 2; // there is no science behind this threshold it just looks nice
+        this._numStars = param.numStars;
+        this._dustRenderSize = param.dustRenderSize;
+        this._hasDarkMatter = param.hasDarkMatter;
+        this._pertN = param.pertN;
+        this._pertAmp = param.pertAmp;
+        this.initStarsAndDust();
+    }
+    get stars() {
+        return this._stars;
+    }
+    get rad() {
+        return this._rad;
+    }
+    set rad(value) {
+        this._rad = value;
+    }
+    get coreRad() {
+        return this._radCore;
+    }
+    get farFieldRad() {
+        return this._radFarField;
+    }
+    get hasDarkMatter() {
+        return this._hasDarkMatter;
+    }
+    getExcentricity(r) {
+        if (r < this._radCore) {
+            // Core region of the galaxy. Innermost part is round
+            // excentricity increasing linear to the border of the core.
+            return 1 + (r / this._radCore) * (this._elEx1 - 1);
+        }
+        else if (r > this._radCore && r <= this._radGalaxy) {
+            return this._elEx1 + (r - this._radCore) / (this._radGalaxy - this._radCore) * (this._elEx2 - this._elEx1);
+        }
+        else if (r > this._radGalaxy && r < this._radFarField) {
+            // excentricity is slowly reduced to 1.
+            return this._elEx2 + (r - this._radGalaxy) / (this._radFarField - this._radGalaxy) * (1 - this._elEx2);
+        }
+        else
+            return 1;
+    }
+    getOrbitalVelocity(rad) {
+        let vel_kms = 0; // velovity in kilometer per seconds
+        if (this._hasDarkMatter) {
+            vel_kms = _Helper__WEBPACK_IMPORTED_MODULE_1__.Helper.velocityWithDarkMatter(rad);
+        }
+        else {
+            vel_kms = _Helper__WEBPACK_IMPORTED_MODULE_1__.Helper.velocityWithoutDarkMatter(rad);
+        }
+        // Calculate velocity in degree per year
+        let u = 2.0 * Math.PI * rad * _Helper__WEBPACK_IMPORTED_MODULE_1__.Helper.PC_TO_KM;
+        let time = u / (vel_kms * _Helper__WEBPACK_IMPORTED_MODULE_1__.Helper.SEC_PER_YEAR);
+        return 360.0 / time;
+    }
+    getAngularOffset(rad) {
+        return rad * this._angleOffset;
+    }
+    get exInner() {
+        return this._elEx1;
+    }
+    get exOuter() {
+        return this._elEx2;
+    }
+    get dustRenderSize() {
+        return this._dustRenderSize;
+    }
+    get pertN() {
+        return this._pertN;
+    }
+    get pertAmp() {
+        return this._pertAmp;
+    }
+    get baseTemp() {
+        return this._baseTemp;
+    }
+    toggleDarkMatter() {
+        this._hasDarkMatter !== true;
+        this.initStarsAndDust();
+    }
+}
+
+
+/***/ }),
+
 /***/ "./src/GalaxyRenderer.ts":
 /*!*******************************!*\
   !*** ./src/GalaxyRenderer.ts ***!
@@ -1953,44 +2216,66 @@ var sub = subtract;
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "GalaxyRendererConfig": () => /* binding */ GalaxyRendererConfig,
 /* harmony export */   "GalaxyRenderer": () => /* binding */ GalaxyRenderer
 /* harmony export */ });
-/* harmony import */ var gl_matrix__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! gl-matrix */ "./node_modules/gl-matrix/esm/mat4.js");
+/* harmony import */ var gl_matrix__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! gl-matrix */ "./node_modules/gl-matrix/esm/mat4.js");
 /* harmony import */ var _Types__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Types */ "./src/Types.ts");
 /* harmony import */ var _VertexBufferLines__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./VertexBufferLines */ "./src/VertexBufferLines.ts");
+/* harmony import */ var _Galaxy__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./Galaxy */ "./src/Galaxy.ts");
 
 
 
-class GalaxyRendererConfig {
-    constructor() {
-        this.cvid = "";
-    }
-}
+
+var DisplayItem;
+(function (DisplayItem) {
+    DisplayItem[DisplayItem["NONE"] = 0] = "NONE";
+    DisplayItem[DisplayItem["AXIS"] = 1] = "AXIS";
+    DisplayItem[DisplayItem["STARS"] = 2] = "STARS";
+    DisplayItem[DisplayItem["HELP"] = 8] = "HELP";
+    DisplayItem[DisplayItem["DENSITY_WAVES"] = 32] = "DENSITY_WAVES";
+    DisplayItem[DisplayItem["VELOCITY"] = 64] = "VELOCITY";
+    DisplayItem[DisplayItem["DUST"] = 128] = "DUST";
+    DisplayItem[DisplayItem["H2"] = 256] = "H2";
+    DisplayItem[DisplayItem["FILAMENTS"] = 512] = "FILAMENTS";
+})(DisplayItem || (DisplayItem = {}));
+var RenderUpdateHint;
+(function (RenderUpdateHint) {
+    RenderUpdateHint[RenderUpdateHint["NONE"] = 0] = "NONE";
+    RenderUpdateHint[RenderUpdateHint["DENSITY_WAVES"] = 2] = "DENSITY_WAVES";
+    RenderUpdateHint[RenderUpdateHint["AXIS"] = 4] = "AXIS";
+    RenderUpdateHint[RenderUpdateHint["STARS"] = 8] = "STARS";
+    RenderUpdateHint[RenderUpdateHint["DUST"] = 16] = "DUST";
+    RenderUpdateHint[RenderUpdateHint["CREATE_VELOCITY_CURVE"] = 32] = "CREATE_VELOCITY_CURVE";
+    RenderUpdateHint[RenderUpdateHint["CREATE_TEXT"] = 128] = "CREATE_TEXT";
+})(RenderUpdateHint || (RenderUpdateHint = {}));
 class GalaxyRenderer {
-    constructor(cfg) {
+    constructor(canvas) {
         this.vertDensityWaves = null;
         this.vertAxis = null;
         this.vertVelocityCurve = null;
         this.vertStars = null;
         this.fov = 0;
-        this.matProjection = gl_matrix__WEBPACK_IMPORTED_MODULE_2__.create();
-        this.matView = gl_matrix__WEBPACK_IMPORTED_MODULE_2__.create();
+        this.matProjection = gl_matrix__WEBPACK_IMPORTED_MODULE_3__.create();
+        this.matView = gl_matrix__WEBPACK_IMPORTED_MODULE_3__.create();
         this.camPos = new _Types__WEBPACK_IMPORTED_MODULE_0__.Vec3();
         this.camLookAt = new _Types__WEBPACK_IMPORTED_MODULE_0__.Vec3();
         this.camOrient = new _Types__WEBPACK_IMPORTED_MODULE_0__.Vec3();
-        this.config = cfg;
-        this.canvas = document.getElementById(cfg.cvid);
-        if (this.canvas === null)
-            throw new Error("Canvas " + cfg.cvid + " not found!");
-        this.gl = this.canvas.getContext("webgl");
+        this.time = 0;
+        this.flags = DisplayItem.STARS | DisplayItem.AXIS | DisplayItem.HELP | DisplayItem.DUST | DisplayItem.H2 | DisplayItem.FILAMENTS;
+        this.renderUpdateHint = RenderUpdateHint.DENSITY_WAVES | RenderUpdateHint.AXIS | RenderUpdateHint.STARS | RenderUpdateHint.DUST | RenderUpdateHint.CREATE_VELOCITY_CURVE | RenderUpdateHint.CREATE_TEXT;
+        this.galaxy = new _Galaxy__WEBPACK_IMPORTED_MODULE_2__.Galaxy();
+        this.TimeStepSize = 100000.0;
+        this.canvas = canvas;
+        this.gl = this.canvas.getContext("webgl2");
         if (this.gl === null)
-            throw new Error("Unable to initialize WebGL. Your browser or machine may not support it.");
+            throw new Error("Unable to initialize WebGL2. Your browser may not support it.");
         //	    this.vertDensityWaves.initialize();
         this.vertAxis = new _VertexBufferLines__WEBPACK_IMPORTED_MODULE_1__.VertexBufferLines(this.gl, 1, this.gl.STATIC_DRAW);
         //        this.vertDensityWaves = new VertexBufferLines(this.gl, 2, this.gl.STATIC_DRAW);
         //	    this.vertVelocityCurve = new VertexBufferLines(this.gl, 1, this.gl.DYNAMIC_DRAW);
         this.initGL(this.gl);
+        // Start the main loop
+        window.requestAnimationFrame((timeStamp) => this.mainLoop(timeStamp));
     }
     initGL(gl) {
         if (this.vertAxis == null)
@@ -2013,13 +2298,396 @@ class GalaxyRenderer {
     adjustCamera() {
         let l = this.fov / 2.0;
         let aspect = this.canvas.width / this.canvas.height;
-        gl_matrix__WEBPACK_IMPORTED_MODULE_2__.ortho(this.matProjection, -l * aspect, l * aspect, -l, l, -l, l);
+        gl_matrix__WEBPACK_IMPORTED_MODULE_3__.ortho(this.matProjection, -l * aspect, l * aspect, -l, l, -l, l);
         // glm::dvec3 camPos(_camPos.x, _camPos.y, _camPos.z);
         // glm::dvec3 camLookAt(_camLookAt.x, _camLookAt.y, _camLookAt.z);
         // glm::dvec3 camOrient(_camOrient.x, _camOrient.y, _camOrient.z);
         // _matView = glm::lookAt(camPos, camLookAt, camOrient);
     }
+    updateAxis() {
+        if (this.vertAxis == null)
+            throw new Error("Galaxyrenderer.updateAxis(): this.vertAxis is null!");
+        console.log("updating axis data.");
+        let vert = [];
+        let idx = [];
+        let s = Math.pow(10, (Math.log10(this.fov / 2)));
+        let l = this.fov / 100;
+        let p = 0;
+        let r = 0.3;
+        let g = 0.3;
+        let b = 0.3;
+        let a = 0.8;
+        for (let i = 0; p < this.fov; ++i) {
+            p += s;
+            idx.push(vert.length);
+            vert.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.VertexColor(p, -l, 0, r, g, b, a));
+            idx.push(vert.length);
+            vert.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.VertexColor(p, l, 0, r, g, b, a));
+            idx.push(vert.length);
+            vert.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.VertexColor(-p, -l, 0, r, g, b, a));
+            idx.push(vert.length);
+            vert.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.VertexColor(-p, 0, 0, r, g, b, a));
+            idx.push(vert.length);
+            vert.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.VertexColor(-l, p, 0, r, g, b, a));
+            idx.push(vert.length);
+            vert.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.VertexColor(0, p, 0, r, g, b, a));
+            idx.push(vert.length);
+            vert.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.VertexColor(-l, -p, 0, r, g, b, a));
+            idx.push(vert.length);
+            vert.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.VertexColor(0, -p, 0, r, g, b, a));
+        }
+        idx.push(vert.length);
+        vert.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.VertexColor(-this.fov, 0, 0, r, g, b, a));
+        idx.push(vert.length);
+        vert.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.VertexColor(this.fov, 0, 0, r, g, b, a));
+        idx.push(vert.length);
+        vert.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.VertexColor(0, -this.fov, 0, r, g, b, a));
+        idx.push(vert.length);
+        vert.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.VertexColor(0, this.fov, 0, r, g, b, a));
+        this.vertAxis.createBuffer(vert, idx, this.gl.LINES);
+        this.renderUpdateHint &= ~RenderUpdateHint.AXIS;
+    }
+    updateDensityWaves() {
+        //        console.log("updating density waves.");
+    }
+    updateStars() {
+        //        console.log("updating stars.");
+    }
+    updateVelocityCurve(updateOnly) {
+        //        console.log("updating velocity curves.");
+    }
+    updateText() {
+        //        console.log("updating text.");
+    }
+    update() {
+        this.time += this.TimeStepSize;
+        if ((this.renderUpdateHint & RenderUpdateHint.AXIS) != 0)
+            this.updateAxis();
+        if ((this.renderUpdateHint & RenderUpdateHint.DENSITY_WAVES) != 0)
+            this.updateDensityWaves();
+        if ((this.renderUpdateHint & RenderUpdateHint.STARS) != 0)
+            this.updateStars();
+        if ((this.renderUpdateHint & RenderUpdateHint.CREATE_VELOCITY_CURVE) != 0)
+            this.updateVelocityCurve(false);
+        if ((this.flags & DisplayItem.VELOCITY) != 0)
+            this.updateVelocityCurve(true); // Update Data Only, no buffer recreation!
+        if ((this.renderUpdateHint & RenderUpdateHint.CREATE_TEXT) != 0)
+            this.updateText();
+        this.camOrient = new _Types__WEBPACK_IMPORTED_MODULE_0__.Vec3(0, 1, 0);
+        this.camPos = new _Types__WEBPACK_IMPORTED_MODULE_0__.Vec3(0, 0, 5000);
+        this.camLookAt = new _Types__WEBPACK_IMPORTED_MODULE_0__.Vec3(0, 0, 0);
+    }
+    render() {
+        this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+        this.adjustCamera();
+        if (this.vertAxis != null && this.flags & DisplayItem.AXIS) {
+            this.vertAxis.draw(this.matView, this.matProjection);
+            //            this.textAxisLabel.draw(_width, _height, _matView, _matProjection);
+        }
+        let features = 0;
+        if (this.flags & DisplayItem.STARS)
+            features |= 1 << 0;
+        if (this.flags & DisplayItem.DUST)
+            features |= 1 << 1;
+        if (this.flags & DisplayItem.FILAMENTS)
+            features |= 1 << 2;
+        if (this.flags & DisplayItem.H2)
+            features |= 1 << 3;
+        if (this.vertStars != null && features != 0) {
+            this.vertStars.updateShaderVariables(this.time, this.galaxy.pertN, this.galaxy.pertAmp, this.galaxy.dustRenderSize, features);
+            this.vertStars.draw(this.matView, this.matProjection);
+        }
+        if (this.vertDensityWaves != null && this.flags & DisplayItem.DENSITY_WAVES) {
+            this.vertDensityWaves.draw(this.matView, this.matProjection);
+            //            this.textGalaxyLabels.Draw(this.canvas.width, this.canvas.height, this.matView, this.matProjection);
+        }
+        if (this.vertVelocityCurve != null && this.flags & DisplayItem.VELOCITY) {
+            //            this.gl.pointSize(2);
+            this.vertVelocityCurve.draw(this.matView, this.matProjection);
+        }
+        // if (this.flags & DisplayItem.HELP)
+        // {
+        //     this.textHelp.draw(this.canvas.width, this.canvas.height, this.matView, this.matProjection);
+        // }
+    }
+    mainLoop(timestamp) {
+        try {
+            this.update();
+            this.render();
+        }
+        catch (Error) {
+            console.log(Error.message);
+        }
+        finally {
+            window.requestAnimationFrame((timestamp) => this.mainLoop(timestamp));
+        }
+    }
 }
+
+
+/***/ }),
+
+/***/ "./src/Helper.ts":
+/*!***********************!*\
+  !*** ./src/Helper.ts ***!
+  \***********************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "Helper": () => /* binding */ Helper
+/* harmony export */ });
+class Helper {
+    static powerTwoFloor(val) {
+        let power = 2;
+        let nextVal = power * 2;
+        while ((nextVal *= 2) <= val) {
+            power = power << 1;
+        }
+        return power << 1;
+    }
+    static rnum() {
+        return Math.random();
+    }
+    static colorFromTemperature(temp) {
+        let MinTemp = 1000;
+        let MaxTemp = 10000;
+        let colNum = 200;
+        let col = [
+            { "r": 1, "g": -0.00987248, "b": -0.0166818, "a": 1 },
+            { "r": 1, "g": 0.000671682, "b": -0.0173831, "a": 1 },
+            { "r": 1, "g": 0.0113477, "b": -0.0179839, "a": 1 },
+            { "r": 1, "g": 0.0221357, "b": -0.0184684, "a": 1 },
+            { "r": 1, "g": 0.0330177, "b": -0.0188214, "a": 1 },
+            { "r": 1, "g": 0.0439771, "b": -0.0190283, "a": 1 },
+            { "r": 1, "g": 0.0549989, "b": -0.0190754, "a": 1 },
+            { "r": 1, "g": 0.0660696, "b": -0.0189496, "a": 1 },
+            { "r": 1, "g": 0.0771766, "b": -0.0186391, "a": 1 },
+            { "r": 1, "g": 0.0883086, "b": -0.0181329, "a": 1 },
+            { "r": 1, "g": 0.0994553, "b": -0.017421, "a": 1 },
+            { "r": 1, "g": 0.110607, "b": -0.0164945, "a": 1 },
+            { "r": 1, "g": 0.121756, "b": -0.0153455, "a": 1 },
+            { "r": 1, "g": 0.132894, "b": -0.0139671, "a": 1 },
+            { "r": 1, "g": 0.144013, "b": -0.0123534, "a": 1 },
+            { "r": 1, "g": 0.155107, "b": -0.0104993, "a": 1 },
+            { "r": 1, "g": 0.166171, "b": -0.0084008, "a": 1 },
+            { "r": 1, "g": 0.177198, "b": -0.00605465, "a": 1 },
+            { "r": 1, "g": 0.188184, "b": -0.00345843, "a": 1 },
+            { "r": 1, "g": 0.199125, "b": -0.000610485, "a": 1 },
+            { "r": 1, "g": 0.210015, "b": 0.00249014, "a": 1 },
+            { "r": 1, "g": 0.220853, "b": 0.00584373, "a": 1 },
+            { "r": 1, "g": 0.231633, "b": 0.00944995, "a": 1 },
+            { "r": 1, "g": 0.242353, "b": 0.0133079, "a": 1 },
+            { "r": 1, "g": 0.25301, "b": 0.0174162, "a": 1 },
+            { "r": 1, "g": 0.263601, "b": 0.021773, "a": 1 },
+            { "r": 1, "g": 0.274125, "b": 0.0263759, "a": 1 },
+            { "r": 1, "g": 0.284579, "b": 0.0312223, "a": 1 },
+            { "r": 1, "g": 0.294962, "b": 0.0363091, "a": 1 },
+            { "r": 1, "g": 0.305271, "b": 0.0416328, "a": 1 },
+            { "r": 1, "g": 0.315505, "b": 0.0471899, "a": 1 },
+            { "r": 1, "g": 0.325662, "b": 0.0529765, "a": 1 },
+            { "r": 1, "g": 0.335742, "b": 0.0589884, "a": 1 },
+            { "r": 1, "g": 0.345744, "b": 0.0652213, "a": 1 },
+            { "r": 1, "g": 0.355666, "b": 0.0716707, "a": 1 },
+            { "r": 1, "g": 0.365508, "b": 0.078332, "a": 1 },
+            { "r": 1, "g": 0.375268, "b": 0.0852003, "a": 1 },
+            { "r": 1, "g": 0.384948, "b": 0.0922709, "a": 1 },
+            { "r": 1, "g": 0.394544, "b": 0.0995389, "a": 1 },
+            { "r": 1, "g": 0.404059, "b": 0.106999, "a": 1 },
+            { "r": 1, "g": 0.41349, "b": 0.114646, "a": 1 },
+            { "r": 1, "g": 0.422838, "b": 0.122476, "a": 1 },
+            { "r": 1, "g": 0.432103, "b": 0.130482, "a": 1 },
+            { "r": 1, "g": 0.441284, "b": 0.138661, "a": 1 },
+            { "r": 1, "g": 0.450381, "b": 0.147005, "a": 1 },
+            { "r": 1, "g": 0.459395, "b": 0.155512, "a": 1 },
+            { "r": 1, "g": 0.468325, "b": 0.164175, "a": 1 },
+            { "r": 1, "g": 0.477172, "b": 0.172989, "a": 1 },
+            { "r": 1, "g": 0.485935, "b": 0.181949, "a": 1 },
+            { "r": 1, "g": 0.494614, "b": 0.19105, "a": 1 },
+            { "r": 1, "g": 0.503211, "b": 0.200288, "a": 1 },
+            { "r": 1, "g": 0.511724, "b": 0.209657, "a": 1 },
+            { "r": 1, "g": 0.520155, "b": 0.219152, "a": 1 },
+            { "r": 1, "g": 0.528504, "b": 0.228769, "a": 1 },
+            { "r": 1, "g": 0.536771, "b": 0.238502, "a": 1 },
+            { "r": 1, "g": 0.544955, "b": 0.248347, "a": 1 },
+            { "r": 1, "g": 0.553059, "b": 0.2583, "a": 1 },
+            { "r": 1, "g": 0.561082, "b": 0.268356, "a": 1 },
+            { "r": 1, "g": 0.569024, "b": 0.27851, "a": 1 },
+            { "r": 1, "g": 0.576886, "b": 0.288758, "a": 1 },
+            { "r": 1, "g": 0.584668, "b": 0.299095, "a": 1 },
+            { "r": 1, "g": 0.592372, "b": 0.309518, "a": 1 },
+            { "r": 1, "g": 0.599996, "b": 0.320022, "a": 1 },
+            { "r": 1, "g": 0.607543, "b": 0.330603, "a": 1 },
+            { "r": 1, "g": 0.615012, "b": 0.341257, "a": 1 },
+            { "r": 1, "g": 0.622403, "b": 0.35198, "a": 1 },
+            { "r": 1, "g": 0.629719, "b": 0.362768, "a": 1 },
+            { "r": 1, "g": 0.636958, "b": 0.373617, "a": 1 },
+            { "r": 1, "g": 0.644122, "b": 0.384524, "a": 1 },
+            { "r": 1, "g": 0.65121, "b": 0.395486, "a": 1 },
+            { "r": 1, "g": 0.658225, "b": 0.406497, "a": 1 },
+            { "r": 1, "g": 0.665166, "b": 0.417556, "a": 1 },
+            { "r": 1, "g": 0.672034, "b": 0.428659, "a": 1 },
+            { "r": 1, "g": 0.678829, "b": 0.439802, "a": 1 },
+            { "r": 1, "g": 0.685552, "b": 0.450982, "a": 1 },
+            { "r": 1, "g": 0.692204, "b": 0.462196, "a": 1 },
+            { "r": 1, "g": 0.698786, "b": 0.473441, "a": 1 },
+            { "r": 1, "g": 0.705297, "b": 0.484714, "a": 1 },
+            { "r": 1, "g": 0.711739, "b": 0.496013, "a": 1 },
+            { "r": 1, "g": 0.718112, "b": 0.507333, "a": 1 },
+            { "r": 1, "g": 0.724417, "b": 0.518673, "a": 1 },
+            { "r": 1, "g": 0.730654, "b": 0.53003, "a": 1 },
+            { "r": 1, "g": 0.736825, "b": 0.541402, "a": 1 },
+            { "r": 1, "g": 0.742929, "b": 0.552785, "a": 1 },
+            { "r": 1, "g": 0.748968, "b": 0.564177, "a": 1 },
+            { "r": 1, "g": 0.754942, "b": 0.575576, "a": 1 },
+            { "r": 1, "g": 0.760851, "b": 0.586979, "a": 1 },
+            { "r": 1, "g": 0.766696, "b": 0.598385, "a": 1 },
+            { "r": 1, "g": 0.772479, "b": 0.609791, "a": 1 },
+            { "r": 1, "g": 0.778199, "b": 0.621195, "a": 1 },
+            { "r": 1, "g": 0.783858, "b": 0.632595, "a": 1 },
+            { "r": 1, "g": 0.789455, "b": 0.643989, "a": 1 },
+            { "r": 1, "g": 0.794991, "b": 0.655375, "a": 1 },
+            { "r": 1, "g": 0.800468, "b": 0.666751, "a": 1 },
+            { "r": 1, "g": 0.805886, "b": 0.678116, "a": 1 },
+            { "r": 1, "g": 0.811245, "b": 0.689467, "a": 1 },
+            { "r": 1, "g": 0.816546, "b": 0.700803, "a": 1 },
+            { "r": 1, "g": 0.82179, "b": 0.712122, "a": 1 },
+            { "r": 1, "g": 0.826976, "b": 0.723423, "a": 1 },
+            { "r": 1, "g": 0.832107, "b": 0.734704, "a": 1 },
+            { "r": 1, "g": 0.837183, "b": 0.745964, "a": 1 },
+            { "r": 1, "g": 0.842203, "b": 0.757201, "a": 1 },
+            { "r": 1, "g": 0.847169, "b": 0.768414, "a": 1 },
+            { "r": 1, "g": 0.852082, "b": 0.779601, "a": 1 },
+            { "r": 1, "g": 0.856941, "b": 0.790762, "a": 1 },
+            { "r": 1, "g": 0.861748, "b": 0.801895, "a": 1 },
+            { "r": 1, "g": 0.866503, "b": 0.812999, "a": 1 },
+            { "r": 1, "g": 0.871207, "b": 0.824073, "a": 1 },
+            { "r": 1, "g": 0.87586, "b": 0.835115, "a": 1 },
+            { "r": 1, "g": 0.880463, "b": 0.846125, "a": 1 },
+            { "r": 1, "g": 0.885017, "b": 0.857102, "a": 1 },
+            { "r": 1, "g": 0.889521, "b": 0.868044, "a": 1 },
+            { "r": 1, "g": 0.893977, "b": 0.878951, "a": 1 },
+            { "r": 1, "g": 0.898386, "b": 0.889822, "a": 1 },
+            { "r": 1, "g": 0.902747, "b": 0.900657, "a": 1 },
+            { "r": 1, "g": 0.907061, "b": 0.911453, "a": 1 },
+            { "r": 1, "g": 0.91133, "b": 0.922211, "a": 1 },
+            { "r": 1, "g": 0.915552, "b": 0.932929, "a": 1 },
+            { "r": 1, "g": 0.91973, "b": 0.943608, "a": 1 },
+            { "r": 1, "g": 0.923863, "b": 0.954246, "a": 1 },
+            { "r": 1, "g": 0.927952, "b": 0.964842, "a": 1 },
+            { "r": 1, "g": 0.931998, "b": 0.975397, "a": 1 },
+            { "r": 1, "g": 0.936001, "b": 0.985909, "a": 1 },
+            { "r": 1, "g": 0.939961, "b": 0.996379, "a": 1 },
+            { "r": 0.993241, "g": 0.9375, "b": 1, "a": 1 },
+            { "r": 0.983104, "g": 0.931743, "b": 1, "a": 1 },
+            { "r": 0.973213, "g": 0.926103, "b": 1, "a": 1 },
+            { "r": 0.963562, "g": 0.920576, "b": 1, "a": 1 },
+            { "r": 0.954141, "g": 0.915159, "b": 1, "a": 1 },
+            { "r": 0.944943, "g": 0.909849, "b": 1, "a": 1 },
+            { "r": 0.935961, "g": 0.904643, "b": 1, "a": 1 },
+            { "r": 0.927189, "g": 0.899538, "b": 1, "a": 1 },
+            { "r": 0.918618, "g": 0.894531, "b": 1, "a": 1 },
+            { "r": 0.910244, "g": 0.88962, "b": 1, "a": 1 },
+            { "r": 0.902059, "g": 0.884801, "b": 1, "a": 1 },
+            { "r": 0.894058, "g": 0.880074, "b": 1, "a": 1 },
+            { "r": 0.886236, "g": 0.875434, "b": 1, "a": 1 },
+            { "r": 0.878586, "g": 0.87088, "b": 1, "a": 1 },
+            { "r": 0.871103, "g": 0.86641, "b": 1, "a": 1 },
+            { "r": 0.863783, "g": 0.862021, "b": 1, "a": 1 },
+            { "r": 0.856621, "g": 0.857712, "b": 1, "a": 1 },
+            { "r": 0.849611, "g": 0.853479, "b": 1, "a": 1 },
+            { "r": 0.84275, "g": 0.849322, "b": 1, "a": 1 },
+            { "r": 0.836033, "g": 0.845239, "b": 1, "a": 1 },
+            { "r": 0.829456, "g": 0.841227, "b": 1, "a": 1 },
+            { "r": 0.823014, "g": 0.837285, "b": 1, "a": 1 },
+            { "r": 0.816705, "g": 0.83341, "b": 1, "a": 1 },
+            { "r": 0.810524, "g": 0.829602, "b": 1, "a": 1 },
+            { "r": 0.804468, "g": 0.825859, "b": 1, "a": 1 },
+            { "r": 0.798532, "g": 0.82218, "b": 1, "a": 1 },
+            { "r": 0.792715, "g": 0.818562, "b": 1, "a": 1 },
+            { "r": 0.787012, "g": 0.815004, "b": 1, "a": 1 },
+            { "r": 0.781421, "g": 0.811505, "b": 1, "a": 1 },
+            { "r": 0.775939, "g": 0.808063, "b": 1, "a": 1 },
+            { "r": 0.770561, "g": 0.804678, "b": 1, "a": 1 },
+            { "r": 0.765287, "g": 0.801348, "b": 1, "a": 1 },
+            { "r": 0.760112, "g": 0.798071, "b": 1, "a": 1 },
+            { "r": 0.755035, "g": 0.794846, "b": 1, "a": 1 },
+            { "r": 0.750053, "g": 0.791672, "b": 1, "a": 1 },
+            { "r": 0.745164, "g": 0.788549, "b": 1, "a": 1 },
+            { "r": 0.740364, "g": 0.785474, "b": 1, "a": 1 },
+            { "r": 0.735652, "g": 0.782448, "b": 1, "a": 1 },
+            { "r": 0.731026, "g": 0.779468, "b": 1, "a": 1 },
+            { "r": 0.726482, "g": 0.776534, "b": 1, "a": 1 },
+            { "r": 0.722021, "g": 0.773644, "b": 1, "a": 1 },
+            { "r": 0.717638, "g": 0.770798, "b": 1, "a": 1 },
+            { "r": 0.713333, "g": 0.767996, "b": 1, "a": 1 },
+            { "r": 0.709103, "g": 0.765235, "b": 1, "a": 1 },
+            { "r": 0.704947, "g": 0.762515, "b": 1, "a": 1 },
+            { "r": 0.700862, "g": 0.759835, "b": 1, "a": 1 },
+            { "r": 0.696848, "g": 0.757195, "b": 1, "a": 1 },
+            { "r": 0.692902, "g": 0.754593, "b": 1, "a": 1 },
+            { "r": 0.689023, "g": 0.752029, "b": 1, "a": 1 },
+            { "r": 0.685208, "g": 0.749502, "b": 1, "a": 1 },
+            { "r": 0.681458, "g": 0.747011, "b": 1, "a": 1 },
+            { "r": 0.67777, "g": 0.744555, "b": 1, "a": 1 },
+            { "r": 0.674143, "g": 0.742134, "b": 1, "a": 1 },
+            { "r": 0.670574, "g": 0.739747, "b": 1, "a": 1 },
+            { "r": 0.667064, "g": 0.737394, "b": 1, "a": 1 },
+            { "r": 0.663611, "g": 0.735073, "b": 1, "a": 1 },
+            { "r": 0.660213, "g": 0.732785, "b": 1, "a": 1 },
+            { "r": 0.656869, "g": 0.730528, "b": 1, "a": 1 },
+            { "r": 0.653579, "g": 0.728301, "b": 1, "a": 1 },
+            { "r": 0.65034, "g": 0.726105, "b": 1, "a": 1 },
+            { "r": 0.647151, "g": 0.723939, "b": 1, "a": 1 },
+            { "r": 0.644013, "g": 0.721801, "b": 1, "a": 1 },
+            { "r": 0.640922, "g": 0.719692, "b": 1, "a": 1 },
+            { "r": 0.637879, "g": 0.717611, "b": 1, "a": 1 },
+            { "r": 0.634883, "g": 0.715558, "b": 1, "a": 1 },
+            { "r": 0.631932, "g": 0.713531, "b": 1, "a": 1 },
+            { "r": 0.629025, "g": 0.711531, "b": 1, "a": 1 },
+            { "r": 0.626162, "g": 0.709557, "b": 1, "a": 1 },
+            { "r": 0.623342, "g": 0.707609, "b": 1, "a": 1 },
+            { "r": 0.620563, "g": 0.705685, "b": 1, "a": 1 },
+            { "r": 0.617825, "g": 0.703786, "b": 1, "a": 1 },
+            { "r": 0.615127, "g": 0.701911, "b": 1, "a": 1 },
+            { "r": 0.612469, "g": 0.70006, "b": 1, "a": 1 },
+            { "r": 0.609848, "g": 0.698231, "b": 1, "a": 1 },
+            { "r": 0.607266, "g": 0.696426, "b": 1, "a": 1 },
+            { "r": 0.60472, "g": 0.694643, "b": 1, "a": 1 }
+        ];
+        let idx = (temp - MinTemp) / (MaxTemp - MinTemp) * colNum;
+        idx = Math.min(colNum - 1, idx);
+        idx = Math.max(0, idx);
+        return col[idx];
+    }
+    // Velocity curve with dark matter
+    static velocityWithDarkMatter(r) {
+        let MZ = 100;
+        return 20000.0 * Math.sqrt(Helper.CONTANT_OF_GRAVITY * (Helper.massHalo(r) + Helper.massDisc(r) + MZ) / r);
+    }
+    // velocity curve without dark matter
+    static velocityWithoutDarkMatter(r) {
+        let MZ = 100;
+        return 20000.0 * Math.sqrt(Helper.CONTANT_OF_GRAVITY * (Helper.massDisc(r) + MZ) / r);
+    }
+    static massDisc(r) {
+        let d = 2000; // Dicke der Scheibe
+        let rho_so = 1; // Dichte im Mittelpunkt
+        let rH = 2000; // Radius auf dem die Dichte um die Hälfte gefallen ist
+        return rho_so * Math.exp(-r / rH) * (r * r) * Math.PI * d;
+    }
+    static massHalo(r) {
+        let rho_h0 = 0.15;
+        let rC = 2500;
+        return rho_h0 * 1 / (1 + Math.pow(r / rC, 2)) * (4 * Math.PI * Math.pow(r, 3) / 3);
+    }
+}
+Helper.PC_TO_KM = 3.08567758129e13;
+Helper.SEC_PER_YEAR = 365.25 * 86400;
+Helper.DEG_TO_RAD = Math.PI / 180.0;
+Helper.RAD_TO_DEG = 180.0 / Math.PI;
+Helper.CONTANT_OF_GRAVITY = 6.672e-11;
+;
 
 
 /***/ }),
@@ -2037,6 +2705,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "Color": () => /* binding */ Color,
 /* harmony export */   "Star": () => /* binding */ Star,
 /* harmony export */   "GalaxyParam": () => /* binding */ GalaxyParam,
+/* harmony export */   "VertexBase": () => /* binding */ VertexBase,
 /* harmony export */   "VertexColor": () => /* binding */ VertexColor,
 /* harmony export */   "VertexStar": () => /* binding */ VertexStar
 /* harmony export */ });
@@ -2095,17 +2764,58 @@ class GalaxyParam {
         this.baseTemp = 0;
     }
 }
-class VertexColor {
-    constructor() {
+class VertexBase {
+    constructor() { }
+}
+class VertexColor extends VertexBase {
+    constructor(x, y, z, r, g, b, a) {
+        super();
         this.pos = new Vec3();
         this.col = new Color(0, 0, 0, 0);
+        this.pos.x = x;
+        this.pos.y = y;
+        this.pos.z = z;
+        this.col.r = r;
+        this.col.g = g;
+        this.col.b = b;
+        this.col.a = a;
+    }
+    numberOfFloats() {
+        return 7;
+    }
+    writeTo(array, offset) {
+        array[offset + 0] = this.pos.x;
+        array[offset + 1] = this.pos.y;
+        array[offset + 2] = this.pos.z;
+        array[offset + 3] = this.col.r;
+        array[offset + 4] = this.col.g;
+        array[offset + 5] = this.col.b;
+        array[offset + 6] = this.col.a;
     }
 }
 ;
-class VertexStar {
+class VertexStar extends VertexBase {
     constructor() {
+        super();
         this.star = new Star();
         this.col = new Color();
+    }
+    numberOfFloats() {
+        return 8 + 4;
+    }
+    writeTo(array, offset) {
+        array[offset + 0] = this.star.theta0;
+        array[offset + 1] = this.star.velTheta;
+        array[offset + 2] = this.star.tiltAngle;
+        array[offset + 3] = this.star.a;
+        array[offset + 4] = this.star.b;
+        array[offset + 5] = this.star.temp;
+        array[offset + 6] = this.star.mag;
+        array[offset + 7] = this.star.type;
+        array[offset + 8] = this.col.r;
+        array[offset + 9] = this.col.g;
+        array[offset + 10] = this.col.b;
+        array[offset + 11] = this.col.a;
     }
 }
 ;
@@ -2125,14 +2835,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "VertexBufferBase": () => /* binding */ VertexBufferBase
 /* harmony export */ });
 class AttributeDefinition {
-    constructor(attribIdx = 0, size = 0, type = 0, offset = 0) {
+    constructor(attribIdx = 0, size = 0, offset = 0) {
         this.attribIdx = 0;
         this.size = 0;
-        this.type = 0;
         this.offset = 0;
         this.attribIdx = attribIdx;
         this.size = size;
-        this.type = type;
         this.offset = offset;
     }
 }
@@ -2144,7 +2852,7 @@ class VertexBufferBase {
         this.vert = [];
         this.idx = [];
         this.shaderProgram = null;
-        this.primitiveType = 0;
+        this._primitiveType = 0;
         this.bufferMode = 0;
         this.attributes = [];
         this.gl = gl;
@@ -2155,6 +2863,20 @@ class VertexBufferBase {
         for (let i = 0; i < attribList.length; ++i) {
             this.attributes.push(attribList[i]);
         }
+    }
+    get primitiveType() {
+        return this._primitiveType;
+    }
+    set primitiveType(value) {
+        this._primitiveType = value;
+    }
+    get arrayElementCount() {
+        return this.idx.length;
+    }
+    get vertexArrayObject() {
+        if (this.vao == null)
+            throw Error("VertexBufferBase.vertexArrayObject(): vertex array object is null!");
+        return this.vao;
     }
     createShader(shaderType, shaderSource) {
         let shader = this.gl.createShader(shaderType);
@@ -2170,9 +2892,15 @@ class VertexBufferBase {
         return shader;
     }
     initialize() {
+        //
+        // 1.) Create Vertex buffer
+        //
         this.vbo = this.gl.createBuffer();
         this.ibo = this.gl.createBuffer();
-        this.vao = this.gl.createBuffer();
+        this.vao = this.gl.createVertexArray();
+        //
+        // Initialize WebGL
+        // 
         let srcVertex = this.getVertexShaderSource();
         let vertexShader = this.createShader(this.gl.VERTEX_SHADER, srcVertex);
         let srcFragment = this.getFragmentShaderSource();
@@ -2195,32 +2923,88 @@ class VertexBufferBase {
         this.gl.detachShader(this.shaderProgram, vertexShader);
         this.gl.detachShader(this.shaderProgram, fragmentShader);
     }
+    releaseAttribArray() {
+        for (let i = 0; i < this.attributes.length; ++i) {
+            let attribIdx = this.attributes[i].attribIdx;
+            this.gl.disableVertexAttribArray(attribIdx);
+        }
+    }
+    release() {
+        this.releaseAttribArray();
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, 0);
+        this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, 0);
+        this.gl.bindVertexArray(null);
+        if (this.vbo != null)
+            this.gl.deleteBuffer(this.vbo);
+        if (this.ibo != null)
+            this.gl.deleteBuffer(this.ibo);
+        if (this.vao != null)
+            this.gl.deleteVertexArray(this.vao);
+    }
+    onSetCustomShaderVariables() { }
+    onBeforeDraw() { }
     draw(matView, matProjection) {
         if (this.shaderProgram == null)
             throw new Error("VertexBufferBase.draw(): shader program is null!");
         this.gl.useProgram(this.shaderProgram);
         let viewMatIdx = this.gl.getUniformLocation(this.shaderProgram, "viewMat");
+        this.gl.uniformMatrix4fv(viewMatIdx, false, matView);
         let projMatIdx = this.gl.getUniformLocation(this.shaderProgram, "projMat");
-        /*
-                this.gl.uniformMatrix4fv(viewMatIdx, 1, GL_FALSE, glm::value_ptr(matView));
-                this.gl.uniformMatrix4fv(projMatIdx, 1, GL_FALSE, glm::value_ptr(matProjection));
-        
-                this.onSetCustomShaderVariables();
-        
-                this.gl.enable(this.gl.PRIMITIVE_RESTART);
-                this.gl.enable(this.gl.BLEND);
-                this.gl.primitiveRestartIndex(0xFFFF);
-        
-                this.onBeforeDraw();
-        
-                glBindVertexArray(_vao);
-                glDrawElements(_primitiveType, (int)_idx.size(), GL_UNSIGNED_INT, nullptr);
-                glBindVertexArray(0);
-        
-                this.gl.disable(GL_BLEND);
-                glDisable(GL_PRIMITIVE_RESTART);
-        */
-        this.gl.useProgram(0);
+        this.gl.uniformMatrix4fv(projMatIdx, false, matProjection);
+        this.onSetCustomShaderVariables();
+        this.gl.enable(this.gl.BLEND);
+        this.onBeforeDraw();
+        this.gl.bindVertexArray(this.vao);
+        this.gl.drawElements(this.primitiveType, this.idx.length, this.gl.UNSIGNED_INT, 0);
+        this.gl.bindVertexArray(null);
+        this.gl.disable(this.gl.BLEND);
+        this.gl.useProgram(null);
+    }
+    createBuffer(vert, idx, type) {
+        if (vert.length == 0)
+            throw Error("VertexBufferBase.createBuffer: vertex array size is 0!");
+        if (idx.length == 0)
+            throw Error("VertexBufferBase.createBuffer: index array size is 0!");
+        this.vert = vert;
+        this.idx = idx;
+        this.primitiveType = type;
+        // Copy vertex data into a Float32Array
+        let numberOfFloats = vert[0].numberOfFloats();
+        let floatArray = new Float32Array(vert.length * numberOfFloats);
+        for (let i = 0; i < vert.length; ++i) {
+            vert[i].writeTo(floatArray, i * numberOfFloats);
+        }
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vbo);
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, floatArray, this.bufferMode);
+        this.gl.bindVertexArray(this.vao);
+        this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.ibo);
+        // Set up vertex buffer array
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vbo);
+        // Set up vertex buffer attributes
+        this.attributes.forEach((attrib) => {
+            this.gl.enableVertexAttribArray(attrib.attribIdx);
+            this.gl.vertexAttribPointer(attrib.attribIdx, attrib.size, this.gl.FLOAT, false, numberOfFloats * 4, attrib.offset);
+        });
+        // Set up index buffer array
+        this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.ibo);
+        let intArray = new Int32Array(idx.length);
+        for (let i = 0; i < vert.length; ++i) {
+            intArray[i] = idx[i];
+        }
+        this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, intArray, this.gl.STATIC_DRAW);
+        let errc = this.gl.getError();
+        if (errc != this.gl.NO_ERROR) {
+            throw Error("VertexBufferBase: Cannot create vbo! (Error " + errc + ")");
+        }
+        this.gl.bindVertexArray(null);
+    }
+    updateBuffer(vert) {
+        throw new Error("updateBuffer not implemented!");
+        // if (this.bufferMode == this.gl.STATIC_DRAW)
+        // 	throw Error("VertexBufferBase: static buffers cannot be updated!");
+        // this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vbo);
+        // this.gl.bufferSubData(this.gl.ARRAY_BUFFER, 0, _vert.size() * sizeof(TVertex), vert.data());
+        // this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
     }
 }
 
@@ -2237,11 +3021,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "VertexBufferLines": () => /* binding */ VertexBufferLines
 /* harmony export */ });
-/* harmony import */ var _Types__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Types */ "./src/Types.ts");
-/* harmony import */ var _VertexBufferBase__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./VertexBufferBase */ "./src/VertexBufferBase.ts");
+/* harmony import */ var _VertexBufferBase__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./VertexBufferBase */ "./src/VertexBufferBase.ts");
 
-
-class VertexBufferLines extends _VertexBufferBase__WEBPACK_IMPORTED_MODULE_1__.VertexBufferBase {
+class VertexBufferLines extends _VertexBufferBase__WEBPACK_IMPORTED_MODULE_0__.VertexBufferBase {
     constructor(gl, lineWidth, bufferMode) {
         super(gl, bufferMode);
         this.lineWidth = 1;
@@ -2249,35 +3031,68 @@ class VertexBufferLines extends _VertexBufferBase__WEBPACK_IMPORTED_MODULE_1__.V
         this.attColor = 1;
         this.lineWidth = lineWidth;
         this.defineAttributes([
-            new _VertexBufferBase__WEBPACK_IMPORTED_MODULE_1__.AttributeDefinition(this.attPosition, 3, gl.FLOAT, 0),
-            new _VertexBufferBase__WEBPACK_IMPORTED_MODULE_1__.AttributeDefinition(this.attColor, 4, gl.FLOAT, Object.keys(_Types__WEBPACK_IMPORTED_MODULE_0__.Vec3).length)
+            new _VertexBufferBase__WEBPACK_IMPORTED_MODULE_0__.AttributeDefinition(this.attPosition, 3, 0),
+            new _VertexBufferBase__WEBPACK_IMPORTED_MODULE_0__.AttributeDefinition(this.attColor, 4, 3 * 4)
         ]);
     }
     onBeforeDraw() {
         this.gl.lineWidth(this.lineWidth);
     }
     getVertexShaderSource() {
-        return `
-			uniform mat4 projMat;
-			uniform mat4 viewMat;
-			layout(location = 0) in vec3 position;
-			layout(location = 1) in vec4 color;
-			out vec4 vertexColor;
-			void main()
-			{
-				gl_Position =  projMat * vec4(position, 1);
-				vertexColor = color;
-			}`;
+        return `#version 300 es 
+
+uniform mat4 projMat;
+uniform mat4 viewMat;
+
+layout(location = 0) in vec3 position;
+layout(location = 1) in vec4 color;
+
+out vec4 vertexColor;
+
+void main()
+{
+	gl_Position =  projMat * vec4(position, 1);
+	vertexColor = color;
+}`;
     }
     getFragmentShaderSource() {
-        return `
-			out vec4 FragColor;
-			in vec4 vertexColor;
-			void main()
-			{
-				FragColor = vertexColor;
-			}`;
+        return `#version 300 es 
+
+precision mediump float;
+
+out vec4 FragColor;
+
+in vec4 vertexColor;
+
+void main()
+{
+	FragColor = vertexColor;
+}`;
     }
+}
+
+
+/***/ }),
+
+/***/ "./src/index.ts":
+/*!**********************!*\
+  !*** ./src/index.ts ***!
+  \**********************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _GalaxyRenderer__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./GalaxyRenderer */ "./src/GalaxyRenderer.ts");
+
+try {
+    // The html code must contain a canvas named "cvGalaxy"
+    var canvas = document.getElementById('cvGalaxy');
+    if (canvas == null) {
+        throw Error('"The galaxy renderer needs a canvas object with id "cvGalaxy"');
+    }
+    var galaxy = new _GalaxyRenderer__WEBPACK_IMPORTED_MODULE_0__.GalaxyRenderer(canvas);
+}
+catch (Error) {
+    alert(Error.message);
 }
 
 
@@ -2341,7 +3156,7 @@ class VertexBufferLines extends _VertexBufferBase__WEBPACK_IMPORTED_MODULE_1__.V
 /******/ 	// module exports must be returned from runtime so entry inlining is disabled
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__("./src/GalaxyRenderer.ts");
+/******/ 	return __webpack_require__("./src/index.ts");
 /******/ })()
 ;
 //# sourceMappingURL=galaxy-renderer-bundle.js.map

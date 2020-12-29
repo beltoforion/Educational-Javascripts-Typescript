@@ -11,20 +11,5 @@
   <h2>Galaxy Renderer</h2>
   <canvas id="cvGalaxy" width="800" height="800"></canvas>
   <script src="./dist/galaxy-renderer-bundle.js"></script>
-  <script>
-    try
-    {
-      var galaxy = new window.GalaxyRenderer.GalaxyRenderer(
-      { 
-         cvid : 'cvGalaxy'
-      });    
-
-      galaxy.mainLoop();
-    }
-    catch(Error)
-    {
-      alert(Error.message);
-    }
-  </script>
 </body>
 </html>

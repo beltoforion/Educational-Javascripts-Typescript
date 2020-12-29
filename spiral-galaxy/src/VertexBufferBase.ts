@@ -1,44 +1,42 @@
 import { mat4 } from 'gl-matrix'
+import { VertexBase } from './Types'
 
 export class AttributeDefinition
 {
     constructor(
         attribIdx : number = 0,
         size : number = 0,
-        type : number = 0,
         offset : number = 0)
     {
         this.attribIdx = attribIdx;
         this.size = size;
-        this.type = type;
         this.offset = offset;
     }
 
     attribIdx : number = 0;
     size : number = 0;
-    type : number = 0;
     offset : number = 0;
 }
 
 
-export abstract class VertexBufferBase<TVertex>
+export abstract class VertexBufferBase<TVertex extends VertexBase>
 {
     private vbo : WebGLBuffer | null = null;
 	private ibo : WebGLBuffer | null = null;
-	private vao : WebGLBuffer | null = null;
+	private vao : WebGLVertexArrayObject | null = null;
 
 	private vert : TVertex[] = [];
 	private idx : number[] = [];
 
 	protected shaderProgram? : WebGLProgram | null = null;
-	private primitiveType : number = 0;
+	private _primitiveType : number = 0;
 
 	protected bufferMode : number = 0;
-    protected readonly gl : WebGLRenderingContext;
+    protected readonly gl : WebGL2RenderingContext;
 
     private attributes : AttributeDefinition[] = [];
 
-    public constructor(gl : WebGLRenderingContext, bufferMode : number)
+    public constructor(gl : WebGL2RenderingContext, bufferMode : number)
 	{
         this.gl = gl;
 		this.bufferMode = bufferMode;
@@ -52,6 +50,29 @@ export abstract class VertexBufferBase<TVertex>
 		{
             this.attributes.push(attribList[i]);
         }
+	}
+
+	protected get primitiveType() : number
+	{
+		return this._primitiveType;
+	}
+
+	protected set primitiveType(value : number) 
+	{
+		this._primitiveType = value;
+	}
+
+	protected get arrayElementCount() : number
+	{
+		return this.idx.length;
+	}
+
+	protected get vertexArrayObject() : WebGLBuffer 
+	{
+		if (this.vao==null)
+			throw Error("VertexBufferBase.vertexArrayObject(): vertex array object is null!");
+
+		return this.vao;
 	}
 
     protected abstract  getVertexShaderSource() : string;
@@ -79,11 +100,19 @@ export abstract class VertexBufferBase<TVertex>
 	
 	public initialize() : void
 	{
+		//
+		// 1.) Create Vertex buffer
+		//
+
 		this.vbo = this.gl.createBuffer();
 		this.ibo = this.gl.createBuffer();
-		this.vao = this.gl.createBuffer();
+		this.vao = this.gl.createVertexArray();
 
-		let  srcVertex : string = this.getVertexShaderSource();
+		//
+		// Initialize WebGL
+		// 
+
+		let srcVertex : string = this.getVertexShaderSource();
 		let vertexShader : WebGLShader = this.createShader(this.gl.VERTEX_SHADER, srcVertex);
 
 		let srcFragment : string = this.getFragmentShaderSource();
@@ -114,6 +143,39 @@ export abstract class VertexBufferBase<TVertex>
 		this.gl.detachShader(this.shaderProgram, fragmentShader);
 	}
 
+	protected releaseAttribArray() : void 
+	{
+		for (let i=0; i<this.attributes.length; ++i)
+		{
+			let attribIdx = this.attributes[i].attribIdx;
+			this.gl.disableVertexAttribArray(attribIdx);
+		}
+	}
+
+	public release() : void
+	{
+		this.releaseAttribArray();
+
+		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, 0);
+		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, 0);
+		this.gl.bindVertexArray(null);
+
+		if (this.vbo != null)
+			this.gl.deleteBuffer(this.vbo);
+
+		if (this.ibo != null)
+			this.gl.deleteBuffer(this.ibo);
+
+		if (this.vao != null)
+			this.gl.deleteVertexArray(this.vao);
+	}
+
+	protected onSetCustomShaderVariables() : void
+	{}
+
+	protected onBeforeDraw() : void
+	{}
+
 	public draw(matView : mat4, matProjection : mat4) : void
 	{
 		if (this.shaderProgram==null)
@@ -122,145 +184,88 @@ export abstract class VertexBufferBase<TVertex>
 		this.gl.useProgram(this.shaderProgram);
 
 		let viewMatIdx = this.gl.getUniformLocation(this.shaderProgram, "viewMat");
+		this.gl.uniformMatrix4fv(viewMatIdx, false, matView);
+		
 		let projMatIdx = this.gl.getUniformLocation(this.shaderProgram, "projMat");
-/*
-		this.gl.uniformMatrix4fv(viewMatIdx, 1, GL_FALSE, glm::value_ptr(matView));
-		this.gl.uniformMatrix4fv(projMatIdx, 1, GL_FALSE, glm::value_ptr(matProjection));
+		this.gl.uniformMatrix4fv(projMatIdx, false, matProjection);
 
 		this.onSetCustomShaderVariables();
 
-		this.gl.enable(this.gl.PRIMITIVE_RESTART);
 		this.gl.enable(this.gl.BLEND);
-		this.gl.primitiveRestartIndex(0xFFFF);
 
 		this.onBeforeDraw();
 
-		glBindVertexArray(_vao);
-		glDrawElements(_primitiveType, (int)_idx.size(), GL_UNSIGNED_INT, nullptr);
-		glBindVertexArray(0);
+		this.gl.bindVertexArray(this.vao);
+		this.gl.drawElements(this.primitiveType, this.idx.length, this.gl.UNSIGNED_INT, 0);
+		this.gl.bindVertexArray(null);
 
-		this.gl.disable(GL_BLEND);
-		glDisable(GL_PRIMITIVE_RESTART);
-*/		
-		this.gl.useProgram(0);
-	}
-/*
-	void Release()
-	{
-		ReleaseAttribArray();
-
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-		glBindVertexArray(0);
-
-		if (_vbo != 0)
-			glDeleteBuffers(1, &_vbo);
-
-		if (_ibo != 0)
-			glDeleteBuffers(1, &_ibo);
-
-		if (_vao != 0)
-			glDeleteVertexArrays(1, &_vao);
+		this.gl.disable(this.gl.BLEND);
+		this.gl.useProgram(null);
 	}
 
-	void CreateBuffer(const std::vector<TVertex>& vert, const std::vector<int>& idx, GLuint type)  noexcept(false)
+	public createBuffer(vert : TVertex[], idx : number[], type : number) : void
 	{
-		_vert = vert;
-		_idx = idx;
-		_primitiveType = type;
+		if (vert.length==0)
+			throw Error("VertexBufferBase.createBuffer: vertex array size is 0!");
 
-		glBindBuffer(GL_ARRAY_BUFFER, _vbo);
-		glBufferData(GL_ARRAY_BUFFER, _vert.size() * sizeof(TVertex), _vert.data(), _bufferMode);
+		if (idx.length==0)
+			throw Error("VertexBufferBase.createBuffer: index array size is 0!");
 
-		glBindVertexArray(_vao);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _ibo);
+		this.vert = vert;
+		this.idx = idx;
+		this.primitiveType = type;
+
+		// Copy vertex data into a Float32Array
+		let numberOfFloats : number = vert[0].numberOfFloats();
+		let floatArray = new Float32Array(vert.length * numberOfFloats);
+		for (let i = 0; i<vert.length; ++i)
+		{
+			vert[i].writeTo(floatArray, i * numberOfFloats);
+		}
+
+		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vbo);
+		this.gl.bufferData(this.gl.ARRAY_BUFFER, floatArray, this.bufferMode);
+
+		this.gl.bindVertexArray(this.vao);
+		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.ibo);
 
 		// Set up vertex buffer array
-		glBindBuffer(GL_ARRAY_BUFFER, _vbo);
+		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vbo);
 
 		// Set up vertex buffer attributes
-		for (const AttributeDefinition &attrib : _attributes)
-		{
-			glEnableVertexAttribArray(attrib.attribIdx);
-			if (attrib.type == GL_INT)
-			{
-				glVertexAttribIPointer(attrib.attribIdx, attrib.size, GL_INT, sizeof(TVertex), (GLvoid*)attrib.offset);
-			}
-			else
-			{
-				glVertexAttribPointer(attrib.attribIdx, attrib.size, attrib.type, GL_FALSE, sizeof(TVertex), (GLvoid*)attrib.offset);
-			}
-		}
+		this.attributes.forEach((attrib) => {
+			this.gl.enableVertexAttribArray(attrib.attribIdx);
+			this.gl.vertexAttribPointer(attrib.attribIdx, attrib.size, this.gl.FLOAT, false, numberOfFloats*4, attrib.offset);
+		});
 
 		// Set up index buffer array
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _ibo);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, _idx.size() * sizeof(int), _idx.data(), GL_STATIC_DRAW);
+		this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.ibo);
 
-		auto errc = glGetError();
-		if (errc != GL_NO_ERROR)
+		let intArray = new Int32Array(idx.length);
+		for (let i = 0; i<vert.length; ++i)
 		{
-			std::stringstream ss;
-			ss << "VertexBufferBase: Cannot create vbo! (Error 0x" << std::hex << errc << ")" << std::endl;
-			throw std::runtime_error(ss.str());
+			intArray[i] = idx[i];
+		}
+		this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, intArray, this.gl.STATIC_DRAW);
+
+		let errc = this.gl.getError();
+		if (errc != this.gl.NO_ERROR)
+		{
+			throw Error("VertexBufferBase: Cannot create vbo! (Error " + errc + ")");
 		}
 
-		glBindVertexArray(0);
+		this.gl.bindVertexArray(null);
 	}
 
-	void UpdateBuffer(const std::vector<TVertex>& vert) noexcept(false)
+	public updateBuffer(vert : TVertex[]) : void
 	{
-		if (_bufferMode == GL_STATIC_DRAW)
-			throw std::runtime_error("VertexBufferBase: static buffers cannot be updated!");
+		throw new Error("updateBuffer not implemented!");
 
-		glBindBuffer(GL_ARRAY_BUFFER, _vbo);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, _vert.size() * sizeof(TVertex), vert.data());
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		// if (this.bufferMode == this.gl.STATIC_DRAW)
+		// 	throw Error("VertexBufferBase: static buffers cannot be updated!");
+
+		// this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vbo);
+		// this.gl.bufferSubData(this.gl.ARRAY_BUFFER, 0, _vert.size() * sizeof(TVertex), vert.data());
+		// this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
 	}
-
-	virtual void OnSetCustomShaderVariables()
-	{}
-
-
-
-	void ReleaseAttribArray() const 
-	{
-		for (const auto &attrib : _attributes)
-		{
-			glDisableVertexAttribArray(attrib.attribIdx);
-		}
-	}
-
-	virtual void OnBeforeDraw() 
-	{
-	}
-
-protected:
-
-	struct AttributeDefinition
-	{
-		int attribIdx;
-		int size;
-		int type;
-		uintptr_t offset;
-	};
-
-	int GetPrimitiveType() const
-	{
-		return _primitiveType;
-	}
-
-	int GetArrayElementCount() const
-	{
-		return (int)_idx.size();
-	}
-
-	GLuint GetVertexArrayObject() const
-	{
-		return _vao;
-	}
-
-private:
-
-
-*/    
 }

@@ -1,15 +1,10 @@
 import { mat4 } from 'gl-matrix'
 
-import { Vec3 } from './Types' 
+import { Vec3, VertexColor } from './Types' 
 import { Helper } from './Helper'
 import { VertexBufferLines } from './VertexBufferLines'
 import { VertexBufferStars } from './VertexBufferStars';
 import { Galaxy } from './Galaxy'
-
-export class GalaxyRendererConfig {
-    public cvid : string = "";
-}
-
 
 enum DisplayItem {
     NONE          = 0,
@@ -36,9 +31,8 @@ enum RenderUpdateHint {
 
 
 export class GalaxyRenderer {
-    private config : GalaxyRendererConfig;
     private canvas : HTMLCanvasElement;
-    private gl : WebGLRenderingContext;
+    private gl : WebGL2RenderingContext;
 
 	private vertDensityWaves : VertexBufferLines | null = null;
 	private vertAxis : VertexBufferLines | null = null;
@@ -55,24 +49,20 @@ export class GalaxyRenderer {
 	private camOrient : Vec3 = new Vec3();
 
     private time : number = 0;
-    private flags : number = 0;
+    private flags : DisplayItem = DisplayItem.STARS | DisplayItem.AXIS | DisplayItem.HELP | DisplayItem.DUST | DisplayItem.H2 | DisplayItem.FILAMENTS;
 
-    private renderUpdateHint : number = 0;
+    private renderUpdateHint : RenderUpdateHint = RenderUpdateHint.DENSITY_WAVES | RenderUpdateHint.AXIS | RenderUpdateHint.STARS | RenderUpdateHint.DUST | RenderUpdateHint.CREATE_VELOCITY_CURVE | RenderUpdateHint.CREATE_TEXT;
 
     private galaxy : Galaxy = new Galaxy();
 
     private readonly TimeStepSize : number = 100000.0;
 
-    public constructor(cfg : any) {
-        this.config = cfg;
+    public constructor(canvas : HTMLCanvasElement) {
+        this.canvas = canvas;
 
-        this.canvas = document.getElementById(cfg.cvid) as HTMLCanvasElement;
-        if (this.canvas === null)
-            throw new Error("Canvas " + cfg.cvid + " not found!");
-
-        this.gl = this.canvas.getContext("webgl") as WebGLRenderingContext;
+        this.gl = this.canvas.getContext("webgl2") as WebGL2RenderingContext;
         if (this.gl === null)
-            throw new Error("Unable to initialize WebGL. Your browser or machine may not support it.");
+            throw new Error("Unable to initialize WebGL2. Your browser may not support it.");
 
 //	    this.vertDensityWaves.initialize();
         this.vertAxis = new VertexBufferLines(this.gl, 1, this.gl.STATIC_DRAW);
@@ -80,9 +70,12 @@ export class GalaxyRenderer {
 //	    this.vertVelocityCurve = new VertexBufferLines(this.gl, 1, this.gl.DYNAMIC_DRAW);
 
         this.initGL(this.gl);
+
+        // Start the main loop
+        window.requestAnimationFrame((timeStamp) => this.mainLoop(timeStamp));
     }
 
-    private initGL(gl : WebGLRenderingContext) : void {
+    private initGL(gl : WebGL2RenderingContext) : void {
         if (this.vertAxis==null)
             throw new Error("initGL(): vertAxis is null!");
 
@@ -123,23 +116,86 @@ export class GalaxyRenderer {
     }
 
     private updateAxis() : void {
+        if (this.vertAxis==null)
+            throw new Error("Galaxyrenderer.updateAxis(): this.vertAxis is null!");
+
+        console.log("updating axis data.");
+
+        let vert : VertexColor[] = [];
+        let idx : number[] = [];
+
+        let s : number = Math.pow(10, (Math.log10(this.fov / 2)));
+        let l : number = this.fov / 100;
+        let p : number = 0;
+
+        let r : number = 0.3;
+        let g : number = 0.3;
+        let b : number = 0.3;
+        let a : number = 0.8;
+    
+        for (let i = 0; p < this.fov; ++i)
+        {
+            p += s;
+            idx.push(vert.length);
+            vert.push(new VertexColor(p, -l, 0, r, g, b, a));
+    
+            idx.push(vert.length);
+            vert.push(new VertexColor( p,  l, 0, r, g, b, a ));
+    
+            idx.push(vert.length);
+            vert.push(new VertexColor( -p, -l, 0, r, g, b, a ));
+    
+            idx.push(vert.length);
+            vert.push(new VertexColor( -p,  0, 0, r, g, b, a ));
+    
+            idx.push(vert.length);
+            vert.push(new VertexColor( -l, p, 0, r, g, b, a ));
+    
+            idx.push(vert.length);
+            vert.push(new VertexColor( 0, p, 0, r, g, b, a ));
+    
+            idx.push(vert.length);
+            vert.push(new VertexColor( -l, -p, 0, r, g, b, a ));
+    
+            idx.push(vert.length);
+            vert.push(new VertexColor( 0, -p, 0, r, g, b, a ));
+        }
+    
+        idx.push(vert.length);
+        vert.push(new VertexColor( -this.fov, 0, 0, r, g, b, a ));
+    
+        idx.push(vert.length);
+        vert.push(new VertexColor( this.fov, 0, 0, r, g, b, a ));
+    
+        idx.push(vert.length);
+        vert.push(new VertexColor( 0, -this.fov, 0, r, g, b, a ));
+    
+        idx.push(vert.length);
+        vert.push(new VertexColor( 0, this.fov, 0, r, g, b, a ));
+    
+        this.vertAxis.createBuffer(vert, idx, this.gl.LINES);
+        this.renderUpdateHint &= ~RenderUpdateHint.AXIS;        
     }
 
     private updateDensityWaves() : void {
+//        console.log("updating density waves.");
     }
 
     private updateStars() : void {
+//        console.log("updating stars.");
     }
 
     private updateVelocityCurve(updateOnly : boolean) : void {
+//        console.log("updating velocity curves.");
     }
 
     private updateText() : void {
+//        console.log("updating text.");
     }
 
     private update() : void {
         this.time += this.TimeStepSize;
-            
+
         if ((this.renderUpdateHint & RenderUpdateHint.AXIS) != 0)
             this.updateAxis();
 
@@ -208,16 +264,21 @@ export class GalaxyRenderer {
         // {
         //     this.textHelp.draw(this.canvas.width, this.canvas.height, this.matView, this.matProjection);
         // }
-    
-//        SDL_GL_SwapWindow(_pSdlWnd);
-//        SDL_Delay(1);
     }
 
-    public mainLoop() {
-        let running = true;
-        while(running) {
+    public mainLoop(timestamp : any) {
+        try
+        {
             this.update();
             this.render();
+        }
+        catch(Error)
+        {
+            console.log(Error.message);
+        }
+        finally
+        {
+            window.requestAnimationFrame( (timestamp)=>this.mainLoop(timestamp) );
         }
     }
 
