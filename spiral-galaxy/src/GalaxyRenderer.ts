@@ -347,15 +347,13 @@ export class GalaxyRenderer {
         let stars : Star[] = this.galaxy.stars;
     
         let a : number = 1;
-        let color : Color = new Color(1, 1, 1, a);
-    
         for (let i = 1; i < stars.length; ++i)
         {
             let col : Color = Helper.colorFromTemperature(stars[i].temp);
             col.a = a;
     
             idx.push(vert.length);
-            vert.push(new VertexStar(stars[i], color));
+            vert.push(new VertexStar(stars[i], col));
         }
     
         this.vertStars.createBuffer(vert, idx, this.gl.POINTS);

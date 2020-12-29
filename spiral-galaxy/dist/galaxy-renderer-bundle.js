@@ -3079,8 +3079,16 @@ class Galaxy {
             particleH2.type = 3;
             this._stars.push(particleH2);
             // Push particle again with type 4 (bright red core of an h2 region)
-            particleH2.type = 4;
-            this._stars.push(particleH2);
+            let particleH2Highlight = new _Types__WEBPACK_IMPORTED_MODULE_0__.Star();
+            particleH2Highlight.a = particleH2.a;
+            particleH2Highlight.b = particleH2.b;
+            particleH2Highlight.tiltAngle = particleH2.tiltAngle;
+            particleH2Highlight.theta0 = particleH2.theta0;
+            particleH2Highlight.velTheta = particleH2.velTheta;
+            particleH2Highlight.temp = particleH2.temp;
+            particleH2Highlight.mag = particleH2.mag;
+            particleH2Highlight.type = 4;
+            this._stars.push(particleH2Highlight);
         }
     }
     reset(param) {
@@ -3432,12 +3440,11 @@ class GalaxyRenderer {
         let idx = [];
         let stars = this.galaxy.stars;
         let a = 1;
-        let color = new _Types__WEBPACK_IMPORTED_MODULE_0__.Color(1, 1, 1, a);
         for (let i = 1; i < stars.length; ++i) {
             let col = _Helper__WEBPACK_IMPORTED_MODULE_1__.Helper.colorFromTemperature(stars[i].temp);
             col.a = a;
             idx.push(vert.length);
-            vert.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.VertexStar(stars[i], color));
+            vert.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.VertexStar(stars[i], col));
         }
         this.vertStars.createBuffer(vert, idx, this.gl.POINTS);
         this.renderUpdateHint &= ~RenderUpdateHint.STARS;
@@ -4265,7 +4272,7 @@ layout(location = 8) in vec4 color;
 
 out vec4 vertexColor;
 
-flat out int vertexType;
+out float vertexType;
 flat out int features;
 
 vec2 calcPos(float a, float b, float theta, float velTheta, float time, float tiltAngle) {
@@ -4289,23 +4296,23 @@ return ps;
 void main()
 {
     vec2 ps = calcPos(a, b, theta0, velTheta, time, tiltAngle);
-    
-    if (int(type)==0) {
+
+    if (type==0.0) {
         gl_PointSize = mag * 4.0;
         vertexColor = color * mag;
-    } else if (int(type)==1) {	
+    } else if (type==1.0) {	
         gl_PointSize = mag * 5.0 * float(dustSize);
         vertexColor = color * mag;
-    } else if (int(type)==2) {
+    } else if (type==2.0) {
         gl_PointSize = mag * 2.0 * float(dustSize);
         vertexColor = color * mag;
-    } else if (int(type)==3) {
+    } else if (type==3.0) {
         vec2 ps2 = calcPos(a + 1000.0, b, theta0, velTheta, time, tiltAngle);
         float dst = distance(ps, ps2);
         float size = ((1000.0 - dst) / 10.0) - 50.0;
         gl_PointSize = size;
         vertexColor = color * mag * vec4(2.0, 0.5, 0.5, 1.0);
-    } else if (int(type)==4) {
+    } else if (type==4.0) {
         vec2 ps2 = calcPos(a + 1000.0, b, theta0, velTheta, time, tiltAngle);
         float dst = distance(ps, ps2);
         float size = ((1000.0 - dst) / 10.0) - 50.0;
@@ -4313,7 +4320,7 @@ void main()
         vertexColor = vec4(1.0,1.0,1.0,1.0);
     }
     gl_Position =  projMat * vec4(ps, 0.0, 1.0);
-    vertexType = int(type);
+    vertexType = type;
     features = displayFeatures;
 }`;
     }
@@ -4324,39 +4331,39 @@ precision mediump float;
 
 in vec4 vertexColor;
 
-flat in int vertexType;
+in float vertexType;
 flat in int features;
 
 out vec4 FragColor;
 
 void main()
 {
-    if (vertexType==0) {
+    if (vertexType==0.0) {
         if ( (features & 1) ==0)
             discard;
         FragColor = vertexColor;
         vec2 circCoord = 2.0 * gl_PointCoord - 1.0;
         float alpha = 1.0 - length(circCoord);
         FragColor = vec4(vertexColor.xyz, alpha);
-    } else if (vertexType==1) {
+    } else if (vertexType==1.0) {
         if ( (features & 2) ==0)
             discard;
         vec2 circCoord = 2.0 * gl_PointCoord - 1.0;
         float alpha = 0.05 * (1.0 - length(circCoord));
         FragColor = vec4(vertexColor.xyz, alpha);
-    } else if (vertexType==2) {
+    } else if (vertexType==2.0) {
         if ( (features & 4) ==0)
             discard;
         vec2 circCoord = 2.0 * gl_PointCoord - 1.0;
         float alpha = 0.07 * (1.0 - length(circCoord));
         FragColor = vec4(vertexColor.xyz, alpha);
-    } else if (vertexType==3) {
+    } else if (vertexType==3.0) {
         if ((features & 8) == 0)
             discard;
         vec2 circCoord = 2.0 * gl_PointCoord - 1.0;
         float alpha = 1.0 - length(circCoord);
         FragColor = vec4(vertexColor.xyz, alpha);
-    } else if (vertexType==4) {
+    } else if (vertexType==4.0) {
         if ((features & 8)== 0)
             discard;
         vec2 circCoord = 2.0 * gl_PointCoord - 1.0;

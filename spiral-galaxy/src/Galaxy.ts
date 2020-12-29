@@ -81,7 +81,7 @@ export class Galaxy {
             0,					    // start  of the intnesity curve
             this._radFarField,		// end of the intensity curve
             1000);				    // number of supporting points
-    
+
         for (let i = 1; i < this._numStars; ++i)
         {
             let rad : number = cdf.valFromProb(Helper.rnum());
@@ -177,7 +177,7 @@ export class Galaxy {
                 this._stars.push(dustParticle);
             }
         }
-        
+
         //
         // 4.) Initialise H2 regions
         // 
@@ -201,8 +201,16 @@ export class Galaxy {
             this._stars.push(particleH2);
     
             // Push particle again with type 4 (bright red core of an h2 region)
-            particleH2.type = 4;
-            this._stars.push(particleH2);
+            let particleH2Highlight = new Star();
+            particleH2Highlight.a = particleH2.a;
+            particleH2Highlight.b = particleH2.b;
+            particleH2Highlight.tiltAngle = particleH2.tiltAngle;
+            particleH2Highlight.theta0 = particleH2.theta0;
+            particleH2Highlight.velTheta = particleH2.velTheta;
+            particleH2Highlight.temp = particleH2.temp;
+            particleH2Highlight.mag = particleH2.mag;
+            particleH2Highlight.type = 4;
+            this._stars.push(particleH2Highlight);
         }
     }
         
