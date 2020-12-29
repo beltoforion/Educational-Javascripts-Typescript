@@ -2262,9 +2262,11 @@ class GalaxyRenderer {
         this.camOrient = new _Types__WEBPACK_IMPORTED_MODULE_0__.Vec3();
         this.time = 0;
         this.flags = DisplayItem.STARS | DisplayItem.AXIS | DisplayItem.HELP | DisplayItem.DUST | DisplayItem.H2 | DisplayItem.FILAMENTS;
-        this.renderUpdateHint = RenderUpdateHint.DENSITY_WAVES | RenderUpdateHint.AXIS | RenderUpdateHint.STARS | RenderUpdateHint.DUST | RenderUpdateHint.CREATE_VELOCITY_CURVE | RenderUpdateHint.CREATE_TEXT;
+        //    private renderUpdateHint : RenderUpdateHint = RenderUpdateHint.DENSITY_WAVES | RenderUpdateHint.AXIS | RenderUpdateHint.STARS | RenderUpdateHint.DUST | RenderUpdateHint.CREATE_VELOCITY_CURVE | RenderUpdateHint.CREATE_TEXT;
+        this.renderUpdateHint = RenderUpdateHint.AXIS;
         this.galaxy = new _Galaxy__WEBPACK_IMPORTED_MODULE_2__.Galaxy();
         this.TimeStepSize = 100000.0;
+        this.b = 0;
         this.canvas = canvas;
         this.gl = this.canvas.getContext("webgl2");
         if (this.gl === null)
@@ -2274,8 +2276,24 @@ class GalaxyRenderer {
         //        this.vertDensityWaves = new VertexBufferLines(this.gl, 2, this.gl.STATIC_DRAW);
         //	    this.vertVelocityCurve = new VertexBufferLines(this.gl, 1, this.gl.DYNAMIC_DRAW);
         this.initGL(this.gl);
+        this.initSimulation();
         // Start the main loop
         window.requestAnimationFrame((timeStamp) => this.mainLoop(timeStamp));
+    }
+    initSimulation() {
+        // this.galaxy.reset({
+        // 	13000,		// radius of the galaxy
+        // 	4000,		// radius of the core
+        // 	0.0004f,	// angluar offset of the density wave per parsec of radius
+        // 	0.85f,		// excentricity at the edge of the core
+        // 	0.95f,		// excentricity at the edge of the disk
+        // 	100000,		// total number of stars
+        // 	true,		// has dark matter
+        // 	2,			// Perturbations per full ellipse
+        // 	40,			// Amplitude damping factor of perturbation
+        // 	70,			// dust render size in pixel
+        // 	4000 });
+        this.fov = 35000;
     }
     initGL(gl) {
         if (this.vertAxis == null)
@@ -2283,7 +2301,7 @@ class GalaxyRenderer {
         this.vertAxis.initialize();
         //	    this.vertVelocityCurve.initialize();
         //	    this.vertStars.initialize();
-        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        gl.clearColor(0.0, 0.0, 0.1, 1.0);
         gl.clear(this.gl.COLOR_BUFFER_BIT);
         // GL initialization
         gl.viewport(0, 0, this.canvas.width, this.canvas.height);
@@ -2378,6 +2396,8 @@ class GalaxyRenderer {
         this.camLookAt = new _Types__WEBPACK_IMPORTED_MODULE_0__.Vec3(0, 0, 0);
     }
     render() {
+        this.gl.clearColor(0, 0, this.b, 1);
+        //        this.gl.clear(this.gl.COLOR_BUFFER_BIT| this.gl.DEPTH_BUFFER_BIT);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
         this.adjustCamera();
         if (this.vertAxis != null && this.flags & DisplayItem.AXIS) {
@@ -2411,15 +2431,22 @@ class GalaxyRenderer {
         // }
     }
     mainLoop(timestamp) {
+        let error = false;
+        let b = 0;
         try {
+            this.b = this.b + 0.004;
+            if (this.b >= 0.3)
+                this.b = 0;
             this.update();
             this.render();
         }
         catch (Error) {
             console.log(Error.message);
+            error = true;
         }
         finally {
-            window.requestAnimationFrame((timestamp) => this.mainLoop(timestamp));
+            if (!error)
+                window.requestAnimationFrame((timestamp) => this.mainLoop(timestamp));
         }
     }
 }

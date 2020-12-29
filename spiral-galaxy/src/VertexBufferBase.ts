@@ -19,7 +19,7 @@ export class AttributeDefinition
 }
 
 
-export abstract class VertexBufferBase<TVertex extends VertexBase>
+export abstract class VertexBufferBase<TVertex extends VertexBase> 
 {
     private vbo : WebGLBuffer | null = null;
 	private ibo : WebGLBuffer | null = null;
@@ -52,7 +52,7 @@ export abstract class VertexBufferBase<TVertex extends VertexBase>
         }
 	}
 
-	protected get primitiveType() : number
+	protected get primitiveType() : number 
 	{
 		return this._primitiveType;
 	}
@@ -173,8 +173,8 @@ export abstract class VertexBufferBase<TVertex extends VertexBase>
 	protected onSetCustomShaderVariables() : void
 	{}
 
-	protected onBeforeDraw() : void
-	{}
+	protected onBeforeDraw() : void	{
+	}
 
 	public draw(matView : mat4, matProjection : mat4) : void
 	{

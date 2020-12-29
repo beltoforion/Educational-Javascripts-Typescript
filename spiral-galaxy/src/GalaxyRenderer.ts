@@ -51,7 +51,8 @@ export class GalaxyRenderer {
     private time : number = 0;
     private flags : DisplayItem = DisplayItem.STARS | DisplayItem.AXIS | DisplayItem.HELP | DisplayItem.DUST | DisplayItem.H2 | DisplayItem.FILAMENTS;
 
-    private renderUpdateHint : RenderUpdateHint = RenderUpdateHint.DENSITY_WAVES | RenderUpdateHint.AXIS | RenderUpdateHint.STARS | RenderUpdateHint.DUST | RenderUpdateHint.CREATE_VELOCITY_CURVE | RenderUpdateHint.CREATE_TEXT;
+//    private renderUpdateHint : RenderUpdateHint = RenderUpdateHint.DENSITY_WAVES | RenderUpdateHint.AXIS | RenderUpdateHint.STARS | RenderUpdateHint.DUST | RenderUpdateHint.CREATE_VELOCITY_CURVE | RenderUpdateHint.CREATE_TEXT;
+    private renderUpdateHint : RenderUpdateHint = RenderUpdateHint.AXIS;
 
     private galaxy : Galaxy = new Galaxy();
 
@@ -70,11 +71,28 @@ export class GalaxyRenderer {
 //	    this.vertVelocityCurve = new VertexBufferLines(this.gl, 1, this.gl.DYNAMIC_DRAW);
 
         this.initGL(this.gl);
+        this.initSimulation();
 
         // Start the main loop
         window.requestAnimationFrame((timeStamp) => this.mainLoop(timeStamp));
     }
 
+    private initSimulation() {
+        // this.galaxy.reset({
+		// 	13000,		// radius of the galaxy
+		// 	4000,		// radius of the core
+		// 	0.0004f,	// angluar offset of the density wave per parsec of radius
+		// 	0.85f,		// excentricity at the edge of the core
+		// 	0.95f,		// excentricity at the edge of the disk
+		// 	100000,		// total number of stars
+		// 	true,		// has dark matter
+		// 	2,			// Perturbations per full ellipse
+		// 	40,			// Amplitude damping factor of perturbation
+		// 	70,			// dust render size in pixel
+		// 	4000 });
+
+        this.fov = 35000;
+    }
     private initGL(gl : WebGL2RenderingContext) : void {
         if (this.vertAxis==null)
             throw new Error("initGL(): vertAxis is null!");
@@ -83,7 +101,7 @@ export class GalaxyRenderer {
 //	    this.vertVelocityCurve.initialize();
 //	    this.vertStars.initialize();
 
-        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        gl.clearColor(0.0, 0.0, 0.1, 1.0);
         gl.clear(this.gl.COLOR_BUFFER_BIT);
 
         // GL initialization
@@ -220,6 +238,8 @@ export class GalaxyRenderer {
     }
 
     private render() {
+        this.gl.clearColor(0, 0, this.b, 1);
+//        this.gl.clear(this.gl.COLOR_BUFFER_BIT| this.gl.DEPTH_BUFFER_BIT);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
         this.adjustCamera();
 
@@ -266,19 +286,29 @@ export class GalaxyRenderer {
         // }
     }
 
+    private b : number = 0;
+
     public mainLoop(timestamp : any) {
+        let error : boolean = false;
+        let b = 0;
         try
         {
+            this.b = this.b + 0.004;
+            if (this.b>=0.3)
+                this.b=0;
+
             this.update();
             this.render();
         }
         catch(Error)
         {
             console.log(Error.message);
+            error = true;
         }
         finally
         {
-            window.requestAnimationFrame( (timestamp)=>this.mainLoop(timestamp) );
+            if (!error)
+                window.requestAnimationFrame( (timestamp) => this.mainLoop(timestamp) );
         }
     }
 
