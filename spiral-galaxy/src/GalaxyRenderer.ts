@@ -1,6 +1,6 @@
 import { mat4,  vec3 } from 'gl-matrix'
 
-import { Vec3, VertexColor } from './Types' 
+import { GalaxyParam, Vec3, VertexColor } from './Types' 
 import { Helper } from './Helper'
 import { VertexBufferLines } from './VertexBufferLines'
 import { VertexBufferStars } from './VertexBufferStars';
@@ -25,8 +25,7 @@ enum RenderUpdateHint {
     AXIS = 1 << 2,
     STARS = 1 << 3,
     DUST = 1 << 4,
-    CREATE_VELOCITY_CURVE = 1 << 5,
-    CREATE_TEXT = 1 << 7
+    CREATE_VELOCITY_CURVE = 1 << 5
 }
 
 
@@ -49,10 +48,10 @@ export class GalaxyRenderer {
 	private camOrient : vec3 = vec3.create();
 
     private time : number = 0;
-    private flags : DisplayItem = DisplayItem.STARS | DisplayItem.AXIS | DisplayItem.HELP | DisplayItem.DUST | DisplayItem.H2 | DisplayItem.FILAMENTS;
+    private flags : DisplayItem = DisplayItem.VELOCITY | DisplayItem.STARS | DisplayItem.AXIS | DisplayItem.HELP | DisplayItem.DUST | DisplayItem.H2 | DisplayItem.FILAMENTS;
 
 //    private renderUpdateHint : RenderUpdateHint = RenderUpdateHint.DENSITY_WAVES | RenderUpdateHint.AXIS | RenderUpdateHint.STARS | RenderUpdateHint.DUST | RenderUpdateHint.CREATE_VELOCITY_CURVE | RenderUpdateHint.CREATE_TEXT;
-    private renderUpdateHint : RenderUpdateHint = RenderUpdateHint.AXIS;
+    private renderUpdateHint : RenderUpdateHint = RenderUpdateHint.AXIS | RenderUpdateHint.CREATE_VELOCITY_CURVE;
 
     private galaxy : Galaxy = new Galaxy();
 
@@ -65,10 +64,9 @@ export class GalaxyRenderer {
         if (this.gl === null)
             throw new Error("Unable to initialize WebGL2. Your browser may not support it.");
 
-//	    this.vertDensityWaves.initialize();
+	    this.vertDensityWaves = new VertexBufferLines(this.gl, 2, this.gl.STATIC_DRAW);
         this.vertAxis = new VertexBufferLines(this.gl, 1, this.gl.STATIC_DRAW);
-//        this.vertDensityWaves = new VertexBufferLines(this.gl, 2, this.gl.STATIC_DRAW);
-//	    this.vertVelocityCurve = new VertexBufferLines(this.gl, 1, this.gl.DYNAMIC_DRAW);
+	    this.vertVelocityCurve = new VertexBufferLines(this.gl, 1, this.gl.DYNAMIC_DRAW);
 
         this.initGL(this.gl);
         this.initSimulation();
@@ -78,38 +76,42 @@ export class GalaxyRenderer {
     }
 
     private initSimulation() {
-        // this.galaxy.reset({
-		// 	13000,		// radius of the galaxy
-		// 	4000,		// radius of the core
-		// 	0.0004f,	// angluar offset of the density wave per parsec of radius
-		// 	0.85f,		// excentricity at the edge of the core
-		// 	0.95f,		// excentricity at the edge of the disk
-		// 	100000,		// total number of stars
-		// 	true,		// has dark matter
-		// 	2,			// Perturbations per full ellipse
-		// 	40,			// Amplitude damping factor of perturbation
-		// 	70,			// dust render size in pixel
-		// 	4000 });
-
+        let param = new GalaxyParam(
+            13000,		// radius of the galaxy
+            4000,		// radius of the core
+            0.0004,	    // angluar offset of the density wave per parsec of radius
+            0.85,		// excentricity at the edge of the core
+            0.95,		// excentricity at the edge of the disk
+            100000,		// total number of stars
+            true,		// has dark matter
+            2,			// Perturbations per full ellipse
+            40,			// Amplitude damping factor of perturbation
+            70,			// dust render size in pixel
+            4000)
+            
+        this.galaxy.reset(param)
         this.fov = 35000;
     }
     private initGL(gl : WebGL2RenderingContext) : void {
         if (this.vertAxis==null)
             throw new Error("initGL(): vertAxis is null!");
 
-        this.vertAxis.initialize();
-//	    this.vertVelocityCurve.initialize();
-//	    this.vertStars.initialize();
+        if ( this.vertDensityWaves==null)
+            throw new Error("initGL(): vertDensityWaves is null!");
 
-        gl.clearColor(0.0, 0.0, 0.1, 1.0);
-        gl.clear(this.gl.COLOR_BUFFER_BIT);
+        if ( this.vertVelocityCurve==null)
+            throw new Error("initGL(): vertVelocityCurve is null!");
+
+        this.vertAxis.initialize();
+        this.vertDensityWaves.initialize();
+	    this.vertVelocityCurve.initialize();
+//	    this.vertStars.initialize();
 
         // GL initialization
         gl.viewport(0, 0, this.canvas.width, this.canvas.height);
 
     	gl.disable(gl.DEPTH_TEST);
-	    gl.clearColor(0.0, .0, 0.08, 0.0);
-	    this.setCameraOrientation(vec3.fromValues(0, 1, 0));
+        this.setCameraOrientation(vec3.fromValues(0, 1, 0));
     }
 
     private setCameraOrientation(orient : vec3) : void {   
@@ -204,12 +206,37 @@ export class GalaxyRenderer {
     }
 
     private updateVelocityCurve(updateOnly : boolean) : void {
-//        console.log("updating velocity curves.");
-    }
+        if (this.vertVelocityCurve==null)
+            throw new Error("GalaxyRenderer.updateVelocityCurve(): this.vertVelocityCurve is null!")
 
-    private updateText() : void {
-//        console.log("updating text.");
-    }
+        console.log("updating velocity curves.");
+
+	    let stars = this.galaxy.stars;
+        let num : number = 5000;
+
+        let vert : VertexColor[] = [];
+	    let idx : number[] = [];
+
+        let dt_in_sec : number = this.TimeStepSize * Helper.SEC_PER_YEAR;
+	    let r : number = 0 , v : number = 0;
+        let cr : number= 0.5, cg : number= 1, cb : number= 1, ca : number= 1;
+        
+	    for (let r = 0; r < this.galaxy.farFieldRad; r += 100) {
+            let v : number = (this.galaxy.hasDarkMatter) 
+                ? Helper.velocityWithDarkMatter(r)
+                : Helper.velocityWithoutDarkMatter(r)
+               
+            idx.push(vert.length);
+            vert.push(new VertexColor(r,v * 10, 0,  cr, cg, cb, ca));
+	    }
+
+	    if (!updateOnly) {
+		    this.vertVelocityCurve.createBuffer(vert, idx, this.gl.POINTS);
+		    this.renderUpdateHint &= ~RenderUpdateHint.CREATE_VELOCITY_CURVE;
+    	} else {
+    		this.vertVelocityCurve.updateBuffer(vert);
+        }
+    }   
 
     private update() : void {
         this.time += this.TimeStepSize;
@@ -229,24 +256,18 @@ export class GalaxyRenderer {
         if ((this.flags & DisplayItem.VELOCITY) != 0)
             this.updateVelocityCurve(true); // Update Data Only, no buffer recreation!
 
-        if ((this.renderUpdateHint & RenderUpdateHint.CREATE_TEXT) != 0)
-            this.updateText();
-
         this.camOrient = vec3.fromValues(0, 1, 0 );
         this.camPos = vec3.fromValues(0, 0, 5000);
         this.camLookAt = vec3.fromValues(0, 0, 0);
     }
 
     private render() {
-        this.gl.clearColor(0, 0, this.b, 1);
+        this.gl.clearColor(0.0, 0.0, 0.1, 1);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
         this.adjustCamera();
 
         if (this.vertAxis!=null && this.flags & DisplayItem.AXIS)
-        {
             this.vertAxis.draw(this.matView, this.matProjection);
-//            this.textAxisLabel.draw(_width, _height, _matView, _matProjection);
-        }
 
         let features : number = 0;
         if (this.flags & DisplayItem.STARS)
@@ -275,27 +296,20 @@ export class GalaxyRenderer {
     
         if (this.vertVelocityCurve!=null && this.flags & DisplayItem.VELOCITY)
         {
-//            this.gl.pointSize(2);
+//            this.gl.poin .pointSize(2);
             this.vertVelocityCurve.draw(this.matView, this.matProjection);
         }
     
-        // if (this.flags & DisplayItem.HELP)
-        // {
-        //     this.textHelp.draw(this.canvas.width, this.canvas.height, this.matView, this.matProjection);
-        // }
+        if (this.flags & DisplayItem.HELP) {
+        }
     }
 
     private b : number = 0;
 
     public mainLoop(timestamp : any) {
         let error : boolean = false;
-        let b = 0;
         try
         {
-            this.b = this.b + 0.004;
-            if (this.b>=0.3)
-                this.b=0;
-
             this.update();
             this.render();
         }

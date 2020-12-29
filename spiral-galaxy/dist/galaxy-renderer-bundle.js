@@ -2793,6 +2793,125 @@ var forEach = function () {
 
 /***/ }),
 
+/***/ "./src/CumulativeDistributionFunction.ts":
+/*!***********************************************!*\
+  !*** ./src/CumulativeDistributionFunction.ts ***!
+  \***********************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "CumulativeDistributionFunction": () => /* binding */ CumulativeDistributionFunction
+/* harmony export */ });
+class CumulativeDistributionFunction {
+    constructor() {
+        this.min = 0;
+        this.max = 0;
+        this.width = 0;
+        this.steps = 0;
+        this.i0 = 0;
+        this.k = 0;
+        this.a = 0;
+        this.r_bulge = 0;
+        this.m1 = [];
+        this.y1 = [];
+        this.x1 = [];
+        this.m2 = [];
+        this.y2 = [];
+        this.x2 = [];
+    }
+    probFromVal(fVal) {
+        if (fVal < this.min || fVal > this.max)
+            throw new Error("out of range");
+        let h = 2 * ((this.max - this.min) / this.steps);
+        let i = ((fVal - this.min) / h);
+        let remainder = fVal - i * h;
+        return (this.y1[i] + this.m1[i] * remainder);
+    }
+    valFromProb(fVal) {
+        if (fVal < 0 || fVal > 1)
+            throw new Error("out of range");
+        let h = 1.0 / (this.y2.length - 1);
+        let i = Math.floor(fVal / h);
+        let remainder = fVal - i * h;
+        return (this.y2[i] + this.m2[i] * remainder);
+    }
+    setupRealistic(i0, k, a, rad_bulge, min, max, nsteps) {
+        this.min = min;
+        this.max = max;
+        this.steps = nsteps;
+        this.i0 = i0;
+        this.k = k;
+        this.a = a;
+        this.r_bulge = rad_bulge;
+        this.buildCdf(nsteps);
+    }
+    buildCdf(nsteps) {
+        let h = (this.max - this.min) / this.steps;
+        let x = 0;
+        let y = 0;
+        this.x1 = [];
+        this.y1 = [];
+        this.x2 = [];
+        this.y2 = [];
+        this.m1 = [];
+        this.m2 = [];
+        // Simpson rule for integration of the distribution function
+        this.y1.push(0.0);
+        this.x1.push(0.0);
+        for (let i = 0; i < this.steps; i += 2) {
+            x = h * (i + 2);
+            y += h / 3 * (this.intensity(this.min + i * h) + 4 * this.intensity(this.min + (i + 1) * h) + this.intensity(this.min + (i + 2) * h));
+            this.m1.push((y - this.y1[this.y1.length - 1]) / (2 * h));
+            this.x1.push(x);
+            this.y1.push(y);
+            //    printf("%2.2f, %2.2f, %2.2f\n", m_fMin + (i+2) * h, v, h);
+        }
+        this.m1.push(0.0);
+        // all arrays must have the same length
+        if (this.m1.length != this.x1.length || this.m1.length != this.y1.length)
+            throw new Error("CumulativeDistributionFunction::BuildCDF: array size mismatch (1)!");
+        // normieren
+        for (let i = 0; i < this.y1.length; ++i) {
+            this.y1[i] /= this.y1[this.y1.length - 1];
+            this.m1[i] /= this.y1[this.y1.length - 1];
+        }
+        this.x2.push(0.0);
+        this.y2.push(0.0);
+        let p = 0;
+        h = 1.0 / nsteps;
+        for (let i = 1, k = 0; i < nsteps; ++i) {
+            p = i * h;
+            for (; this.y1[k + 1] <= p; ++k) {
+            }
+            y = this.x1[k] + (p - this.y1[k]) / this.m1[k];
+            //    printf("%2.4f, %2.4f, k=%d, %2.4f, %2.4f\n", p, y, k, m_vY1[k], m_vM1[k]);
+            this.m2.push((y - this.y2[this.y2.length - 1]) / h);
+            this.x2.push(p);
+            this.y2.push(y);
+        }
+        this.m2.push(0.0);
+        // all arrays must have the same length
+        if (this.m2.length != this.x2.length || this.m2.length != this.y2.length)
+            throw new Error("CumulativeDistributionFunction::BuildCDF: array size mismatch (1)!");
+    }
+    intensityBulge(r, i0, k) {
+        return i0 * Math.exp(-k * Math.pow(r, 0.25));
+    }
+    intensityDisc(r, i0, a) {
+        return i0 * Math.exp(-r / a);
+    }
+    intensity(x) {
+        return (x < this.r_bulge)
+            ? this.intensityBulge(x, this.i0, this.k)
+            : this.intensityDisc(x - this.r_bulge, this.intensityBulge(this.r_bulge, this.i0, this.k), this.a);
+    }
+}
+;
+
+
+/***/ }),
+
 /***/ "./src/Galaxy.ts":
 /*!***********************!*\
   !*** ./src/Galaxy.ts ***!
@@ -2805,6 +2924,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _Types__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Types */ "./src/Types.ts");
 /* harmony import */ var _Helper__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Helper */ "./src/Helper.ts");
+/* harmony import */ var _CumulativeDistributionFunction__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./CumulativeDistributionFunction */ "./src/CumulativeDistributionFunction.ts");
+
 
 
 class Galaxy {
@@ -2856,7 +2977,7 @@ class Galaxy {
         //
         // 1.) Initialize the stars
         //
-        let cdf = new CumulativeDistributionFunction();
+        let cdf = new _CumulativeDistributionFunction__WEBPACK_IMPORTED_MODULE_2__.CumulativeDistributionFunction();
         cdf.setupRealistic(1.0, // maximum intensity
         0.02, // k (bulge)
         this._radGalaxy / 3.0, // disc scale length
@@ -3066,11 +3187,13 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "GalaxyRenderer": () => /* binding */ GalaxyRenderer
 /* harmony export */ });
-/* harmony import */ var gl_matrix__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! gl-matrix */ "./node_modules/gl-matrix/esm/mat4.js");
-/* harmony import */ var gl_matrix__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! gl-matrix */ "./node_modules/gl-matrix/esm/vec3.js");
+/* harmony import */ var gl_matrix__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! gl-matrix */ "./node_modules/gl-matrix/esm/mat4.js");
+/* harmony import */ var gl_matrix__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! gl-matrix */ "./node_modules/gl-matrix/esm/vec3.js");
 /* harmony import */ var _Types__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Types */ "./src/Types.ts");
-/* harmony import */ var _VertexBufferLines__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./VertexBufferLines */ "./src/VertexBufferLines.ts");
-/* harmony import */ var _Galaxy__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./Galaxy */ "./src/Galaxy.ts");
+/* harmony import */ var _Helper__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Helper */ "./src/Helper.ts");
+/* harmony import */ var _VertexBufferLines__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./VertexBufferLines */ "./src/VertexBufferLines.ts");
+/* harmony import */ var _Galaxy__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./Galaxy */ "./src/Galaxy.ts");
+
 
 
 
@@ -3095,7 +3218,6 @@ var RenderUpdateHint;
     RenderUpdateHint[RenderUpdateHint["STARS"] = 8] = "STARS";
     RenderUpdateHint[RenderUpdateHint["DUST"] = 16] = "DUST";
     RenderUpdateHint[RenderUpdateHint["CREATE_VELOCITY_CURVE"] = 32] = "CREATE_VELOCITY_CURVE";
-    RenderUpdateHint[RenderUpdateHint["CREATE_TEXT"] = 128] = "CREATE_TEXT";
 })(RenderUpdateHint || (RenderUpdateHint = {}));
 class GalaxyRenderer {
     constructor(canvas) {
@@ -3104,59 +3226,60 @@ class GalaxyRenderer {
         this.vertVelocityCurve = null;
         this.vertStars = null;
         this.fov = 0;
-        this.matProjection = gl_matrix__WEBPACK_IMPORTED_MODULE_3__.create();
-        this.matView = gl_matrix__WEBPACK_IMPORTED_MODULE_3__.create();
-        this.camPos = gl_matrix__WEBPACK_IMPORTED_MODULE_4__.create();
-        this.camLookAt = gl_matrix__WEBPACK_IMPORTED_MODULE_4__.create();
-        this.camOrient = gl_matrix__WEBPACK_IMPORTED_MODULE_4__.create();
+        this.matProjection = gl_matrix__WEBPACK_IMPORTED_MODULE_4__.create();
+        this.matView = gl_matrix__WEBPACK_IMPORTED_MODULE_4__.create();
+        this.camPos = gl_matrix__WEBPACK_IMPORTED_MODULE_5__.create();
+        this.camLookAt = gl_matrix__WEBPACK_IMPORTED_MODULE_5__.create();
+        this.camOrient = gl_matrix__WEBPACK_IMPORTED_MODULE_5__.create();
         this.time = 0;
-        this.flags = DisplayItem.STARS | DisplayItem.AXIS | DisplayItem.HELP | DisplayItem.DUST | DisplayItem.H2 | DisplayItem.FILAMENTS;
+        this.flags = DisplayItem.VELOCITY | DisplayItem.STARS | DisplayItem.AXIS | DisplayItem.HELP | DisplayItem.DUST | DisplayItem.H2 | DisplayItem.FILAMENTS;
         //    private renderUpdateHint : RenderUpdateHint = RenderUpdateHint.DENSITY_WAVES | RenderUpdateHint.AXIS | RenderUpdateHint.STARS | RenderUpdateHint.DUST | RenderUpdateHint.CREATE_VELOCITY_CURVE | RenderUpdateHint.CREATE_TEXT;
-        this.renderUpdateHint = RenderUpdateHint.AXIS;
-        this.galaxy = new _Galaxy__WEBPACK_IMPORTED_MODULE_2__.Galaxy();
+        this.renderUpdateHint = RenderUpdateHint.AXIS | RenderUpdateHint.CREATE_VELOCITY_CURVE;
+        this.galaxy = new _Galaxy__WEBPACK_IMPORTED_MODULE_3__.Galaxy();
         this.TimeStepSize = 100000.0;
         this.b = 0;
         this.canvas = canvas;
         this.gl = this.canvas.getContext("webgl2");
         if (this.gl === null)
             throw new Error("Unable to initialize WebGL2. Your browser may not support it.");
-        //	    this.vertDensityWaves.initialize();
-        this.vertAxis = new _VertexBufferLines__WEBPACK_IMPORTED_MODULE_1__.VertexBufferLines(this.gl, 1, this.gl.STATIC_DRAW);
-        //        this.vertDensityWaves = new VertexBufferLines(this.gl, 2, this.gl.STATIC_DRAW);
-        //	    this.vertVelocityCurve = new VertexBufferLines(this.gl, 1, this.gl.DYNAMIC_DRAW);
+        this.vertDensityWaves = new _VertexBufferLines__WEBPACK_IMPORTED_MODULE_2__.VertexBufferLines(this.gl, 2, this.gl.STATIC_DRAW);
+        this.vertAxis = new _VertexBufferLines__WEBPACK_IMPORTED_MODULE_2__.VertexBufferLines(this.gl, 1, this.gl.STATIC_DRAW);
+        this.vertVelocityCurve = new _VertexBufferLines__WEBPACK_IMPORTED_MODULE_2__.VertexBufferLines(this.gl, 1, this.gl.DYNAMIC_DRAW);
         this.initGL(this.gl);
         this.initSimulation();
         // Start the main loop
         window.requestAnimationFrame((timeStamp) => this.mainLoop(timeStamp));
     }
     initSimulation() {
-        // this.galaxy.reset({
-        // 	13000,		// radius of the galaxy
-        // 	4000,		// radius of the core
-        // 	0.0004f,	// angluar offset of the density wave per parsec of radius
-        // 	0.85f,		// excentricity at the edge of the core
-        // 	0.95f,		// excentricity at the edge of the disk
-        // 	100000,		// total number of stars
-        // 	true,		// has dark matter
-        // 	2,			// Perturbations per full ellipse
-        // 	40,			// Amplitude damping factor of perturbation
-        // 	70,			// dust render size in pixel
-        // 	4000 });
+        let param = new _Types__WEBPACK_IMPORTED_MODULE_0__.GalaxyParam(13000, // radius of the galaxy
+        4000, // radius of the core
+        0.0004, // angluar offset of the density wave per parsec of radius
+        0.85, // excentricity at the edge of the core
+        0.95, // excentricity at the edge of the disk
+        100000, // total number of stars
+        true, // has dark matter
+        2, // Perturbations per full ellipse
+        40, // Amplitude damping factor of perturbation
+        70, // dust render size in pixel
+        4000);
+        this.galaxy.reset(param);
         this.fov = 35000;
     }
     initGL(gl) {
         if (this.vertAxis == null)
             throw new Error("initGL(): vertAxis is null!");
+        if (this.vertDensityWaves == null)
+            throw new Error("initGL(): vertDensityWaves is null!");
+        if (this.vertVelocityCurve == null)
+            throw new Error("initGL(): vertVelocityCurve is null!");
         this.vertAxis.initialize();
-        //	    this.vertVelocityCurve.initialize();
+        this.vertDensityWaves.initialize();
+        this.vertVelocityCurve.initialize();
         //	    this.vertStars.initialize();
-        gl.clearColor(0.0, 0.0, 0.1, 1.0);
-        gl.clear(this.gl.COLOR_BUFFER_BIT);
         // GL initialization
         gl.viewport(0, 0, this.canvas.width, this.canvas.height);
         gl.disable(gl.DEPTH_TEST);
-        gl.clearColor(0.0, .0, 0.08, 0.0);
-        this.setCameraOrientation(gl_matrix__WEBPACK_IMPORTED_MODULE_4__.fromValues(0, 1, 0));
+        this.setCameraOrientation(gl_matrix__WEBPACK_IMPORTED_MODULE_5__.fromValues(0, 1, 0));
     }
     setCameraOrientation(orient) {
         this.camOrient = orient;
@@ -3165,8 +3288,8 @@ class GalaxyRenderer {
     adjustCamera() {
         let l = this.fov / 2.0;
         let aspect = this.canvas.width / this.canvas.height;
-        gl_matrix__WEBPACK_IMPORTED_MODULE_3__.ortho(this.matProjection, -l * aspect, l * aspect, -l, l, -l, l);
-        gl_matrix__WEBPACK_IMPORTED_MODULE_3__.lookAt(this.matView, this.camPos, this.camLookAt, this.camOrient);
+        gl_matrix__WEBPACK_IMPORTED_MODULE_4__.ortho(this.matProjection, -l * aspect, l * aspect, -l, l, -l, l);
+        gl_matrix__WEBPACK_IMPORTED_MODULE_4__.lookAt(this.matView, this.camPos, this.camLookAt, this.camOrient);
     }
     updateAxis() {
         if (this.vertAxis == null)
@@ -3218,10 +3341,30 @@ class GalaxyRenderer {
         //        console.log("updating stars.");
     }
     updateVelocityCurve(updateOnly) {
-        //        console.log("updating velocity curves.");
-    }
-    updateText() {
-        //        console.log("updating text.");
+        if (this.vertVelocityCurve == null)
+            throw new Error("GalaxyRenderer.updateVelocityCurve(): this.vertVelocityCurve is null!");
+        console.log("updating velocity curves.");
+        let stars = this.galaxy.stars;
+        let num = 5000;
+        let vert = [];
+        let idx = [];
+        let dt_in_sec = this.TimeStepSize * _Helper__WEBPACK_IMPORTED_MODULE_1__.Helper.SEC_PER_YEAR;
+        let r = 0, v = 0;
+        let cr = 0.5, cg = 1, cb = 1, ca = 1;
+        for (let r = 0; r < this.galaxy.farFieldRad; r += 100) {
+            let v = (this.galaxy.hasDarkMatter)
+                ? _Helper__WEBPACK_IMPORTED_MODULE_1__.Helper.velocityWithDarkMatter(r)
+                : _Helper__WEBPACK_IMPORTED_MODULE_1__.Helper.velocityWithoutDarkMatter(r);
+            idx.push(vert.length);
+            vert.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.VertexColor(r, v * 10, 0, cr, cg, cb, ca));
+        }
+        if (!updateOnly) {
+            this.vertVelocityCurve.createBuffer(vert, idx, this.gl.POINTS);
+            this.renderUpdateHint &= ~RenderUpdateHint.CREATE_VELOCITY_CURVE;
+        }
+        else {
+            this.vertVelocityCurve.updateBuffer(vert);
+        }
     }
     update() {
         this.time += this.TimeStepSize;
@@ -3235,20 +3378,16 @@ class GalaxyRenderer {
             this.updateVelocityCurve(false);
         if ((this.flags & DisplayItem.VELOCITY) != 0)
             this.updateVelocityCurve(true); // Update Data Only, no buffer recreation!
-        if ((this.renderUpdateHint & RenderUpdateHint.CREATE_TEXT) != 0)
-            this.updateText();
-        this.camOrient = gl_matrix__WEBPACK_IMPORTED_MODULE_4__.fromValues(0, 1, 0);
-        this.camPos = gl_matrix__WEBPACK_IMPORTED_MODULE_4__.fromValues(0, 0, 5000);
-        this.camLookAt = gl_matrix__WEBPACK_IMPORTED_MODULE_4__.fromValues(0, 0, 0);
+        this.camOrient = gl_matrix__WEBPACK_IMPORTED_MODULE_5__.fromValues(0, 1, 0);
+        this.camPos = gl_matrix__WEBPACK_IMPORTED_MODULE_5__.fromValues(0, 0, 5000);
+        this.camLookAt = gl_matrix__WEBPACK_IMPORTED_MODULE_5__.fromValues(0, 0, 0);
     }
     render() {
-        this.gl.clearColor(0, 0, this.b, 1);
+        this.gl.clearColor(0.0, 0.0, 0.1, 1);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
         this.adjustCamera();
-        if (this.vertAxis != null && this.flags & DisplayItem.AXIS) {
+        if (this.vertAxis != null && this.flags & DisplayItem.AXIS)
             this.vertAxis.draw(this.matView, this.matProjection);
-            //            this.textAxisLabel.draw(_width, _height, _matView, _matProjection);
-        }
         let features = 0;
         if (this.flags & DisplayItem.STARS)
             features |= 1 << 0;
@@ -3267,21 +3406,15 @@ class GalaxyRenderer {
             //            this.textGalaxyLabels.Draw(this.canvas.width, this.canvas.height, this.matView, this.matProjection);
         }
         if (this.vertVelocityCurve != null && this.flags & DisplayItem.VELOCITY) {
-            //            this.gl.pointSize(2);
+            //            this.gl.poin .pointSize(2);
             this.vertVelocityCurve.draw(this.matView, this.matProjection);
         }
-        // if (this.flags & DisplayItem.HELP)
-        // {
-        //     this.textHelp.draw(this.canvas.width, this.canvas.height, this.matView, this.matProjection);
-        // }
+        if (this.flags & DisplayItem.HELP) {
+        }
     }
     mainLoop(timestamp) {
         let error = false;
-        let b = 0;
         try {
-            this.b = this.b + 0.004;
-            if (this.b >= 0.3)
-                this.b = 0;
             this.update();
             this.render();
         }
@@ -3534,11 +3667,18 @@ class Helper {
     }
     // Velocity curve with dark matter
     static velocityWithDarkMatter(r) {
+        if (r == 0)
+            return 0;
         let MZ = 100;
-        return 20000.0 * Math.sqrt(Helper.CONTANT_OF_GRAVITY * (Helper.massHalo(r) + Helper.massDisc(r) + MZ) / r);
+        let massHalo = Helper.massHalo(r);
+        let massDisc = Helper.massDisc(r);
+        let v = 20000.0 * Math.sqrt(Helper.CONTANT_OF_GRAVITY * (massHalo + massDisc + MZ) / r);
+        return v;
     }
     // velocity curve without dark matter
     static velocityWithoutDarkMatter(r) {
+        if (r == 0)
+            return 0;
         let MZ = 100;
         return 20000.0 * Math.sqrt(Helper.CONTANT_OF_GRAVITY * (Helper.massDisc(r) + MZ) / r);
     }
@@ -3622,7 +3762,7 @@ class Star {
     }
 }
 class GalaxyParam {
-    constructor() {
+    constructor(rad, radCore, deltaAng, ex1, ex2, numStars, hasDarkMatter, pertN, pertAmp, dustRenderSize, baseTemp) {
         this.rad = 0;
         this.radCore = 0;
         this.deltaAng = 0;
@@ -3634,6 +3774,17 @@ class GalaxyParam {
         this.pertAmp = 0;
         this.dustRenderSize = 0;
         this.baseTemp = 0;
+        this.rad = rad;
+        this.radCore = radCore;
+        this.deltaAng = deltaAng;
+        this.ex1 = ex1;
+        this.ex2 = ex2;
+        this.numStars = numStars;
+        this.hasDarkMatter = hasDarkMatter;
+        this.pertN = pertN;
+        this.pertAmp = pertAmp;
+        this.dustRenderSize = dustRenderSize;
+        this.baseTemp = baseTemp;
     }
 }
 class VertexBase {
@@ -3872,12 +4023,16 @@ class VertexBufferBase {
         this.gl.bindVertexArray(null);
     }
     updateBuffer(vert) {
-        throw new Error("updateBuffer not implemented!");
-        // if (this.bufferMode == this.gl.STATIC_DRAW)
-        // 	throw Error("VertexBufferBase: static buffers cannot be updated!");
-        // this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vbo);
-        // this.gl.bufferSubData(this.gl.ARRAY_BUFFER, 0, _vert.size() * sizeof(TVertex), vert.data());
-        // this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
+        if (this.bufferMode == this.gl.STATIC_DRAW)
+            throw Error("VertexBufferBase: static buffers cannot be updated!");
+        let numberOfFloats = vert[0].numberOfFloats();
+        let floatArray = new Float32Array(vert.length * numberOfFloats);
+        for (let i = 0; i < vert.length; ++i) {
+            vert[i].writeTo(floatArray, i * numberOfFloats);
+        }
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vbo);
+        this.gl.bufferSubData(this.gl.ARRAY_BUFFER, 0, floatArray);
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
     }
 }
 

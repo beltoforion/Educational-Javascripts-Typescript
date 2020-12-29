@@ -259,13 +259,18 @@ export abstract class VertexBufferBase<TVertex extends VertexBase>
 
 	public updateBuffer(vert : TVertex[]) : void
 	{
-		throw new Error("updateBuffer not implemented!");
+		if (this.bufferMode == this.gl.STATIC_DRAW)
+		 	throw Error("VertexBufferBase: static buffers cannot be updated!");
 
-		// if (this.bufferMode == this.gl.STATIC_DRAW)
-		// 	throw Error("VertexBufferBase: static buffers cannot be updated!");
-
-		// this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vbo);
-		// this.gl.bufferSubData(this.gl.ARRAY_BUFFER, 0, _vert.size() * sizeof(TVertex), vert.data());
-		// this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
+		let numberOfFloats : number = vert[0].numberOfFloats();
+		let floatArray = new Float32Array(vert.length * numberOfFloats);
+		for (let i = 0; i<vert.length; ++i)
+		{
+			vert[i].writeTo(floatArray, i * numberOfFloats);
+		}
+	 
+		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vbo);
+		this.gl.bufferSubData(this.gl.ARRAY_BUFFER, 0, floatArray);
+		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
 	}
 }

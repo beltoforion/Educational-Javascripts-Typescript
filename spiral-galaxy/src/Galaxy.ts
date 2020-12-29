@@ -1,5 +1,6 @@
 import { Star, GalaxyParam } from './Types'
 import { Helper } from './Helper'
+import { CumulativeDistributionFunction } from './CumulativeDistributionFunction'
 
 export class Galaxy {
 

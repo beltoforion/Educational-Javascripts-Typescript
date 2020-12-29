@@ -248,13 +248,22 @@ export class Helper
 	// Velocity curve with dark matter
 	public static velocityWithDarkMatter(r : number) : number
 	{
+		if (r==0)
+			return 0;
+
 		let MZ : number = 100;
-		return 20000.0 * Math.sqrt(Helper.CONTANT_OF_GRAVITY * (Helper.massHalo(r) + Helper.massDisc(r) + MZ) / r);
+		let massHalo : number = Helper.massHalo(r);
+		let massDisc : number = Helper.massDisc(r);
+		let v = 20000.0 * Math.sqrt(Helper.CONTANT_OF_GRAVITY * (massHalo + massDisc + MZ) / r); 
+		return v;
 	}
 
 	// velocity curve without dark matter
 	public static velocityWithoutDarkMatter(r : number) : number
 	{
+		if (r==0)
+			return 0;
+
 		let MZ : number = 100;
 		return 20000.0 * Math.sqrt(Helper.CONTANT_OF_GRAVITY * (Helper.massDisc(r) + MZ) / r);
 	}

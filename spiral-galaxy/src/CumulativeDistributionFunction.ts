@@ -1,4 +1,4 @@
-class CumulativeDistributionFunction
+export class CumulativeDistributionFunction
 {
     public constructor() {
     }
@@ -21,8 +21,7 @@ class CumulativeDistributionFunction
 		    throw new Error("out of range");
 
 	    let h : number  = 1.0 / (this.y2.length - 1);
-
-	    let i : number = fVal / h;
+	    let i : number = Math.floor(fVal / h);
 	    let remainder = fVal - i * h;
 
     	return (this.y2[i] + this.m2[i] * remainder);
