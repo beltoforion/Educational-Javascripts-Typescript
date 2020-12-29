@@ -36,7 +36,7 @@ export class GalaxyRenderer {
 	private vertVelocityCurve : VertexBufferLines| null = null;
     private vertStars : VertexBufferStars | null = null;
 
-    private fov : number = 0;
+    private _fov : number = 0;
 
     private matProjection : mat4 = mat4.create();
 	private matView : mat4 = mat4.create();
@@ -77,6 +77,7 @@ export class GalaxyRenderer {
     }
 
     private onKeydown(event : KeyboardEvent) {
+/*        
         const keyName = event.key;
         console.log("Key " + keyName + " pressed")
 
@@ -94,6 +95,25 @@ export class GalaxyRenderer {
                 this.renderUpdateHint |= RenderUpdateHint.AXIS | RenderUpdateHint.DENSITY_WAVES;  // ruhDENSITY_WAVES only for the labels!
                 break;    
         }
+*/        
+    }
+
+    public set fov(value : number) {
+        this._fov = value;
+        this.adjustCamera();
+        this.renderUpdateHint |= RenderUpdateHint.AXIS | RenderUpdateHint.DENSITY_WAVES;
+    }
+
+    public get fov() {
+        return this._fov;
+    }
+
+    public set dustRenderSize(value : number) {
+        this.galaxy.dustRenderSize = value;
+    }
+
+    public get dustRenderSize() {
+        return this.galaxy.dustRenderSize;
     }
 
     private hasFlag(flag : DisplayItem) : boolean{
@@ -184,7 +204,7 @@ export class GalaxyRenderer {
     }
 
     private initSimulation() {
-        this.preset.push(new GalaxyParam(13000, 4000, 0.0004, 0.85, 0.95, 100000, true, 2, 40, 70, 4000));
+        this.preset.push(new GalaxyParam(13000, 4000, 0.0004, 0.85, 0.95, 100000, true, 2, 40, 58, 4000));
         this.preset.push(new GalaxyParam(16000, 4000, .0003, .8, .85, 40000, true, 0, 40, 100, 4500));
         this.preset.push(new GalaxyParam(13000, 4000, .00064, .9, .9, 40000, true, 0, 0, 85, 4100));
         this.preset.push(new GalaxyParam(13000, 4000, .0004, 1.35, 1.05, 40000, true, 0, 0, 70, 4500));

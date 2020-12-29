@@ -3163,6 +3163,9 @@ class Galaxy {
     get dustRenderSize() {
         return this._dustRenderSize;
     }
+    set dustRenderSize(value) {
+        this._dustRenderSize = value;
+    }
     get pertN() {
         return this._pertN;
     }
@@ -3232,7 +3235,7 @@ class GalaxyRenderer {
         this.vertAxis = null;
         this.vertVelocityCurve = null;
         this.vertStars = null;
-        this.fov = 0;
+        this._fov = 0;
         this.matProjection = gl_matrix__WEBPACK_IMPORTED_MODULE_5__.create();
         this.matView = gl_matrix__WEBPACK_IMPORTED_MODULE_5__.create();
         this.camPos = gl_matrix__WEBPACK_IMPORTED_MODULE_6__.create();
@@ -3259,20 +3262,39 @@ class GalaxyRenderer {
         window.requestAnimationFrame((timeStamp) => this.mainLoop(timeStamp));
     }
     onKeydown(event) {
-        const keyName = event.key;
-        console.log("Key " + keyName + " pressed");
-        switch (keyName) {
-            case '+':
-                this.scaleAxis(1.1);
-                this.setCameraOrientation(gl_matrix__WEBPACK_IMPORTED_MODULE_6__.fromValues(0, 1, 0));
-                this.renderUpdateHint |= RenderUpdateHint.AXIS | RenderUpdateHint.DENSITY_WAVES; // ruhDENSITY_WAVES only for the labels!
-                break;
-            case '-':
-                this.scaleAxis(0.9);
-                this.setCameraOrientation(gl_matrix__WEBPACK_IMPORTED_MODULE_6__.fromValues(0, 1, 0));
-                this.renderUpdateHint |= RenderUpdateHint.AXIS | RenderUpdateHint.DENSITY_WAVES; // ruhDENSITY_WAVES only for the labels!
-                break;
-        }
+        /*
+                const keyName = event.key;
+                console.log("Key " + keyName + " pressed")
+        
+                switch(keyName)
+                {
+                    case '+':
+                        this.scaleAxis(1.1);
+                        this.setCameraOrientation(vec3.fromValues(0, 1, 0));
+                        this.renderUpdateHint |= RenderUpdateHint.AXIS | RenderUpdateHint.DENSITY_WAVES;  // ruhDENSITY_WAVES only for the labels!
+                        break;
+        
+                    case '-':
+                        this.scaleAxis(0.9);
+                        this.setCameraOrientation(vec3.fromValues(0, 1, 0));
+                        this.renderUpdateHint |= RenderUpdateHint.AXIS | RenderUpdateHint.DENSITY_WAVES;  // ruhDENSITY_WAVES only for the labels!
+                        break;
+                }
+        */
+    }
+    set fov(value) {
+        this._fov = value;
+        this.adjustCamera();
+        this.renderUpdateHint |= RenderUpdateHint.AXIS | RenderUpdateHint.DENSITY_WAVES;
+    }
+    get fov() {
+        return this._fov;
+    }
+    set dustRenderSize(value) {
+        this.galaxy.dustRenderSize = value;
+    }
+    get dustRenderSize() {
+        return this.galaxy.dustRenderSize;
     }
     hasFlag(flag) {
         return (this.flags & flag) != 0;
@@ -3342,7 +3364,7 @@ class GalaxyRenderer {
         this.adjustCamera();
     }
     initSimulation() {
-        this.preset.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.GalaxyParam(13000, 4000, 0.0004, 0.85, 0.95, 100000, true, 2, 40, 70, 4000));
+        this.preset.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.GalaxyParam(13000, 4000, 0.0004, 0.85, 0.95, 100000, true, 2, 40, 58, 4000));
         this.preset.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.GalaxyParam(16000, 4000, .0003, .8, .85, 40000, true, 0, 40, 100, 4500));
         this.preset.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.GalaxyParam(13000, 4000, .00064, .9, .9, 40000, true, 0, 0, 85, 4100));
         this.preset.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.GalaxyParam(13000, 4000, .0004, 1.35, 1.05, 40000, true, 0, 0, 70, 4500));

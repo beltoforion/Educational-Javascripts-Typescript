@@ -298,59 +298,44 @@ export class Galaxy {
         return 360.0 / time;
     }
 
-    public getAngularOffset(rad:number) : number 
-    {
+    public getAngularOffset(rad:number) : number {
         return rad * this._angleOffset;
     }
 
-    public get exInner() : number 
-    {
+    public get exInner() : number {
         return this._elEx1;
     }
 
-    public get exOuter() : number 
-    {
-        return this._elEx2;
+    public get exOuter() : number {
+        return this._elEx2
     }
 
-    public get dustRenderSize() : number
-    {
-        return this._dustRenderSize;
+    public get dustRenderSize() : number {
+        return this._dustRenderSize
     }
 
-    public get pertN() : number
-    {
-	    return this._pertN;
+    public set dustRenderSize(value : number) {
+        this._dustRenderSize = value
+    }
+
+    public get pertN() : number {
+	    return this._pertN
     }
     
-    public get pertAmp() : number
-    {
-        return this._pertAmp;        
+    public get pertAmp() : number {
+        return this._pertAmp
     }
 
-    public get baseTemp() : number
-    {
-        return this._baseTemp;
+    public get baseTemp() : number {
+        return this._baseTemp
     }
 
     public get hasDarkMatter() : boolean {
-        return this._hasDarkMatter;
+        return this._hasDarkMatter
     }
 
     public set hasDarkMatter(hasDarkMatter : boolean) {
-        this._hasDarkMatter = hasDarkMatter;
-        this.initStarsAndDust();
+        this._hasDarkMatter = hasDarkMatter
+        this.initStarsAndDust()
     }
-
-/*    
-    void SetPertN(int n);
-    void SetPertAmp(float amp);
-    void SetAngularOffset(float offset);
-    void SetCoreRad(float rad);
-    void SetRad(float rad);
-    void SetExInner(float ex);
-    void SetExOuter(float ex);
-    void SetDustRenderSize(float sz);
-    void SetBaseTemp(float temp);
-*/    
 }
