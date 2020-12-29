@@ -239,7 +239,7 @@ export class Helper
 			{ "r":0.60472, "g":0.694643, "b":1, "a":1 }
         ];
 
-		let idx : number = (temp - MinTemp) / (MaxTemp - MinTemp) * colNum;
+		let idx : number = Math.floor((temp - MinTemp) / (MaxTemp - MinTemp) * colNum);
 		idx = Math.min(colNum - 1, idx);
 		idx = Math.max(0, idx);
 		return col[idx];

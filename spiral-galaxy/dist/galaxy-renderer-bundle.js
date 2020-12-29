@@ -3186,12 +3186,14 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "GalaxyRenderer": () => /* binding */ GalaxyRenderer
 /* harmony export */ });
-/* harmony import */ var gl_matrix__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! gl-matrix */ "./node_modules/gl-matrix/esm/mat4.js");
-/* harmony import */ var gl_matrix__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! gl-matrix */ "./node_modules/gl-matrix/esm/vec3.js");
+/* harmony import */ var gl_matrix__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! gl-matrix */ "./node_modules/gl-matrix/esm/mat4.js");
+/* harmony import */ var gl_matrix__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! gl-matrix */ "./node_modules/gl-matrix/esm/vec3.js");
 /* harmony import */ var _Types__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Types */ "./src/Types.ts");
 /* harmony import */ var _Helper__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Helper */ "./src/Helper.ts");
 /* harmony import */ var _VertexBufferLines__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./VertexBufferLines */ "./src/VertexBufferLines.ts");
-/* harmony import */ var _Galaxy__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./Galaxy */ "./src/Galaxy.ts");
+/* harmony import */ var _VertexBufferStars__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./VertexBufferStars */ "./src/VertexBufferStars.ts");
+/* harmony import */ var _Galaxy__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./Galaxy */ "./src/Galaxy.ts");
+
 
 
 
@@ -3225,16 +3227,16 @@ class GalaxyRenderer {
         this.vertVelocityCurve = null;
         this.vertStars = null;
         this.fov = 0;
-        this.matProjection = gl_matrix__WEBPACK_IMPORTED_MODULE_4__.create();
-        this.matView = gl_matrix__WEBPACK_IMPORTED_MODULE_4__.create();
-        this.camPos = gl_matrix__WEBPACK_IMPORTED_MODULE_5__.create();
-        this.camLookAt = gl_matrix__WEBPACK_IMPORTED_MODULE_5__.create();
-        this.camOrient = gl_matrix__WEBPACK_IMPORTED_MODULE_5__.create();
+        this.matProjection = gl_matrix__WEBPACK_IMPORTED_MODULE_5__.create();
+        this.matView = gl_matrix__WEBPACK_IMPORTED_MODULE_5__.create();
+        this.camPos = gl_matrix__WEBPACK_IMPORTED_MODULE_6__.create();
+        this.camLookAt = gl_matrix__WEBPACK_IMPORTED_MODULE_6__.create();
+        this.camOrient = gl_matrix__WEBPACK_IMPORTED_MODULE_6__.create();
         this.time = 0;
         this.flags = DisplayItem.VELOCITY | DisplayItem.STARS | DisplayItem.AXIS | DisplayItem.HELP | DisplayItem.DUST | DisplayItem.H2 | DisplayItem.FILAMENTS;
-        //    private renderUpdateHint : RenderUpdateHint = RenderUpdateHint.DENSITY_WAVES | RenderUpdateHint.AXIS | RenderUpdateHint.STARS | RenderUpdateHint.DUST | RenderUpdateHint.CREATE_VELOCITY_CURVE | RenderUpdateHint.CREATE_TEXT;
-        this.renderUpdateHint = RenderUpdateHint.DENSITY_WAVES | RenderUpdateHint.AXIS | RenderUpdateHint.CREATE_VELOCITY_CURVE;
-        this.galaxy = new _Galaxy__WEBPACK_IMPORTED_MODULE_3__.Galaxy();
+        //    private renderUpdateHint : RenderUpdateHint = RenderUpdateHint.DUST;
+        this.renderUpdateHint = RenderUpdateHint.STARS | RenderUpdateHint.DENSITY_WAVES | RenderUpdateHint.AXIS | RenderUpdateHint.CREATE_VELOCITY_CURVE;
+        this.galaxy = new _Galaxy__WEBPACK_IMPORTED_MODULE_4__.Galaxy();
         this.TimeStepSize = 100000.0;
         this.canvas = canvas;
         this.gl = this.canvas.getContext("webgl2");
@@ -3243,6 +3245,7 @@ class GalaxyRenderer {
         this.vertDensityWaves = new _VertexBufferLines__WEBPACK_IMPORTED_MODULE_2__.VertexBufferLines(this.gl, 2, this.gl.STATIC_DRAW);
         this.vertAxis = new _VertexBufferLines__WEBPACK_IMPORTED_MODULE_2__.VertexBufferLines(this.gl, 1, this.gl.STATIC_DRAW);
         this.vertVelocityCurve = new _VertexBufferLines__WEBPACK_IMPORTED_MODULE_2__.VertexBufferLines(this.gl, 1, this.gl.DYNAMIC_DRAW);
+        this.vertStars = new _VertexBufferStars__WEBPACK_IMPORTED_MODULE_3__.VertexBufferStars(this.gl);
         document.addEventListener('keydown', (event) => this.onKeydown(event));
         this.initGL(this.gl);
         this.initSimulation();
@@ -3258,12 +3261,12 @@ class GalaxyRenderer {
                 break;
             case '+':
                 this.scaleAxis(1.1);
-                this.setCameraOrientation(gl_matrix__WEBPACK_IMPORTED_MODULE_5__.fromValues(0, 1, 0));
+                this.setCameraOrientation(gl_matrix__WEBPACK_IMPORTED_MODULE_6__.fromValues(0, 1, 0));
                 this.renderUpdateHint |= RenderUpdateHint.AXIS | RenderUpdateHint.DENSITY_WAVES; // ruhDENSITY_WAVES only for the labels!
                 break;
             case '-':
                 this.scaleAxis(0.9);
-                this.setCameraOrientation(gl_matrix__WEBPACK_IMPORTED_MODULE_5__.fromValues(0, 1, 0));
+                this.setCameraOrientation(gl_matrix__WEBPACK_IMPORTED_MODULE_6__.fromValues(0, 1, 0));
                 this.renderUpdateHint |= RenderUpdateHint.AXIS | RenderUpdateHint.DENSITY_WAVES; // ruhDENSITY_WAVES only for the labels!
                 break;
             case 'v':
@@ -3301,14 +3304,16 @@ class GalaxyRenderer {
             throw new Error("initGL(): vertDensityWaves is null!");
         if (this.vertVelocityCurve == null)
             throw new Error("initGL(): vertVelocityCurve is null!");
+        if (this.vertStars == null)
+            throw new Error("initGL(): vertStars is null!");
         this.vertAxis.initialize();
         this.vertDensityWaves.initialize();
         this.vertVelocityCurve.initialize();
-        //	    this.vertStars.initialize();
+        this.vertStars.initialize();
         // GL initialization
         gl.viewport(0, 0, this.canvas.width, this.canvas.height);
         gl.disable(gl.DEPTH_TEST);
-        this.setCameraOrientation(gl_matrix__WEBPACK_IMPORTED_MODULE_5__.fromValues(0, 1, 0));
+        this.setCameraOrientation(gl_matrix__WEBPACK_IMPORTED_MODULE_6__.fromValues(0, 1, 0));
     }
     setCameraOrientation(orient) {
         this.camOrient = orient;
@@ -3317,8 +3322,8 @@ class GalaxyRenderer {
     adjustCamera() {
         let l = this.fov / 2.0;
         let aspect = this.canvas.width / this.canvas.height;
-        gl_matrix__WEBPACK_IMPORTED_MODULE_4__.ortho(this.matProjection, -l * aspect, l * aspect, -l, l, -l, l);
-        gl_matrix__WEBPACK_IMPORTED_MODULE_4__.lookAt(this.matView, this.camPos, this.camLookAt, this.camOrient);
+        gl_matrix__WEBPACK_IMPORTED_MODULE_5__.ortho(this.matProjection, -l * aspect, l * aspect, -l, l, -l, l);
+        gl_matrix__WEBPACK_IMPORTED_MODULE_5__.lookAt(this.matView, this.camPos, this.camLookAt, this.camOrient);
     }
     updateAxis() {
         if (this.vertAxis == null)
@@ -3420,14 +3425,27 @@ class GalaxyRenderer {
         vertIdx.push(4294967295);
     }
     updateStars() {
-        //        console.log("updating stars.");
+        if (this.vertStars == null)
+            throw new Error("GalaxyRenderer.updateStars(): this.vertStars is null!");
+        console.log("updating stars.");
+        let vert = [];
+        let idx = [];
+        let stars = this.galaxy.stars;
+        let a = 1;
+        let color = new _Types__WEBPACK_IMPORTED_MODULE_0__.Color(1, 1, 1, a);
+        for (let i = 1; i < stars.length; ++i) {
+            let col = _Helper__WEBPACK_IMPORTED_MODULE_1__.Helper.colorFromTemperature(stars[i].temp);
+            col.a = a;
+            idx.push(vert.length);
+            vert.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.VertexStar(stars[i], color));
+        }
+        this.vertStars.createBuffer(vert, idx, this.gl.POINTS);
+        this.renderUpdateHint &= ~RenderUpdateHint.STARS;
     }
     updateVelocityCurve() {
         if (this.vertVelocityCurve == null)
             throw new Error("GalaxyRenderer.updateVelocityCurve(): this.vertVelocityCurve is null!");
         console.log("updating velocity curves.");
-        let stars = this.galaxy.stars;
-        let num = 5000;
         let vert = [];
         let idx = [];
         let dt_in_sec = this.TimeStepSize * _Helper__WEBPACK_IMPORTED_MODULE_1__.Helper.SEC_PER_YEAR;
@@ -3453,9 +3471,9 @@ class GalaxyRenderer {
             this.updateStars();
         if ((this.renderUpdateHint & RenderUpdateHint.CREATE_VELOCITY_CURVE) != 0)
             this.updateVelocityCurve();
-        this.camOrient = gl_matrix__WEBPACK_IMPORTED_MODULE_5__.fromValues(0, 1, 0);
-        this.camPos = gl_matrix__WEBPACK_IMPORTED_MODULE_5__.fromValues(0, 0, 5000);
-        this.camLookAt = gl_matrix__WEBPACK_IMPORTED_MODULE_5__.fromValues(0, 0, 0);
+        this.camOrient = gl_matrix__WEBPACK_IMPORTED_MODULE_6__.fromValues(0, 1, 0);
+        this.camPos = gl_matrix__WEBPACK_IMPORTED_MODULE_6__.fromValues(0, 0, 5000);
+        this.camLookAt = gl_matrix__WEBPACK_IMPORTED_MODULE_6__.fromValues(0, 0, 0);
     }
     render() {
         this.gl.clearColor(0.0, 0.0, 0.1, 1);
@@ -3729,7 +3747,7 @@ class Helper {
             { "r": 0.607266, "g": 0.696426, "b": 1, "a": 1 },
             { "r": 0.60472, "g": 0.694643, "b": 1, "a": 1 }
         ];
-        let idx = (temp - MinTemp) / (MaxTemp - MinTemp) * colNum;
+        let idx = Math.floor((temp - MinTemp) / (MaxTemp - MinTemp) * colNum);
         idx = Math.min(colNum - 1, idx);
         idx = Math.max(0, idx);
         return col[idx];
@@ -3887,10 +3905,12 @@ class VertexColor extends VertexBase {
 }
 ;
 class VertexStar extends VertexBase {
-    constructor() {
+    constructor(star, col) {
         super();
         this.star = new Star();
         this.col = new Color();
+        this.star = star;
+        this.col = col;
     }
     numberOfFloats() {
         return 8 + 4;
@@ -3979,7 +3999,10 @@ class VertexBufferBase {
             let msg = this.gl.getShaderInfoLog(shader);
             // We don't need the shader anymore.
             this.gl.deleteShader(shader);
-            throw new Error("VertexBuffer: Shader compilation failed: " + msg);
+            if (shaderType == this.gl.VERTEX_SHADER)
+                throw new Error("VertexBuffer: Vertex shader compilation failed: " + msg);
+            else
+                throw new Error("VertexBuffer: Fragment shader compilation failed: " + msg);
         }
         return shader;
     }
@@ -4126,7 +4149,7 @@ class VertexBufferLines extends _VertexBufferBase__WEBPACK_IMPORTED_MODULE_0__.V
         this.gl.lineWidth(this.lineWidth);
     }
     getVertexShaderSource() {
-        return `#version 300 es 
+        return `#version 300 es
 
 precision mediump float;
 
@@ -4158,6 +4181,223 @@ void main()
 {
 	FragColor = vertexColor;
 }`;
+    }
+}
+
+
+/***/ }),
+
+/***/ "./src/VertexBufferStars.ts":
+/*!**********************************!*\
+  !*** ./src/VertexBufferStars.ts ***!
+  \**********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "VertexBufferStars": () => /* binding */ VertexBufferStars
+/* harmony export */ });
+/* harmony import */ var _VertexBufferBase__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./VertexBufferBase */ "./src/VertexBufferBase.ts");
+
+class VertexBufferStars extends _VertexBufferBase__WEBPACK_IMPORTED_MODULE_0__.VertexBufferBase {
+    constructor(gl) {
+        super(gl, gl.STATIC_DRAW);
+        this.pertN = 0;
+        this.dustSize = 0;
+        this.pertAmp = 0;
+        this.time = 0;
+        this.blendFunc = 0;
+        this.blendEquation = 0;
+        this.displayFeatures = 0;
+        this.attTheta0 = 0;
+        this.attVelTheta = 1;
+        this.attTiltAngle = 2;
+        this.attSemiMajorAxis = 3;
+        this.attSemiMinorAxis = 4;
+        this.attTemperature = 5;
+        this.attMagnitude = 6;
+        this.attType = 7;
+        this.attColor = 8;
+        this.blendFunc = this.gl.ONE;
+        this.blendEquation = this.gl.FUNC_ADD;
+        this.defineAttributes([
+            new _VertexBufferBase__WEBPACK_IMPORTED_MODULE_0__.AttributeDefinition(this.attTheta0, 1, 0),
+            new _VertexBufferBase__WEBPACK_IMPORTED_MODULE_0__.AttributeDefinition(this.attVelTheta, 1, 4),
+            new _VertexBufferBase__WEBPACK_IMPORTED_MODULE_0__.AttributeDefinition(this.attTiltAngle, 1, 8),
+            new _VertexBufferBase__WEBPACK_IMPORTED_MODULE_0__.AttributeDefinition(this.attSemiMajorAxis, 1, 12),
+            new _VertexBufferBase__WEBPACK_IMPORTED_MODULE_0__.AttributeDefinition(this.attSemiMinorAxis, 1, 16),
+            new _VertexBufferBase__WEBPACK_IMPORTED_MODULE_0__.AttributeDefinition(this.attTemperature, 1, 20),
+            new _VertexBufferBase__WEBPACK_IMPORTED_MODULE_0__.AttributeDefinition(this.attMagnitude, 1, 24),
+            new _VertexBufferBase__WEBPACK_IMPORTED_MODULE_0__.AttributeDefinition(this.attType, 1, 28),
+            new _VertexBufferBase__WEBPACK_IMPORTED_MODULE_0__.AttributeDefinition(this.attColor, 4, 32)
+        ]);
+    }
+    updateShaderVariables(time, num, amp, dustSize, displayFeatures) {
+        this.pertN = num;
+        this.pertAmp = amp;
+        this.time = time;
+        this.dustSize = dustSize;
+        this.displayFeatures = displayFeatures;
+    }
+    getVertexShaderSource() {
+        return `#version 300 es
+
+#define DEG_TO_RAD 0.01745329251
+
+uniform mat4 projMat;
+uniform mat4 viewMat;
+
+uniform int pertN;
+uniform int dustSize;
+uniform int displayFeatures;
+uniform float pertAmp;
+uniform float time;
+
+layout(location = 0) in float theta0;
+layout(location = 1) in float velTheta;
+layout(location = 2) in float tiltAngle;
+layout(location = 3) in float a;
+layout(location = 4) in float b;
+layout(location = 5) in float temp;
+layout(location = 6) in float mag;
+layout(location = 7) in int type;
+layout(location = 8) in vec4 color;
+
+out vec4 vertexColor;
+
+flat out int vertexType;
+flat out int features;
+
+vec2 calcPos(float a, float b, float theta, float velTheta, float time, float tiltAngle) {
+    float thetaActual = theta + velTheta * time;
+    float beta = -tiltAngle;
+    float alpha = thetaActual * DEG_TO_RAD;
+    float cosalpha = cos(alpha);
+    float sinalpha = sin(alpha);
+    float cosbeta = cos(beta);
+    float sinbeta = sin(beta);
+    vec2 center = vec2(0,0);
+    vec2 ps = vec2(center.x + (a * cosalpha * cosbeta - b * sinalpha * sinbeta),
+                   center.y + (a * cosalpha * sinbeta + b * sinalpha * cosbeta));
+    if (pertAmp > 0.0 && pertN > 0) {
+        ps.x += (a / pertAmp) * sin(alpha * 2.0 * float(pertN));
+        ps.y += (a / pertAmp) * cos(alpha * 2.0 * float(pertN));
+    }
+return ps;
+}
+
+void main()
+{
+    vec2 ps = calcPos(a, b, theta0, velTheta, time, tiltAngle);
+    
+    if (type==0) {
+        gl_PointSize = mag * 4.0;
+        vertexColor = color * mag;
+    } else if (type==1) {	
+        gl_PointSize = mag * 5.0 * float(dustSize);
+        vertexColor = color * mag;
+    } else if (type==2) {
+        gl_PointSize = mag * 2.0 * float(dustSize);
+        vertexColor = color * mag;
+    } else if (type==3) {
+        vec2 ps2 = calcPos(a + 1000.0, b, theta0, velTheta, time, tiltAngle);
+        float dst = distance(ps, ps2);
+        float size = ((1000.0 - dst) / 10.0) - 50.0;
+        gl_PointSize = size;
+        vertexColor = color * mag * vec4(2.0, 0.5, 0.5, 1.0);
+    } else if (type==4) {
+        vec2 ps2 = calcPos(a + 1000.0, b, theta0, velTheta, time, tiltAngle);
+        float dst = distance(ps, ps2);
+        float size = ((1000.0 - dst) / 10.0) - 50.0;
+        gl_PointSize = size/10.0;
+        vertexColor = vec4(1.0,1.0,1.0,1.0);
+    }
+    gl_Position =  projMat * vec4(ps, 0.0, 1.0);
+    vertexType = type;
+    features = displayFeatures;
+}`;
+    }
+    getFragmentShaderSource() {
+        return `#version 300 es
+
+precision mediump float;
+
+in vec4 vertexColor;
+
+flat in int vertexType;
+flat in int features;
+
+out vec4 FragColor;
+
+void main()
+{
+    if (vertexType==0) {
+        if ( (features & 1) ==0)
+            discard;
+        FragColor = vertexColor;
+        vec2 circCoord = 2.0 * gl_PointCoord - 1.0;
+        float alpha = 1.0 - length(circCoord);
+        FragColor = vec4(vertexColor.xyz, alpha);
+    } else if (vertexType==1) {
+        if ( (features & 2) ==0)
+            discard;
+        vec2 circCoord = 2.0 * gl_PointCoord - 1.0;
+        float alpha = 0.05 * (1.0 - length(circCoord));
+        FragColor = vec4(vertexColor.xyz, alpha);
+    } else if (vertexType==2) {
+        if ( (features & 4) ==0)
+            discard;
+        vec2 circCoord = 2.0 * gl_PointCoord - 1.0;
+        float alpha = 0.07 * (1.0 - length(circCoord));
+        FragColor = vec4(vertexColor.xyz, alpha);
+    } else if (vertexType==3) {
+        if ((features & 8) == 0)
+            discard;
+        vec2 circCoord = 2.0 * gl_PointCoord - 1.0;
+        float alpha = 1.0 - length(circCoord);
+        FragColor = vec4(vertexColor.xyz, alpha);
+    } else if (vertexType==4) {
+        if ((features & 8)== 0)
+            discard;
+        vec2 circCoord = 2.0 * gl_PointCoord - 1.0;
+        float alpha = 1.0 - length(circCoord);
+        FragColor = vec4(vertexColor.xyz, alpha);
+    }
+}`;
+    }
+    onSetCustomShaderVariables() {
+        if (this.shaderProgram == null)
+            throw new Error("onSetCustomShaderVariables(): Shader program is null!");
+        let varDustSize = this.gl.getUniformLocation(this.shaderProgram, "dustSize");
+        this.gl.uniform1i(varDustSize, this.dustSize);
+        let varPertN = this.gl.getUniformLocation(this.shaderProgram, "pertN");
+        this.gl.uniform1i(varPertN, this.pertN);
+        let varPertAmp = this.gl.getUniformLocation(this.shaderProgram, "pertAmp");
+        this.gl.uniform1f(varPertAmp, this.pertAmp);
+        let varTime = this.gl.getUniformLocation(this.shaderProgram, "time");
+        this.gl.uniform1f(varTime, this.time);
+        let varDisplayFeatures = this.gl.getUniformLocation(this.shaderProgram, "displayFeatures");
+        this.gl.uniform1i(varDisplayFeatures, this.displayFeatures);
+    }
+    draw(matView, matProjection) {
+        if (this.shaderProgram == null)
+            throw new Error("draw(...): Shader program is null!");
+        this.gl.useProgram(this.shaderProgram);
+        let viewMatIdx = this.gl.getUniformLocation(this.shaderProgram, "viewMat");
+        this.gl.uniformMatrix4fv(viewMatIdx, false, matView);
+        let projMatIdx = this.gl.getUniformLocation(this.shaderProgram, "projMat");
+        this.gl.uniformMatrix4fv(projMatIdx, false, matProjection);
+        this.onSetCustomShaderVariables();
+        this.gl.enable(this.gl.BLEND);
+        this.gl.blendFunc(this.gl.SRC_ALPHA, this.blendFunc);
+        this.gl.blendEquation(this.blendEquation);
+        this.onBeforeDraw();
+        this.gl.bindVertexArray(this.vertexArrayObject);
+        this.gl.drawElements(this.primitiveType, this.arrayElementCount, this.gl.UNSIGNED_INT, 0);
+        this.gl.bindVertexArray(null);
+        this.gl.disable(this.gl.BLEND);
+        this.gl.blendEquation(this.gl.FUNC_ADD);
+        this.gl.useProgram(null);
     }
 }
 

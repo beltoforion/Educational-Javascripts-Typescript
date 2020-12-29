@@ -129,8 +129,11 @@ export class VertexStar extends VertexBase
 	public star : Star = new Star()
     public col : Color = new Color()
 
-    constructor() {
+    constructor(star : Star, col : Color) {
         super()
+
+        this.star = star
+        this.col = col
     }
 
     public numberOfFloats() : number {

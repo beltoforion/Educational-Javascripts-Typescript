@@ -1,6 +1,6 @@
 import { mat4,  vec3 } from 'gl-matrix'
 
-import { Color, GalaxyParam, Vec3, VertexColor } from './Types' 
+import { Color, GalaxyParam, Vec3, VertexColor, VertexStar, Star } from './Types' 
 import { Helper } from './Helper'
 import { VertexBufferLines } from './VertexBufferLines'
 import { VertexBufferStars } from './VertexBufferStars';
@@ -50,8 +50,8 @@ export class GalaxyRenderer {
     private time : number = 0;
     private flags : DisplayItem = DisplayItem.VELOCITY | DisplayItem.STARS | DisplayItem.AXIS | DisplayItem.HELP | DisplayItem.DUST | DisplayItem.H2 | DisplayItem.FILAMENTS;
 
-//    private renderUpdateHint : RenderUpdateHint = RenderUpdateHint.DENSITY_WAVES | RenderUpdateHint.AXIS | RenderUpdateHint.STARS | RenderUpdateHint.DUST | RenderUpdateHint.CREATE_VELOCITY_CURVE | RenderUpdateHint.CREATE_TEXT;
-    private renderUpdateHint : RenderUpdateHint = RenderUpdateHint.DENSITY_WAVES | RenderUpdateHint.AXIS | RenderUpdateHint.CREATE_VELOCITY_CURVE;
+//    private renderUpdateHint : RenderUpdateHint = RenderUpdateHint.DUST;
+    private renderUpdateHint : RenderUpdateHint = RenderUpdateHint.STARS |RenderUpdateHint.DENSITY_WAVES | RenderUpdateHint.AXIS | RenderUpdateHint.CREATE_VELOCITY_CURVE;
 
     private galaxy : Galaxy = new Galaxy();
 
@@ -67,6 +67,7 @@ export class GalaxyRenderer {
 	    this.vertDensityWaves = new VertexBufferLines(this.gl, 2, this.gl.STATIC_DRAW);
         this.vertAxis = new VertexBufferLines(this.gl, 1, this.gl.STATIC_DRAW);
 	    this.vertVelocityCurve = new VertexBufferLines(this.gl, 1, this.gl.DYNAMIC_DRAW);
+        this.vertStars = new VertexBufferStars(this.gl)
 
         document.addEventListener('keydown', (event) => this.onKeydown(event));
 
@@ -110,8 +111,7 @@ export class GalaxyRenderer {
         }
     }
 
-    private scaleAxis(scale : number) : void
-    {
+    private scaleAxis(scale : number) : void {
         this.fov *= scale;
 	    this.adjustCamera();
     }
@@ -143,10 +143,13 @@ export class GalaxyRenderer {
         if ( this.vertVelocityCurve==null)
             throw new Error("initGL(): vertVelocityCurve is null!");
 
+        if ( this.vertStars==null)
+            throw new Error("initGL(): vertStars is null!");
+
         this.vertAxis.initialize();
         this.vertDensityWaves.initialize();
 	    this.vertVelocityCurve.initialize();
-//	    this.vertStars.initialize();
+	    this.vertStars.initialize();
 
         // GL initialization
         gl.viewport(0, 0, this.canvas.width, this.canvas.height);
@@ -333,7 +336,30 @@ export class GalaxyRenderer {
     }
     
     private updateStars() : void {
-//        console.log("updating stars.");
+        if (this.vertStars==null)
+            throw new Error("GalaxyRenderer.updateStars(): this.vertStars is null!")
+
+        console.log("updating stars.");
+
+        let vert : VertexStar[] = [];
+        let idx : number[] = [];
+    
+        let stars : Star[] = this.galaxy.stars;
+    
+        let a : number = 1;
+        let color : Color = new Color(1, 1, 1, a);
+    
+        for (let i = 1; i < stars.length; ++i)
+        {
+            let col : Color = Helper.colorFromTemperature(stars[i].temp);
+            col.a = a;
+    
+            idx.push(vert.length);
+            vert.push(new VertexStar(stars[i], color));
+        }
+    
+        this.vertStars.createBuffer(vert, idx, this.gl.POINTS);
+        this.renderUpdateHint &= ~RenderUpdateHint.STARS;
     }
 
     private updateVelocityCurve() : void {
@@ -341,9 +367,6 @@ export class GalaxyRenderer {
             throw new Error("GalaxyRenderer.updateVelocityCurve(): this.vertVelocityCurve is null!")
 
         console.log("updating velocity curves.");
-
-	    let stars = this.galaxy.stars;
-        let num : number = 5000;
 
         let vert : VertexColor[] = [];
 	    let idx : number[] = [];

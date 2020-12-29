@@ -92,14 +92,17 @@ export abstract class VertexBufferBase<TVertex extends VertexBase>
 
 			// We don't need the shader anymore.
 			this.gl.deleteShader(shader);
-			throw new Error("VertexBuffer: Shader compilation failed: " + msg);
+
+			if (shaderType==this.gl.VERTEX_SHADER)
+				throw new Error("VertexBuffer: Vertex shader compilation failed: " + msg);
+			else				
+				throw new Error("VertexBuffer: Fragment shader compilation failed: " + msg);
 		}
 
 		return shader;
 	}
 	
-	public initialize() : void
-	{
+	public initialize() : void {
 		//
 		// 1.) Create Vertex buffer
 		//
@@ -143,8 +146,7 @@ export abstract class VertexBufferBase<TVertex extends VertexBase>
 		this.gl.detachShader(this.shaderProgram, fragmentShader);
 	}
 
-	protected releaseAttribArray() : void 
-	{
+	protected releaseAttribArray() : void {
 		for (let i=0; i<this.attributes.length; ++i)
 		{
 			let attribIdx = this.attributes[i].attribIdx;
@@ -152,8 +154,7 @@ export abstract class VertexBufferBase<TVertex extends VertexBase>
 		}
 	}
 
-	public release() : void
-	{
+	public release() : void	{
 		this.releaseAttribArray();
 
 		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, 0);

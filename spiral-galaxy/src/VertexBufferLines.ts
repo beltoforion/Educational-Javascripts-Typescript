@@ -25,7 +25,7 @@ export class VertexBufferLines extends VertexBufferBase<VertexColor>
     
 	protected getVertexShaderSource() : string
 	{
-		return `#version 300 es 
+		return `#version 300 es
 
 precision mediump float;
 
