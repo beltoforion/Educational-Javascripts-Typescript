@@ -3122,9 +3122,6 @@ class Galaxy {
     get farFieldRad() {
         return this._radFarField;
     }
-    get hasDarkMatter() {
-        return this._hasDarkMatter;
-    }
     getExcentricity(r) {
         if (r < this._radCore) {
             // Core region of the galaxy. Innermost part is round
@@ -3175,8 +3172,11 @@ class Galaxy {
     get baseTemp() {
         return this._baseTemp;
     }
-    toggleDarkMatter() {
-        this._hasDarkMatter = this._hasDarkMatter ? false : true;
+    get hasDarkMatter() {
+        return this._hasDarkMatter;
+    }
+    set hasDarkMatter(hasDarkMatter) {
+        this._hasDarkMatter = hasDarkMatter;
         this.initStarsAndDust();
     }
 }
@@ -3212,12 +3212,11 @@ var DisplayItem;
     DisplayItem[DisplayItem["NONE"] = 0] = "NONE";
     DisplayItem[DisplayItem["AXIS"] = 1] = "AXIS";
     DisplayItem[DisplayItem["STARS"] = 2] = "STARS";
-    DisplayItem[DisplayItem["HELP"] = 8] = "HELP";
-    DisplayItem[DisplayItem["DENSITY_WAVES"] = 32] = "DENSITY_WAVES";
-    DisplayItem[DisplayItem["VELOCITY"] = 64] = "VELOCITY";
-    DisplayItem[DisplayItem["DUST"] = 128] = "DUST";
-    DisplayItem[DisplayItem["H2"] = 256] = "H2";
-    DisplayItem[DisplayItem["FILAMENTS"] = 512] = "FILAMENTS";
+    DisplayItem[DisplayItem["DENSITY_WAVES"] = 4] = "DENSITY_WAVES";
+    DisplayItem[DisplayItem["VELOCITY"] = 8] = "VELOCITY";
+    DisplayItem[DisplayItem["DUST"] = 16] = "DUST";
+    DisplayItem[DisplayItem["H2"] = 32] = "H2";
+    DisplayItem[DisplayItem["FILAMENTS"] = 64] = "FILAMENTS";
 })(DisplayItem || (DisplayItem = {}));
 var RenderUpdateHint;
 (function (RenderUpdateHint) {
@@ -3225,8 +3224,7 @@ var RenderUpdateHint;
     RenderUpdateHint[RenderUpdateHint["DENSITY_WAVES"] = 2] = "DENSITY_WAVES";
     RenderUpdateHint[RenderUpdateHint["AXIS"] = 4] = "AXIS";
     RenderUpdateHint[RenderUpdateHint["STARS"] = 8] = "STARS";
-    RenderUpdateHint[RenderUpdateHint["DUST"] = 16] = "DUST";
-    RenderUpdateHint[RenderUpdateHint["CREATE_VELOCITY_CURVE"] = 32] = "CREATE_VELOCITY_CURVE";
+    RenderUpdateHint[RenderUpdateHint["CREATE_VELOCITY_CURVE"] = 16] = "CREATE_VELOCITY_CURVE";
 })(RenderUpdateHint || (RenderUpdateHint = {}));
 class GalaxyRenderer {
     constructor(canvas) {
@@ -3241,10 +3239,10 @@ class GalaxyRenderer {
         this.camLookAt = gl_matrix__WEBPACK_IMPORTED_MODULE_6__.create();
         this.camOrient = gl_matrix__WEBPACK_IMPORTED_MODULE_6__.create();
         this.time = 0;
-        this.flags = DisplayItem.VELOCITY | DisplayItem.STARS | DisplayItem.AXIS | DisplayItem.HELP | DisplayItem.DUST | DisplayItem.H2 | DisplayItem.FILAMENTS;
-        //    private renderUpdateHint : RenderUpdateHint = RenderUpdateHint.DUST;
+        this.flags = DisplayItem.VELOCITY | DisplayItem.STARS | DisplayItem.AXIS | DisplayItem.DUST | DisplayItem.H2 | DisplayItem.FILAMENTS;
         this.renderUpdateHint = RenderUpdateHint.STARS | RenderUpdateHint.DENSITY_WAVES | RenderUpdateHint.AXIS | RenderUpdateHint.CREATE_VELOCITY_CURVE;
         this.galaxy = new _Galaxy__WEBPACK_IMPORTED_MODULE_4__.Galaxy();
+        this.preset = [];
         this.TimeStepSize = 100000.0;
         this.canvas = canvas;
         this.gl = this.canvas.getContext("webgl2");
@@ -3264,9 +3262,6 @@ class GalaxyRenderer {
         const keyName = event.key;
         console.log("Key " + keyName + " pressed");
         switch (keyName) {
-            case 'F6':
-                this.flags ^= DisplayItem.DENSITY_WAVES;
-                break;
             case '+':
                 this.scaleAxis(1.1);
                 this.setCameraOrientation(gl_matrix__WEBPACK_IMPORTED_MODULE_6__.fromValues(0, 1, 0));
@@ -3277,33 +3272,87 @@ class GalaxyRenderer {
                 this.setCameraOrientation(gl_matrix__WEBPACK_IMPORTED_MODULE_6__.fromValues(0, 1, 0));
                 this.renderUpdateHint |= RenderUpdateHint.AXIS | RenderUpdateHint.DENSITY_WAVES; // ruhDENSITY_WAVES only for the labels!
                 break;
-            case 'v':
-                this.flags ^= DisplayItem.VELOCITY;
-                break;
-            case 'm':
-                this.galaxy.toggleDarkMatter();
-                this.renderUpdateHint |= RenderUpdateHint.STARS | RenderUpdateHint.DUST | RenderUpdateHint.CREATE_VELOCITY_CURVE;
-                break;
         }
+    }
+    hasFlag(flag) {
+        return (this.flags & flag) != 0;
+    }
+    setFlag(flag, stat) {
+        if (stat)
+            this.flags |= flag;
+        else
+            this.flags &= ~flag;
+    }
+    get showAxis() {
+        return this.hasFlag(DisplayItem.AXIS);
+    }
+    set showAxis(value) {
+        this.setFlag(DisplayItem.AXIS, value);
+    }
+    get showDensityWaves() {
+        return this.hasFlag(DisplayItem.DENSITY_WAVES);
+    }
+    set showDensityWaves(value) {
+        this.setFlag(DisplayItem.DENSITY_WAVES, value);
+    }
+    get showDust() {
+        return this.hasFlag(DisplayItem.DUST);
+    }
+    set showDust(value) {
+        this.setFlag(DisplayItem.DUST, value);
+    }
+    get showDustFilaments() {
+        return this.hasFlag(DisplayItem.FILAMENTS);
+    }
+    set showDustFilaments(value) {
+        this.setFlag(DisplayItem.FILAMENTS, value);
+    }
+    get showStars() {
+        return this.hasFlag(DisplayItem.STARS);
+    }
+    set showStars(value) {
+        this.setFlag(DisplayItem.STARS, value);
+    }
+    get showH2() {
+        return this.hasFlag(DisplayItem.H2);
+    }
+    set showH2(value) {
+        this.setFlag(DisplayItem.H2, value);
+    }
+    get showVelocity() {
+        return this.hasFlag(DisplayItem.VELOCITY);
+    }
+    set showVelocity(value) {
+        this.setFlag(DisplayItem.VELOCITY, value);
+    }
+    get hasDarkMatter() {
+        return this.hasFlag(DisplayItem.VELOCITY);
+    }
+    set hasDarkMatter(hasDarkMatter) {
+        this.galaxy.hasDarkMatter = hasDarkMatter;
+        this.renderUpdateHint |= RenderUpdateHint.STARS | RenderUpdateHint.CREATE_VELOCITY_CURVE;
+    }
+    selectPreset(idx) {
+        this.galaxy.reset(this.preset[idx]);
+        this.fov = this.galaxy.rad * 3;
+        this.renderUpdateHint |= RenderUpdateHint.DENSITY_WAVES | RenderUpdateHint.STARS | RenderUpdateHint.CREATE_VELOCITY_CURVE;
     }
     scaleAxis(scale) {
         this.fov *= scale;
         this.adjustCamera();
     }
     initSimulation() {
-        let param = new _Types__WEBPACK_IMPORTED_MODULE_0__.GalaxyParam(13000, // radius of the galaxy
-        4000, // radius of the core
-        0.0004, // angluar offset of the density wave per parsec of radius
-        0.85, // excentricity at the edge of the core
-        0.95, // excentricity at the edge of the disk
-        100000, // total number of stars
-        true, // has dark matter
-        2, // Perturbations per full ellipse
-        40, // Amplitude damping factor of perturbation
-        70, // dust render size in pixel
-        4000);
-        this.galaxy.reset(param);
-        this.fov = 35000;
+        this.preset.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.GalaxyParam(13000, 4000, 0.0004, 0.85, 0.95, 100000, true, 2, 40, 70, 4000));
+        this.preset.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.GalaxyParam(16000, 4000, .0003, .8, .85, 40000, true, 0, 40, 100, 4500));
+        this.preset.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.GalaxyParam(13000, 4000, .00064, .9, .9, 40000, true, 0, 0, 85, 4100));
+        this.preset.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.GalaxyParam(13000, 4000, .0004, 1.35, 1.05, 40000, true, 0, 0, 70, 4500));
+        this.preset.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.GalaxyParam(13000, 4500, .0002, .65, .95, 40000, true, 3, 72, 90, 4000));
+        this.preset.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.GalaxyParam(15000, 4000, .0003, 1.45, 1.0, 40000, true, 0, 0, 100, 4500));
+        this.preset.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.GalaxyParam(14000, 12500, .0002, 0.65, 0.95, 40000, true, 3, 72, 85, 2200));
+        this.preset.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.GalaxyParam(13000, 1500, .0004, 1.1, 1.0, 40000, true, 1, 20, 80, 2800));
+        this.preset.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.GalaxyParam(13000, 4000, .0004, .85, .95, 40000, true, 1, 20, 80, 4500));
+        this.galaxy.reset(this.preset[0]);
+        this.fov = this.galaxy.rad * 3;
     }
     initGL(gl) {
         if (this.vertAxis == null)
@@ -4418,15 +4467,19 @@ void main()
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "galaxy": () => /* binding */ galaxy
+/* harmony export */ });
 /* harmony import */ var _GalaxyRenderer__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./GalaxyRenderer */ "./src/GalaxyRenderer.ts");
 
+var galaxy = null;
 try {
     // The html code must contain a canvas named "cvGalaxy"
     var canvas = document.getElementById('cvGalaxy');
     if (canvas == null) {
         throw Error('"The galaxy renderer needs a canvas object with id "cvGalaxy"');
     }
-    var galaxy = new _GalaxyRenderer__WEBPACK_IMPORTED_MODULE_0__.GalaxyRenderer(canvas);
+    galaxy = new _GalaxyRenderer__WEBPACK_IMPORTED_MODULE_0__.GalaxyRenderer(canvas);
 }
 catch (Error) {
     alert(Error.message);

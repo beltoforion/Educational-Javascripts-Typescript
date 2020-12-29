@@ -1,5 +1,7 @@
 import { GalaxyRenderer } from './GalaxyRenderer'
 
+export var galaxy : GalaxyRenderer | null = null;
+
 try
 {
     // The html code must contain a canvas named "cvGalaxy"
@@ -9,7 +11,7 @@ try
         throw Error('"The galaxy renderer needs a canvas object with id "cvGalaxy"');
     }
 
-    var galaxy = new GalaxyRenderer(canvas);
+    galaxy = new GalaxyRenderer(canvas);
 }
 catch(Error)
 {

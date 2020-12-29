@@ -8,14 +8,13 @@ import { Galaxy } from './Galaxy'
 
 enum DisplayItem {
     NONE          = 0,
-    AXIS          = 0b0000000001,
-    STARS         = 0b0000000010,
-    HELP          = 0b0000001000,
-    DENSITY_WAVES = 0b0000100000,
-    VELOCITY      = 0b0001000000,
-    DUST          = 0b0010000000,
-    H2            = 0b0100000000,
-    FILAMENTS     = 0b1000000000,
+    AXIS          = 0b0000001,
+    STARS         = 0b0000010,
+    DENSITY_WAVES = 0b0000100,
+    VELOCITY      = 0b0001000,
+    DUST          = 0b0010000,
+    H2            = 0b0100000,
+    FILAMENTS     = 0b1000000,
 }
 
 
@@ -24,8 +23,7 @@ enum RenderUpdateHint {
     DENSITY_WAVES = 1 << 1,
     AXIS = 1 << 2,
     STARS = 1 << 3,
-    DUST = 1 << 4,
-    CREATE_VELOCITY_CURVE = 1 << 5
+    CREATE_VELOCITY_CURVE = 1 << 4
 }
 
 
@@ -48,12 +46,12 @@ export class GalaxyRenderer {
 	private camOrient : vec3 = vec3.create();
 
     private time : number = 0;
-    private flags : DisplayItem = DisplayItem.VELOCITY | DisplayItem.STARS | DisplayItem.AXIS | DisplayItem.HELP | DisplayItem.DUST | DisplayItem.H2 | DisplayItem.FILAMENTS;
+    private flags : DisplayItem = DisplayItem.VELOCITY | DisplayItem.STARS | DisplayItem.AXIS | DisplayItem.DUST | DisplayItem.H2 | DisplayItem.FILAMENTS;
 
-//    private renderUpdateHint : RenderUpdateHint = RenderUpdateHint.DUST;
     private renderUpdateHint : RenderUpdateHint = RenderUpdateHint.STARS |RenderUpdateHint.DENSITY_WAVES | RenderUpdateHint.AXIS | RenderUpdateHint.CREATE_VELOCITY_CURVE;
 
-    private galaxy : Galaxy = new Galaxy();
+    private galaxy : Galaxy = new Galaxy()
+    private preset : GalaxyParam[] = []
 
     private readonly TimeStepSize : number = 100000.0;
 
@@ -84,10 +82,6 @@ export class GalaxyRenderer {
 
         switch(keyName)
         {
-            case 'F6':
-                this.flags ^= DisplayItem.DENSITY_WAVES;
-                break;
-
             case '+':
                 this.scaleAxis(1.1);
                 this.setCameraOrientation(vec3.fromValues(0, 1, 0));
@@ -99,16 +93,89 @@ export class GalaxyRenderer {
                 this.setCameraOrientation(vec3.fromValues(0, 1, 0));
                 this.renderUpdateHint |= RenderUpdateHint.AXIS | RenderUpdateHint.DENSITY_WAVES;  // ruhDENSITY_WAVES only for the labels!
                 break;    
-                
-            case 'v':
-                this.flags ^= DisplayItem.VELOCITY;
-                break;
-
-            case 'm':
-                this.galaxy.toggleDarkMatter();
-                this.renderUpdateHint |= RenderUpdateHint.STARS | RenderUpdateHint.DUST | RenderUpdateHint.CREATE_VELOCITY_CURVE;
-                break;
         }
+    }
+
+    private hasFlag(flag : DisplayItem) : boolean{
+        return (this.flags & flag) != 0;
+    }
+
+    private setFlag(flag : DisplayItem, stat : boolean) : void {
+        if (stat) 
+            this.flags |= flag;
+        else
+            this.flags &= ~flag;
+    }
+
+    public get showAxis() : boolean {
+        return this.hasFlag(DisplayItem.AXIS);
+    }
+
+    public set showAxis(value : boolean) {
+        this.setFlag(DisplayItem.AXIS, value) 
+    }
+    
+    public get showDensityWaves() : boolean {
+        return this.hasFlag(DisplayItem.DENSITY_WAVES);
+    }
+
+    public set showDensityWaves(value : boolean) {
+        this.setFlag(DisplayItem.DENSITY_WAVES, value) 
+    }
+
+    public get showDust() : boolean {
+        return this.hasFlag(DisplayItem.DUST);
+    }
+
+    public set showDust(value : boolean) {
+        this.setFlag(DisplayItem.DUST, value) 
+    }
+
+    public get showDustFilaments() : boolean {
+        return this.hasFlag(DisplayItem.FILAMENTS);
+    }
+
+    public set showDustFilaments(value : boolean) {
+        this.setFlag(DisplayItem.FILAMENTS, value) 
+    }
+
+    public get showStars() : boolean {
+        return this.hasFlag(DisplayItem.STARS);
+    }
+
+    public set showStars(value : boolean) {
+        this.setFlag(DisplayItem.STARS, value) 
+    }
+
+    public get showH2() : boolean {
+        return this.hasFlag(DisplayItem.H2);
+    }
+
+    public set showH2(value : boolean) {
+        this.setFlag(DisplayItem.H2, value) 
+    }
+
+    public get showVelocity() : boolean {
+        return this.hasFlag(DisplayItem.VELOCITY);
+    }
+
+    public set showVelocity(value : boolean) {
+        this.setFlag(DisplayItem.VELOCITY, value) 
+    }
+
+    public get hasDarkMatter() : boolean {
+        return this.hasFlag(DisplayItem.VELOCITY);
+    }
+
+    public set hasDarkMatter(hasDarkMatter : boolean) {
+        this.galaxy.hasDarkMatter = hasDarkMatter;
+        this.renderUpdateHint |= RenderUpdateHint.STARS | RenderUpdateHint.CREATE_VELOCITY_CURVE;
+    }
+
+    public selectPreset(idx : number) : void {
+        this.galaxy.reset(this.preset[idx]);
+        this.fov = this.galaxy.rad * 3;
+        this.renderUpdateHint |= RenderUpdateHint.DENSITY_WAVES | RenderUpdateHint.STARS | RenderUpdateHint.CREATE_VELOCITY_CURVE;
     }
 
     private scaleAxis(scale : number) : void {
@@ -117,22 +184,20 @@ export class GalaxyRenderer {
     }
 
     private initSimulation() {
-        let param = new GalaxyParam(
-            13000,		// radius of the galaxy
-            4000,		// radius of the core
-            0.0004,	    // angluar offset of the density wave per parsec of radius
-            0.85,		// excentricity at the edge of the core
-            0.95,		// excentricity at the edge of the disk
-            100000,		// total number of stars
-            true,		// has dark matter
-            2,			// Perturbations per full ellipse
-            40,			// Amplitude damping factor of perturbation
-            70,			// dust render size in pixel
-            4000)
-            
-        this.galaxy.reset(param)
-        this.fov = 35000;
+        this.preset.push(new GalaxyParam(13000, 4000, 0.0004, 0.85, 0.95, 100000, true, 2, 40, 70, 4000));
+        this.preset.push(new GalaxyParam(16000, 4000, .0003, .8, .85, 40000, true, 0, 40, 100, 4500));
+        this.preset.push(new GalaxyParam(13000, 4000, .00064, .9, .9, 40000, true, 0, 0, 85, 4100));
+        this.preset.push(new GalaxyParam(13000, 4000, .0004, 1.35, 1.05, 40000, true, 0, 0, 70, 4500));
+        this.preset.push(new GalaxyParam(13000, 4500, .0002, .65, .95, 40000, true, 3, 72, 90, 4000));
+        this.preset.push(new GalaxyParam(15000, 4000, .0003, 1.45, 1.0, 40000, true, 0, 0, 100, 4500));
+        this.preset.push(new GalaxyParam(14000, 12500, .0002, 0.65, 0.95, 40000, true, 3, 72, 85, 2200));
+        this.preset.push(new GalaxyParam(13000, 1500, .0004, 1.1, 1.0, 40000, true, 1, 20, 80, 2800 ));
+        this.preset.push(new GalaxyParam(13000, 4000, .0004, .85, .95, 40000, true, 1, 20, 80, 4500 ));
+    
+        this.galaxy.reset(this.preset[0])
+        this.fov = this.galaxy.rad * 3;
     }
+
     private initGL(gl : WebGL2RenderingContext) : void {
         if (this.vertAxis==null)
             throw new Error("initGL(): vertAxis is null!");

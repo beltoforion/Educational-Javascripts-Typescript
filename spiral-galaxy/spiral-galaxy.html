@@ -10,6 +10,121 @@
 <body>
   <h2>Galaxy Renderer</h2>
   <canvas id="cvGalaxy" width="800" height="800"></canvas>
+
   <script src="./dist/galaxy-renderer-bundle.js"></script>
+
+  <div style="float:left;width:45%" class="controls">
+	<form> 
+		<fieldset> 
+			<i>Galaxy presets</i><br/> 
+			<select id="cbPreset" name="viewpoint" onChange="onSelectPreset()">
+				<option value="1">Sample 1</option>
+				<option value="2">Sample 2</option>
+				<option value="3">Sample 3</option>
+				<option value="4">Sample 4</option>
+				<option value="5">Sample 5</option>
+				<option value="6">Sample 6</option>
+				<option value="7">Sample 7</option>
+				<option value="8">Sample 8</option>
+				<option value="9">Sample 9</option>
+			</select>
+		</fieldset>
+
+		<fieldset>  
+			<i>Physics</i><br/>
+			<input type="checkbox" value="true" id="cbHasDarkMatter" onChange="onHasDarkMatter()"/> 
+			<label for="cbHasDarkMatter">dark matter</label><br/>
+			<input type="checkbox" value="true" id="cbShowVelocity" onChange="onShowVelocity()"/> 
+			<label for="cbShowVelocity">velocity curve</label><br/>
+		</fieldset>
+
+		<fieldset>  
+			<i>Display</i><br/>
+			<input type="checkbox" value="true" id="cbShowDensityWaves" onChange="onShowDensityWaves()"/> 
+			<label for="cbShowDensityWaves">density waves</label><br/>
+			<input type="checkbox" value="true" id="cbShowAxis" onChange="onShowAxis()"/> 
+			<label for="cbShowAxis">axis</label><br/>
+			<input type="checkbox" value="true" id="cbShowStars" onChange="onShowStars()"/> 
+			<label for="cbShowStars">stars</label><br/>
+			<input type="checkbox" value="true" id="cbShowDust" onChange="onShowDust()"/> 
+			<label for="cbShowDust">dust</label><br/>
+			<input type="checkbox" value="true" id="cbShowDustFilaments" onChange="onShowDustFilaments()"/> 
+			<label for="cbShowDustFilaments">dust filaments</label><br/>
+			<input type="checkbox" value="true" id="cbShowH2" onChange="onShowH2()"/> 
+			<label for="cbShowH2">H2 regions</label><br/>
+		</fieldset>
+	</form>
+</div>
+    <script>
+		
+		try
+		{
+			var galaxy = window.GalaxyRenderer.galaxy;
+			updateControls();
+
+			function updateControls() {
+        		// Display options
+        		document.getElementById("cbShowDensityWaves").value = galaxy.showDensityWaves
+        		document.getElementById("cbShowAxis").checked = galaxy.showAxis
+        		document.getElementById("cbShowStars").checked = galaxy.showStars
+        		document.getElementById("cbShowDust").checked = galaxy.showDust
+        		document.getElementById("cbShowDustFilaments").checked = galaxy.showDustFilaments
+        		document.getElementById("cbShowH2").checked = galaxy.showH2
+
+				// Physics options
+				document.getElementById("cbShowVelocity").checked = galaxy.showVelocity
+				document.getElementById("cbHasDarkMatter").checked = galaxy.hasDarkMatter;
+	        }
+
+			function onSelectPreset() {
+				galaxy.selectPreset(parseInt(document.getElementById("cbPreset").value))
+			}
+
+			function onShowDensityWaves() {
+				var check = document.getElementById("cbShowDensityWaves").checked;
+		        galaxy.showDensityWaves = check;
+			}
+			
+			function onShowAxis() {
+				var check = document.getElementById("cbShowAxis").checked;
+				galaxy.showAxis = check;
+			}
+
+			function onShowStars() {
+				var check = document.getElementById("cbShowStars").checked;
+				galaxy.showStars = check;
+			}
+
+			function onShowDust() {
+				var check = document.getElementById("cbShowDust").checked;
+		        galaxy.showDust = check;
+			}
+
+			function onShowDustFilaments() {
+				var check = document.getElementById("cbShowDustFilaments").checked;
+		        galaxy.showDustFilaments = check;
+			}
+
+			function onShowH2() {
+				var check = document.getElementById("cbShowH2").checked;
+		        galaxy.showH2 = check;
+			}
+
+			function onShowVelocity() {
+				var check = document.getElementById("cbShowVelocity").checked;
+		        galaxy.showVelocity = check;
+			}
+
+			function onHasDarkMatter() {
+				var check = document.getElementById("cbHasDarkMatter").checked;
+		        galaxy.hasDarkMatter = check;
+			}
+
+		}
+		catch(Error)
+		{
+			alert(Error.message);
+		}
+	</script>
 </body>
 </html>

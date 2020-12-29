@@ -258,11 +258,6 @@ export class Galaxy {
         return this._radFarField;
     }
 
-    get hasDarkMatter() : boolean
-    {
-        return this._hasDarkMatter;
-    }
-
     public getExcentricity(r: number) : number 
     {
         if (r < this._radCore)
@@ -338,9 +333,12 @@ export class Galaxy {
         return this._baseTemp;
     }
 
-    public toggleDarkMatter() : void
-    {
-        this._hasDarkMatter = this._hasDarkMatter ? false : true;
+    public get hasDarkMatter() : boolean {
+        return this._hasDarkMatter;
+    }
+
+    public set hasDarkMatter(hasDarkMatter : boolean) {
+        this._hasDarkMatter = hasDarkMatter;
         this.initStarsAndDust();
     }
 
