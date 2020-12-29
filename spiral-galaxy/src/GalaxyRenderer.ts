@@ -1,4 +1,4 @@
-import { mat4 } from 'gl-matrix'
+import { mat4,  vec3 } from 'gl-matrix'
 
 import { Vec3, VertexColor } from './Types' 
 import { Helper } from './Helper'
@@ -44,9 +44,9 @@ export class GalaxyRenderer {
     private matProjection : mat4 = mat4.create();
 	private matView : mat4 = mat4.create();
 
-	private camPos : Vec3 = new Vec3();
-	private camLookAt : Vec3 = new Vec3();
-	private camOrient : Vec3 = new Vec3();
+	private camPos : vec3 = vec3.create();
+	private camLookAt : vec3 = vec3.create();
+	private camOrient : vec3 = vec3.create();
 
     private time : number = 0;
     private flags : DisplayItem = DisplayItem.STARS | DisplayItem.AXIS | DisplayItem.HELP | DisplayItem.DUST | DisplayItem.H2 | DisplayItem.FILAMENTS;
@@ -109,10 +109,10 @@ export class GalaxyRenderer {
 
     	gl.disable(gl.DEPTH_TEST);
 	    gl.clearColor(0.0, .0, 0.08, 0.0);
-	    this.setCameraOrientation(new Vec3(0, 1, 0));
+	    this.setCameraOrientation(vec3.fromValues(0, 1, 0));
     }
 
-    private setCameraOrientation(orient : Vec3) : void {   
+    private setCameraOrientation(orient : vec3) : void {   
 	    this.camOrient = orient;
 	    this.adjustCamera();
     }
@@ -127,10 +127,11 @@ export class GalaxyRenderer {
 	     	-l, l, 
 		    -l, l);
 	
-    	// glm::dvec3 camPos(_camPos.x, _camPos.y, _camPos.z);
-    	// glm::dvec3 camLookAt(_camLookAt.x, _camLookAt.y, _camLookAt.z);
-	    // glm::dvec3 camOrient(_camOrient.x, _camOrient.y, _camOrient.z);
-        // _matView = glm::lookAt(camPos, camLookAt, camOrient);
+        mat4.lookAt(
+            this.matView,
+            this.camPos, 
+            this.camLookAt, 
+            this.camOrient);
     }
 
     private updateAxis() : void {
@@ -142,7 +143,7 @@ export class GalaxyRenderer {
         let vert : VertexColor[] = [];
         let idx : number[] = [];
 
-        let s : number = Math.pow(10, (Math.log10(this.fov / 2)));
+        let s : number = Math.pow(10, Math.floor((Math.log10(this.fov / 2))));
         let l : number = this.fov / 100;
         let p : number = 0;
 
@@ -151,8 +152,7 @@ export class GalaxyRenderer {
         let b : number = 0.3;
         let a : number = 0.8;
     
-        for (let i = 0; p < this.fov; ++i)
-        {
+        for (let i = 0; p < this.fov; ++i) {
             p += s;
             idx.push(vert.length);
             vert.push(new VertexColor(p, -l, 0, r, g, b, a));
@@ -190,7 +190,7 @@ export class GalaxyRenderer {
     
         idx.push(vert.length);
         vert.push(new VertexColor( 0, this.fov, 0, r, g, b, a ));
-    
+
         this.vertAxis.createBuffer(vert, idx, this.gl.LINES);
         this.renderUpdateHint &= ~RenderUpdateHint.AXIS;        
     }
@@ -232,14 +232,13 @@ export class GalaxyRenderer {
         if ((this.renderUpdateHint & RenderUpdateHint.CREATE_TEXT) != 0)
             this.updateText();
 
-        this.camOrient = new Vec3(0, 1, 0 );
-        this.camPos = new Vec3(0, 0, 5000);
-        this.camLookAt = new Vec3(0, 0, 0);
+        this.camOrient = vec3.fromValues(0, 1, 0 );
+        this.camPos = vec3.fromValues(0, 0, 5000);
+        this.camLookAt = vec3.fromValues(0, 0, 0);
     }
 
     private render() {
         this.gl.clearColor(0, 0, this.b, 1);
-//        this.gl.clear(this.gl.COLOR_BUFFER_BIT| this.gl.DEPTH_BUFFER_BIT);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
         this.adjustCamera();
 
