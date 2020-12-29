@@ -4260,7 +4260,7 @@ layout(location = 3) in float a;
 layout(location = 4) in float b;
 layout(location = 5) in float temp;
 layout(location = 6) in float mag;
-layout(location = 7) in int type;
+layout(location = 7) in float type;
 layout(location = 8) in vec4 color;
 
 out vec4 vertexColor;
@@ -4290,22 +4290,22 @@ void main()
 {
     vec2 ps = calcPos(a, b, theta0, velTheta, time, tiltAngle);
     
-    if (type==0) {
+    if (int(type)==0) {
         gl_PointSize = mag * 4.0;
         vertexColor = color * mag;
-    } else if (type==1) {	
+    } else if (int(type)==1) {	
         gl_PointSize = mag * 5.0 * float(dustSize);
         vertexColor = color * mag;
-    } else if (type==2) {
+    } else if (int(type)==2) {
         gl_PointSize = mag * 2.0 * float(dustSize);
         vertexColor = color * mag;
-    } else if (type==3) {
+    } else if (int(type)==3) {
         vec2 ps2 = calcPos(a + 1000.0, b, theta0, velTheta, time, tiltAngle);
         float dst = distance(ps, ps2);
         float size = ((1000.0 - dst) / 10.0) - 50.0;
         gl_PointSize = size;
         vertexColor = color * mag * vec4(2.0, 0.5, 0.5, 1.0);
-    } else if (type==4) {
+    } else if (int(type)==4) {
         vec2 ps2 = calcPos(a + 1000.0, b, theta0, velTheta, time, tiltAngle);
         float dst = distance(ps, ps2);
         float size = ((1000.0 - dst) / 10.0) - 50.0;
@@ -4313,7 +4313,7 @@ void main()
         vertexColor = vec4(1.0,1.0,1.0,1.0);
     }
     gl_Position =  projMat * vec4(ps, 0.0, 1.0);
-    vertexType = type;
+    vertexType = int(type);
     features = displayFeatures;
 }`;
     }
