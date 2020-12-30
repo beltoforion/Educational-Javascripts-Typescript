@@ -3267,6 +3267,7 @@ class GalaxyRenderer {
         this._galaxy = new _Galaxy__WEBPACK_IMPORTED_MODULE_4__.Galaxy();
         this.preset = [];
         this.TimeStepSize = 100000.0;
+        this.dustRenderSizeBase = 187;
         this.canvas = canvas;
         this.gl = this.canvas.getContext("webgl2");
         if (this.gl === null)
@@ -3311,6 +3312,7 @@ class GalaxyRenderer {
     }
     set fov(value) {
         this._fov = value;
+        this.galaxy.dustRenderSize = Math.max(this.dustRenderSizeBase - 0.0026 * this._fov, 0);
         this.adjustCamera();
         this.renderUpdateHint |= RenderUpdateHint.AXIS | RenderUpdateHint.DENSITY_WAVES;
     }
@@ -3318,10 +3320,13 @@ class GalaxyRenderer {
         return this._fov;
     }
     set dustRenderSize(value) {
-        this.galaxy.dustRenderSize = value;
+        this.dustRenderSizeBase = value;
+        this.galaxy.dustRenderSize = Math.max(this.dustRenderSizeBase - 0.0026 * this._fov, 0);
+        //        this.galaxy.dustRenderSize = value;
     }
     get dustRenderSize() {
-        return this.galaxy.dustRenderSize;
+        //        return this.galaxy.dustRenderSize;
+        return this.dustRenderSizeBase;
     }
     hasFlag(flag) {
         return (this.flags & flag) != 0;

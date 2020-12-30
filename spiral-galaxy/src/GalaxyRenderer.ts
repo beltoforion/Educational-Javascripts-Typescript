@@ -108,8 +108,13 @@ export class GalaxyRenderer {
 */        
     }
 
+    private dustRenderSizeBase : number = 187;
+
     public set fov(value : number) {
         this._fov = value;
+
+        this.galaxy.dustRenderSize = Math.max(this.dustRenderSizeBase - 0.0026 * this._fov, 0);
+
         this.adjustCamera();
         this.renderUpdateHint |= RenderUpdateHint.AXIS | RenderUpdateHint.DENSITY_WAVES;
     }
@@ -119,11 +124,14 @@ export class GalaxyRenderer {
     }
 
     public set dustRenderSize(value : number) {
-        this.galaxy.dustRenderSize = value;
+        this.dustRenderSizeBase = value;
+        this.galaxy.dustRenderSize = Math.max(this.dustRenderSizeBase - 0.0026 * this._fov, 0);
+//        this.galaxy.dustRenderSize = value;
     }
 
     public get dustRenderSize() {
-        return this.galaxy.dustRenderSize;
+//        return this.galaxy.dustRenderSize;
+        return this.dustRenderSizeBase;
     }
 
     private hasFlag(flag : DisplayItem) : boolean{

@@ -1,3 +1,6 @@
 *.js.map
 spiral-galaxy/node_modules/*
 spiral-galaxy/debug.log
+spiral-galaxy/.vs/spiral-galaxy/v16/.suo
+*.sqlite
+spiral-galaxy/.vs/spiral-galaxy/v16/.suo
