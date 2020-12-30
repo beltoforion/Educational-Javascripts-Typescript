@@ -3214,6 +3214,7 @@ class Galaxy {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "RenderUpdateHint": () => /* binding */ RenderUpdateHint,
 /* harmony export */   "GalaxyRenderer": () => /* binding */ GalaxyRenderer
 /* harmony export */ });
 /* harmony import */ var gl_matrix__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! gl-matrix */ "./node_modules/gl-matrix/esm/mat4.js");
@@ -3261,9 +3262,9 @@ class GalaxyRenderer {
         this.camLookAt = gl_matrix__WEBPACK_IMPORTED_MODULE_6__.create();
         this.camOrient = gl_matrix__WEBPACK_IMPORTED_MODULE_6__.create();
         this.time = 0;
-        this.flags = DisplayItem.VELOCITY | DisplayItem.STARS | DisplayItem.AXIS | DisplayItem.DUST | DisplayItem.H2 | DisplayItem.FILAMENTS;
-        this.renderUpdateHint = RenderUpdateHint.STARS | RenderUpdateHint.DENSITY_WAVES | RenderUpdateHint.AXIS | RenderUpdateHint.CREATE_VELOCITY_CURVE;
-        this.galaxy = new _Galaxy__WEBPACK_IMPORTED_MODULE_4__.Galaxy();
+        this.flags = DisplayItem.STARS | DisplayItem.AXIS | DisplayItem.DUST | DisplayItem.H2 | DisplayItem.FILAMENTS;
+        this._renderUpdateHint = RenderUpdateHint.STARS | RenderUpdateHint.DENSITY_WAVES | RenderUpdateHint.AXIS | RenderUpdateHint.CREATE_VELOCITY_CURVE;
+        this._galaxy = new _Galaxy__WEBPACK_IMPORTED_MODULE_4__.Galaxy();
         this.preset = [];
         this.TimeStepSize = 100000.0;
         this.canvas = canvas;
@@ -3280,6 +3281,15 @@ class GalaxyRenderer {
         // Start the main loop
         window.requestAnimationFrame((timeStamp) => this.mainLoop(timeStamp));
     }
+    set renderUpdateHint(hint) {
+        this._renderUpdateHint = hint;
+    }
+    get renderUpdateHint() {
+        return this._renderUpdateHint;
+    }
+    get galaxy() {
+        return this._galaxy;
+    }
     onKeydown(event) {
         /*
                 const keyName = event.key;
@@ -3288,15 +3298,13 @@ class GalaxyRenderer {
                 switch(keyName)
                 {
                     case '+':
-                        this.scaleAxis(1.1);
-                        this.setCameraOrientation(vec3.fromValues(0, 1, 0));
-                        this.renderUpdateHint |= RenderUpdateHint.AXIS | RenderUpdateHint.DENSITY_WAVES;  // ruhDENSITY_WAVES only for the labels!
+                        this.galaxy.exInner = Math.max(this.galaxy.exInner - 0.05, 0.0)
+                        this.renderUpdateHint |= RenderUpdateHint.DENSITY_WAVES
                         break;
         
                     case '-':
-                        this.scaleAxis(0.9);
-                        this.setCameraOrientation(vec3.fromValues(0, 1, 0));
-                        this.renderUpdateHint |= RenderUpdateHint.AXIS | RenderUpdateHint.DENSITY_WAVES;  // ruhDENSITY_WAVES only for the labels!
+                        this.galaxy.exInner = this.galaxy.exInner + 0.05
+                        this.renderUpdateHint |= RenderUpdateHint.DENSITY_WAVES
                         break;
                 }
         */
@@ -3367,7 +3375,7 @@ class GalaxyRenderer {
         this.setFlag(DisplayItem.VELOCITY, value);
     }
     get hasDarkMatter() {
-        return this.hasFlag(DisplayItem.VELOCITY);
+        return this.galaxy.hasDarkMatter;
     }
     set hasDarkMatter(hasDarkMatter) {
         this.galaxy.hasDarkMatter = hasDarkMatter;
@@ -3385,15 +3393,15 @@ class GalaxyRenderer {
         this.galaxy.exOuter = outterEx;
         this.galaxy.angleOffset = angularOffset;
         this.galaxy.pertN = pertN;
-        this.renderUpdateHint |= RenderUpdateHint.DENSITY_WAVES | RenderUpdateHint.CREATE_VELOCITY_CURVE;
+        this.renderUpdateHint |= RenderUpdateHint.DENSITY_WAVES;
     }
     initSimulation() {
-        this.preset.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.GalaxyParam(13000, 4000, 0.0004, 0.85, 0.95, 100000, true, 2, 40, 58, 4000));
-        this.preset.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.GalaxyParam(16000, 4000, .0003, .8, .85, 40000, true, 0, 40, 100, 4500));
-        this.preset.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.GalaxyParam(13000, 4000, .00064, .9, .9, 40000, true, 0, 0, 85, 4100));
+        this.preset.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.GalaxyParam(13000, 4000, 0.0004, 0.85, 0.95, 40000, true, 2, 40, 70, 4000));
+        this.preset.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.GalaxyParam(16000, 4000, .0003, .8, .85, 40000, true, 0, 40, 58, 4500));
+        this.preset.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.GalaxyParam(13000, 4000, .00064, .9, .9, 40000, true, 0, 0, 75, 4100));
         this.preset.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.GalaxyParam(13000, 4000, .0004, 1.35, 1.05, 40000, true, 0, 0, 70, 4500));
-        this.preset.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.GalaxyParam(13000, 4500, .0002, .65, .95, 40000, true, 3, 72, 90, 4000));
-        this.preset.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.GalaxyParam(15000, 4000, .0003, 1.45, 1.0, 40000, true, 0, 0, 100, 4500));
+        this.preset.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.GalaxyParam(13000, 4500, .0002, .65, .95, 40000, true, 3, 72, 80, 4000));
+        this.preset.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.GalaxyParam(15000, 4000, .0003, 1.45, 1.0, 40000, true, 0, 0, 80, 4500));
         this.preset.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.GalaxyParam(14000, 12500, .0002, 0.65, 0.95, 40000, true, 3, 72, 85, 2200));
         this.preset.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.GalaxyParam(13000, 1500, .0004, 1.1, 1.0, 40000, true, 1, 20, 80, 2800));
         this.preset.push(new _Types__WEBPACK_IMPORTED_MODULE_0__.GalaxyParam(13000, 4000, .0004, .85, .95, 40000, true, 1, 20, 80, 4500));
@@ -3431,7 +3439,7 @@ class GalaxyRenderer {
     updateAxis() {
         if (this.vertAxis == null)
             throw new Error("Galaxyrenderer.updateAxis(): this.vertAxis is null!");
-        console.log("updating axis data.");
+        //        console.log("updating axis data.");
         let vert = [];
         let idx = [];
         let s = Math.pow(10, Math.floor((Math.log10(this.fov / 2))));
@@ -3474,7 +3482,7 @@ class GalaxyRenderer {
     updateDensityWaves() {
         if (this.vertDensityWaves == null)
             throw new Error("GalaxyRenderer.updateDensityWaves(): this.vertDensityWaves is null!");
-        console.log("updating density waves.");
+        //        console.log("updating density waves.");
         let vert = [];
         let idx = [];
         //
@@ -3530,7 +3538,7 @@ class GalaxyRenderer {
     updateStars() {
         if (this.vertStars == null)
             throw new Error("GalaxyRenderer.updateStars(): this.vertStars is null!");
-        console.log("updating stars.");
+        //        console.log("updating stars.");
         let vert = [];
         let idx = [];
         let stars = this.galaxy.stars;
@@ -3547,11 +3555,9 @@ class GalaxyRenderer {
     updateVelocityCurve() {
         if (this.vertVelocityCurve == null)
             throw new Error("GalaxyRenderer.updateVelocityCurve(): this.vertVelocityCurve is null!");
-        console.log("updating velocity curves.");
+        //        console.log("updating velocity curves.");
         let vert = [];
         let idx = [];
-        let dt_in_sec = this.TimeStepSize * _Helper__WEBPACK_IMPORTED_MODULE_1__.Helper.SEC_PER_YEAR;
-        let r = 0, v = 0;
         let cr = 0.5, cg = 1, cb = 1, ca = 1;
         for (let r = 0; r < this.galaxy.farFieldRad; r += 100) {
             let v = (this.galaxy.hasDarkMatter)
@@ -3578,7 +3584,7 @@ class GalaxyRenderer {
         this.camLookAt = gl_matrix__WEBPACK_IMPORTED_MODULE_6__.fromValues(0, 0, 0);
     }
     render() {
-        this.gl.clearColor(0.0, 0.0, 0.1, 1);
+        this.gl.clearColor(0.0, 0.0, 0, 0);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
         this.adjustCamera();
         if (this.vertAxis != null && this.flags & DisplayItem.AXIS)
@@ -4033,6 +4039,127 @@ class VertexStar extends VertexBase {
     }
 }
 ;
+
+
+/***/ }),
+
+/***/ "./src/UiController.ts":
+/*!*****************************!*\
+  !*** ./src/UiController.ts ***!
+  \*****************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "UiController": () => /* binding */ UiController
+/* harmony export */ });
+/* harmony import */ var _GalaxyRenderer__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./GalaxyRenderer */ "./src/GalaxyRenderer.ts");
+
+class UiController {
+    constructor(renderer) {
+        this.rad = 0;
+        this.coreRad = 0;
+        this.exInner = 0;
+        this.exOuter = 0;
+        this.angleOffset = 0;
+        this.pertN = 0;
+        this._isEditMode = false;
+        this.renderState = [];
+        this.renderer = renderer;
+        this.rad = this.galaxy.rad;
+        this.coreRad = this.galaxy.coreRad / this.galaxy.rad;
+        this.exInner = this.galaxy.exInner;
+        this.exOuter = this.galaxy.exOuter;
+        this.angleOffset = this.galaxy.angleOffset;
+        this.pertN = this.galaxy.pertN;
+    }
+    set isEditMode(mode) {
+        if (this._isEditMode == mode)
+            return;
+        if (this._isEditMode == false)
+            this.enterEditMode();
+        else if (this._isEditMode == true)
+            this.leaveEditMode();
+    }
+    get galaxy() {
+        return this.renderer.galaxy;
+    }
+    leaveEditMode() {
+        if (!this._isEditMode)
+            return;
+        console.log("leaving edit mode");
+        try {
+            this.renderer.showDensityWaves = this.renderState[0];
+            this.renderer.showH2 = this.renderState[1];
+            this.renderer.showDust = this.renderState[2];
+            this.renderer.showStars = this.renderState[3];
+            this.renderer.showVelocity = this.renderState[4];
+            this.renderer.showDustFilaments = this.renderState[5];
+            this.renderState = [];
+        }
+        finally {
+            this._isEditMode = false;
+            this.renderer.renderUpdateHint = _GalaxyRenderer__WEBPACK_IMPORTED_MODULE_0__.RenderUpdateHint.STARS;
+        }
+    }
+    enterEditMode() {
+        if (this._isEditMode)
+            return;
+        console.log("entering edit mode");
+        try {
+            this.renderState = [];
+            this.renderState.push(this.renderer.showDensityWaves);
+            this.renderState.push(this.renderer.showH2);
+            this.renderState.push(this.renderer.showDust);
+            this.renderState.push(this.renderer.showStars);
+            this.renderState.push(this.renderer.showVelocity);
+            this.renderState.push(this.renderer.showDustFilaments);
+            this.renderer.showDensityWaves = true;
+            this.renderer.showH2 = false;
+            this.renderer.showDust = false;
+            this.renderer.showStars = false;
+            this.renderer.showVelocity = false;
+            this.renderer.showDustFilaments = false;
+        }
+        finally {
+            this._isEditMode = true;
+        }
+    }
+    initilializeSlider(id, idLabel, prop) {
+        let slider = document.getElementById(id);
+        if (slider == null)
+            throw new Error("UiController.initilializeSlider(): Ther is no input element with that id!");
+        slider.value = this[prop];
+        let label = document.getElementById(idLabel);
+        label.innerHTML = slider.value;
+        let obj = this.renderer;
+        slider.oninput = function () {
+            obj[prop] = parseFloat(slider.value);
+            label.innerHTML = slider.value;
+        };
+    }
+    initilializeEditModeSlider(id, idLabel, prop) {
+        let slider = document.getElementById(id);
+        if (slider == null)
+            throw new Error("UiController.initilializeSlider(): Ther is no input element with that id!");
+        slider.value = this[prop];
+        let label = document.getElementById(idLabel);
+        label.innerHTML = slider.value;
+        let self = this;
+        slider.oninput = function () {
+            self[prop] = parseFloat(slider.value);
+            self.isEditMode = true;
+            label.innerHTML = slider.value;
+            self.update();
+        };
+        slider.onmouseup = function () {
+            self.isEditMode = false;
+        };
+    }
+    update() {
+        this.renderer.updateDensityWaveParam(this.coreRad * this.rad, this.rad, this.angleOffset, this.exInner, this.exOuter, this.pertN);
+    }
+}
 
 
 /***/ }),
@@ -4514,11 +4641,15 @@ void main()
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "galaxy": () => /* binding */ galaxy
+/* harmony export */   "galaxy": () => /* binding */ galaxy,
+/* harmony export */   "uiController": () => /* binding */ uiController
 /* harmony export */ });
 /* harmony import */ var _GalaxyRenderer__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./GalaxyRenderer */ "./src/GalaxyRenderer.ts");
+/* harmony import */ var _UiController__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./UiController */ "./src/UiController.ts");
+
 
 var galaxy = null;
+var uiController = null;
 try {
     // The html code must contain a canvas named "cvGalaxy"
     var canvas = document.getElementById('cvGalaxy');
@@ -4526,6 +4657,7 @@ try {
         throw Error('"The galaxy renderer needs a canvas object with id "cvGalaxy"');
     }
     galaxy = new _GalaxyRenderer__WEBPACK_IMPORTED_MODULE_0__.GalaxyRenderer(canvas);
+    uiController = new _UiController__WEBPACK_IMPORTED_MODULE_1__.UiController(galaxy);
 }
 catch (Error) {
     alert(Error.message);

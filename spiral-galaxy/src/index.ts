@@ -1,6 +1,8 @@
 import { GalaxyRenderer } from './GalaxyRenderer'
+import { UiController } from './UiController'
 
-export var galaxy : GalaxyRenderer | null = null;
+export var galaxy : GalaxyRenderer | null = null
+export var uiController : UiController | null = null
 
 try
 {
@@ -12,6 +14,8 @@ try
     }
 
     galaxy = new GalaxyRenderer(canvas);
+    uiController = new UiController(galaxy);
+
 }
 catch(Error)
 {
