@@ -1,4 +1,4 @@
-class Vec2d  {
+export class Vec2d  {
 	public x : number;
 	public y : number;
 

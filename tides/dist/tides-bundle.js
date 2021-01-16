@@ -1,8 +1,248 @@
+var TidalSimulation;TidalSimulation =
+/******/ (() => { // webpackBootstrap
+/******/ 	"use strict";
+/******/ 	var __webpack_modules__ = ({
+
+/***/ "../shared/context2d.ts":
+/*!******************************!*\
+  !*** ../shared/context2d.ts ***!
+  \******************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "Context2d": () => /* binding */ Context2d
+/* harmony export */ });
+class Context2d {
+    static Create(cv) {
+        var ctx = cv.getContext("2d");
+        // Extend the context with a draw arrow function
+        ctx.drawVector = function (x, y, vx, vy, len, w, col) {
+            var x1 = x;
+            var y1 = y;
+            var x2 = x1 + vx;
+            var y2 = y1 + vy;
+            var a = Math.atan2(y2 - y1, x2 - x1);
+            this.beginPath();
+            this.moveTo(x1, y1);
+            this.lineTo(x2, y2);
+            this.lineTo(x2 - len * Math.cos(a - Math.PI / 6), y2 - len * Math.sin(a - Math.PI / 7));
+            this.moveTo(x2, y2);
+            this.lineTo(x2 - len * Math.cos(a + Math.PI / 6), y2 - len * Math.sin(a + Math.PI / 7));
+            this.lineWidth = (w != null) ? w : 2;
+            this.strokeStyle = (col != null) ? col : 'yellow';
+            this.stroke();
+            this.closePath();
+        };
+        ctx.drawArrow = function (x1, y1, x2, y2, len, w, col) {
+            var a = Math.atan2(y2 - y1, x2 - x1);
+            this.beginPath();
+            this.moveTo(x1, y1);
+            this.lineTo(x2, y2);
+            this.lineTo(x2 - len * Math.cos(a - Math.PI / 6), y2 - len * Math.sin(a - Math.PI / 7));
+            this.moveTo(x2, y2);
+            this.lineTo(x2 - len * Math.cos(a + Math.PI / 6), y2 - len * Math.sin(a + Math.PI / 7));
+            this.lineWidth = (w != null) ? w : 2;
+            this.strokeStyle = (col != null) ? col : 'yellow';
+            this.stroke();
+            this.closePath();
+        };
+        ctx.drawCross = function (x, y, w, l, color) {
+            this.beginPath();
+            this.moveTo(x - l, y);
+            this.lineTo(x + l, y);
+            this.moveTo(x, y - l);
+            this.lineTo(x, y + l);
+            this.strokeStyle = color;
+            this.lineWidth = w;
+            this.stroke();
+            this.closePath();
+        };
+        ctx.drawCircle = function (pos, r, a1, a2, color, colorOutline, lineWidth) {
+            this.beginPath();
+            this.arc(pos.x, pos.y, r, a1, a2);
+            if (color != null) {
+                this.fillStyle = color;
+                this.fill();
+            }
+            this.lineWidth = (lineWidth != null) ? lineWidth : 2;
+            this.strokeStyle = colorOutline;
+            this.stroke();
+            this.closePath();
+        };
+        ctx.drawCenterOfMass = function (pos, r) {
+            this.fillStyle = 'white';
+            this.beginPath();
+            this.arc(pos.x, pos.y, r, 0, Math.PI / 2);
+            this.lineTo(pos.x, pos.y);
+            this.closePath();
+            this.fill();
+            this.fillStyle = 'black';
+            this.beginPath();
+            this.arc(pos.x, pos.y, r, Math.PI / 2, Math.PI);
+            this.lineTo(pos.x, pos.y);
+            this.closePath();
+            this.fill();
+            this.fillStyle = 'white';
+            this.beginPath();
+            this.arc(pos.x, pos.y, r, Math.PI, 1.5 * Math.PI);
+            this.lineTo(pos.x, pos.y);
+            this.closePath();
+            this.fill();
+            this.fillStyle = 'black';
+            this.beginPath();
+            this.arc(pos.x, pos.y, r, 1.5 * Math.PI, 2 * Math.PI);
+            this.lineTo(pos.x, pos.y);
+            this.closePath();
+            this.fill();
+        };
+        return ctx;
+    }
+}
+
+
+/***/ }),
+
+/***/ "../shared/vec2d.ts":
+/*!**************************!*\
+  !*** ../shared/vec2d.ts ***!
+  \**************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "Vec2d": () => /* binding */ Vec2d
+/* harmony export */ });
+class Vec2d {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+    clone() {
+        return new Vec2d(this.x, this.y);
+    }
+    length() {
+        return Math.sqrt(this.x * this.x + this.y * this.y);
+    }
+    lengthSqr() {
+        return this.x * this.x + this.y * this.y;
+    }
+    add(v) {
+        this.x += v.x;
+        this.y += v.y;
+        return this;
+    }
+    subtract(v) {
+        this.x -= v.x;
+        this.y -= v.y;
+        return this;
+    }
+    rotate(angle) {
+        var fi = angle * Math.PI / 180;
+        this.x = this.x * Math.cos(fi) - this.y * Math.sin(fi);
+        this.y = this.x * Math.sin(fi) + this.y * Math.cos(fi);
+        return this;
+    }
+    orthoNormal() {
+        var ret = new Vec2d(this.y, this.x);
+        return ret.multiplyValue(ret.length());
+    }
+    // Angle towards the positive y axis in radians
+    verticalAngle() {
+        return Math.PI - Math.atan2(this.x, this.y);
+    }
+    // Angle towards the positive y axis in radians
+    verticalAngleDeg() {
+        return this.verticalAngle() * 180.0 / Math.PI;
+    }
+    addXY(x, y) {
+        this.x += x;
+        this.y += y;
+        return this;
+    }
+    normalize() {
+        var l = this.length();
+        this.divideValue(l);
+        return this;
+    }
+    multiplyValue(s) {
+        this.x *= s;
+        this.y *= s;
+        return this;
+    }
+    divideValue(s) {
+        this.x /= s;
+        this.y /= s;
+        return this;
+    }
+    //-------------------------------------------------------------------------------------------------
+    // Static functions that do not alter the arguments
+    //-------------------------------------------------------------------------------------------------
+    rotateEx(angle) {
+        var fi = angle * Math.PI / 180;
+        var v = new Vec2d(this.x * Math.cos(fi) - this.y * Math.sin(fi), this.x * Math.sin(fi) + this.y * Math.cos(fi));
+        return v;
+    }
+    static subtractEx(v1, v2) {
+        return new Vec2d(v1.x - v2.x, v1.y - v2.y);
+    }
+    static addEx(v1, v2) {
+        return new Vec2d(v1.x + v2.x, v1.y + v2.y);
+    }
+}
+
+
+/***/ }),
+
+/***/ "./src/index.ts":
+/*!**********************!*\
+  !*** ./src/index.ts ***!
+  \**********************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "tides": () => /* binding */ tides,
+/* harmony export */   "createTidalSimulation": () => /* binding */ createTidalSimulation
+/* harmony export */ });
+/* harmony import */ var _tides__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./tides */ "./src/tides.ts");
+
+var tides = null;
+//export var uiController : UiController | null = null
+function createTidalSimulation(config) {
+    var canvas = document.getElementById(config.cvid);
+    if (canvas == null) {
+        throw Error('createTidalSimulation: There is no canvas object with such an id!');
+    }
+    return new _tides__WEBPACK_IMPORTED_MODULE_0__.TidalSimulation(config);
+}
+try {
+    //    uiController = new UiController(galaxy);
+}
+catch (Error) {
+    alert(Error.message);
+}
+
+
+/***/ }),
+
+/***/ "./src/tides.ts":
+/*!**********************!*\
+  !*** ./src/tides.ts ***!
+  \**********************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "TidalSimulation": () => /* binding */ TidalSimulation
+/* harmony export */ });
+/* harmony import */ var _shared_vec2d__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../shared/vec2d */ "../shared/vec2d.ts");
+/* harmony import */ var _shared_context2d__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../shared/context2d */ "../shared/context2d.ts");
 //-------------------------------------------------------------------------------------------------
 //
 //      Tidal Simulation Applet for Javascript
 //
-//      (C) Ingo Berg 2020
+//      (C) Ingo Berg 2021
 //      https://beltoforion.de/en/tides
 //
 //      This program is free software: you can redistribute it and/or modify
@@ -27,12 +267,21 @@
 //              - Added capabilitie to display static states (for neap tide and spring tide visualization)
 //      Version 2.0 (2016-09-27):
 //              - Code converted to TypeScript
-//
+//      Version 2.1 (2021-01-16):
+//              - turned into a package with webpack
 //-------------------------------------------------------------------------------------------------
-/// <reference path="../shared/vec2d.ts"/>
-/// <reference path="../shared/context2d.ts"/>
-var TidalSimulation = /** @class */ (function () {
-    function TidalSimulation(cfg) {
+
+
+class TidalSimulation {
+    constructor(cfg) {
+        this.distCenterOfMass = 0;
+        this.forceMultiplier = 0;
+        this.accMultiplier = 0;
+        this.ts = 0;
+        this.scaleSize = 0;
+        this.scaleDist = 0;
+        this.scaleContext = 0;
+        this.dragMoon = false;
         // image buffer
         this.dragDropImage = new Image();
         this.continentsImage = new Image();
@@ -41,11 +290,11 @@ var TidalSimulation = /** @class */ (function () {
         this.config = cfg;
         // The primary drawing canvas
         this.canvas = document.getElementById(cfg.cvid);
-        this.ctx = Context2d.Create(this.canvas);
+        this.ctx = _shared_context2d__WEBPACK_IMPORTED_MODULE_1__.Context2d.Create(this.canvas);
         this.w = this.canvas.width;
         this.h = this.canvas.height;
         // World scaling and rendering
-        this.lookAt = new Vec2d(0, 0); // Rendering engine is looking at this position
+        this.lookAt = new _shared_vec2d__WEBPACK_IMPORTED_MODULE_0__.Vec2d(0, 0); // Rendering engine is looking at this position
         this.numArrows = 30;
         // Time keeping
         this.time = 0; // global time in seconds
@@ -54,9 +303,9 @@ var TidalSimulation = /** @class */ (function () {
         this.distMoonEarth = 384400000; // distance moon to earth in meter
         this.distEarthSun = 149597870700; // distance sun to earth 
         // Some vectors of common use
-        this.vecEarthSun = new Vec2d(0, 0); // Vector pointing from the earth towards the sun
-        this.vecEarthMoon = new Vec2d(0, 0); // Vector pointing from the earth towards the moon
-        this.vecCenterOfMass = new Vec2d(0, 0);
+        this.vecEarthSun = new _shared_vec2d__WEBPACK_IMPORTED_MODULE_0__.Vec2d(0, 0); // Vector pointing from the earth towards the sun
+        this.vecEarthMoon = new _shared_vec2d__WEBPACK_IMPORTED_MODULE_0__.Vec2d(0, 0); // Vector pointing from the earth towards the moon
+        this.vecCenterOfMass = new _shared_vec2d__WEBPACK_IMPORTED_MODULE_0__.Vec2d(0, 0);
         if (cfg.setup == 0) {
             // A setup for illustrating moons gravitational effect on earth
             this.forceMultiplier = 1500;
@@ -65,7 +314,7 @@ var TidalSimulation = /** @class */ (function () {
             this.scaleSize = 0.00002; // scale for sizes	
             this.scaleDist = this.scaleSize; // scale for dimensions
             this.earth = {
-                pos: new Vec2d(-9000000, 0),
+                pos: new _shared_vec2d__WEBPACK_IMPORTED_MODULE_0__.Vec2d(-9000000, 0),
                 m: 5.9721986e24,
                 r: 12735 / 2.0 * 1000,
                 p: 365.256 * 86400,
@@ -73,7 +322,7 @@ var TidalSimulation = /** @class */ (function () {
                 tidalForceSun: [this.numArrows + 1] // Tidal force arrows of the moon
             };
             this.moon = {
-                pos: new Vec2d(7000000, 0),
+                pos: new _shared_vec2d__WEBPACK_IMPORTED_MODULE_0__.Vec2d(7000000, 0),
                 m: 7.349e22,
                 r: 3476 / 2.0 * 1000,
                 p: 27.322 * 86400 // siderial in seconds
@@ -82,7 +331,7 @@ var TidalSimulation = /** @class */ (function () {
             this.canvas.addEventListener('mousedown', this.onMouseDown.bind(this), false);
             this.canvas.addEventListener('mouseup', this.onMouseUp.bind(this), false);
             this.canvas.addEventListener('mousemove', this.onMouseMove.bind(this), false);
-            this.canvas.world = this;
+            //                        this.canvas.world = this
         }
         else if (cfg.setup == 1) {
             this.setScaleForceToModel(cfg.scaleForceToModel);
@@ -91,7 +340,7 @@ var TidalSimulation = /** @class */ (function () {
             this.scaleSize = 0.000011; // scale for sizes	
             this.scaleContext = this.scaleSize;
             this.earth = {
-                pos: new Vec2d(0, 0),
+                pos: new _shared_vec2d__WEBPACK_IMPORTED_MODULE_0__.Vec2d(0, 0),
                 m: 5.9721986e24,
                 r: 12735 / 2.0 * 1000,
                 p: 365.256 * 86400,
@@ -99,7 +348,7 @@ var TidalSimulation = /** @class */ (function () {
                 tidalForceSun: [this.numArrows + 1] // Tidal force arrows of the moon
             };
             this.moon = {
-                pos: new Vec2d(0, 0),
+                pos: new _shared_vec2d__WEBPACK_IMPORTED_MODULE_0__.Vec2d(0, 0),
                 m: 7.349e22,
                 r: 3476 / 2.0 * 1000,
                 p: 27.322 * 86400,
@@ -109,7 +358,7 @@ var TidalSimulation = /** @class */ (function () {
         }
         // Celestial Bodies
         this.sun = {
-            pos: new Vec2d(0, 0),
+            pos: new _shared_vec2d__WEBPACK_IMPORTED_MODULE_0__.Vec2d(0, 0),
             m: 1.98855e30,
             r: 696342000 // sun radius in meter
         };
@@ -142,70 +391,70 @@ var TidalSimulation = /** @class */ (function () {
         this.bckgImage.src = this.config.path + "/images/milkyway.jpg";
         this.init(cfg);
     }
-    TidalSimulation.prototype.init = function (config) {
+    init(config) {
         if (config.isRunning) {
             window.setInterval(this.tick.bind(this), 30);
         }
         else {
             this.tick();
         }
-    };
-    TidalSimulation.prototype.tick = function () {
+    }
+    tick() {
         this.update();
         this.render();
-    };
+    }
     //-------------------------------------------------------------------------------------------------
     //
     // Mouse Handling
     //
     //-------------------------------------------------------------------------------------------------
-    TidalSimulation.prototype.getMousePos = function (evt) {
-        var rect = this.canvas.getBoundingClientRect();
+    getMousePos(evt) {
+        let rect = this.canvas.getBoundingClientRect();
         return { x: evt.clientX - rect.left,
             y: evt.clientY - rect.top };
-    };
-    TidalSimulation.prototype.onMouseDown = function (evt) {
+    }
+    onMouseDown(evt) {
         if (this.config.setup != 0) {
             return;
         }
-        var mousePos = this.getMousePos(evt);
-        var clickPos = new Vec2d(0, 0);
+        let mousePos = this.getMousePos(evt);
+        let clickPos = new _shared_vec2d__WEBPACK_IMPORTED_MODULE_0__.Vec2d(0, 0);
         clickPos.x = mousePos.x - (this.lookAt.x * this.scaleDist) - this.w / 2;
         clickPos.y = mousePos.y - (this.lookAt.y * this.scaleDist) - this.h / 2;
         clickPos.divideValue(this.scaleDist);
-        var dist = Vec2d.subtractEx(this.moon.pos, clickPos).length();
+        let dist = _shared_vec2d__WEBPACK_IMPORTED_MODULE_0__.Vec2d.subtractEx(this.moon.pos, clickPos).length();
         this.dragMoon = dist < this.moon.r;
-    };
-    TidalSimulation.prototype.onMouseUp = function (evt) {
+    }
+    onMouseUp(evt) {
         if (this.config.setup != 0) {
             return;
         }
         this.dragMoon = false;
-    };
-    TidalSimulation.prototype.onMouseMove = function (evt) {
+    }
+    onMouseMove(evt) {
         if (this.config.setup != 0) {
             return;
         }
-        var mousePos = this.getMousePos(evt);
+        let mousePos = this.getMousePos(evt);
         if (this.dragMoon == null || !this.dragMoon) {
             return;
         }
-        var x = mousePos.x - (this.lookAt.x * this.scaleDist) - this.w / 2;
-        var y = mousePos.y - (this.lookAt.y * this.scaleDist) - this.h / 2;
+        let x = mousePos.x - (this.lookAt.x * this.scaleDist) - this.w / 2;
+        let y = mousePos.y - (this.lookAt.y * this.scaleDist) - this.h / 2;
         x /= this.scaleDist;
         y /= this.scaleDist;
-        var newMoonPos = new Vec2d(x, y);
-        var vecEarthMoon = Vec2d.subtractEx(newMoonPos, this.earth.pos);
-        var dist = Vec2d.subtractEx(this.earth.pos, newMoonPos).length();
+        let newMoonPos = new _shared_vec2d__WEBPACK_IMPORTED_MODULE_0__.Vec2d(x, y);
+        let vecEarthMoon = _shared_vec2d__WEBPACK_IMPORTED_MODULE_0__.Vec2d.subtractEx(newMoonPos, this.earth.pos);
+        let dist = _shared_vec2d__WEBPACK_IMPORTED_MODULE_0__.Vec2d.subtractEx(this.earth.pos, newMoonPos).length();
         if (dist > this.earth.r * 2) {
-            this.moon.pos = new Vec2d(x, y);
+            this.moon.pos = new _shared_vec2d__WEBPACK_IMPORTED_MODULE_0__.Vec2d(x, y);
         }
         else {
             this.moon.pos = this.earth.pos.clone();
             this.moon.pos.add(vecEarthMoon.normalize().multiplyValue(this.earth.r * 2));
         }
-    };
-    TidalSimulation.prototype.setScaleForceToModel = function (stat) {
+    }
+    setScaleForceToModel(stat) {
         this.config.scaleForceToModel = stat;
         if (stat) {
             this.accMultiplier = 1700000;
@@ -215,7 +464,7 @@ var TidalSimulation = /** @class */ (function () {
             this.accMultiplier = 1700000;
             this.forceMultiplier = this.accMultiplier * 10;
         }
-    };
+    }
     //-------------------------------------------------------------------------------------------------
     //
     // Helper Functions
@@ -225,15 +474,15 @@ var TidalSimulation = /** @class */ (function () {
     * Based on: http://stackoverflow.com/questions/21961839/simulation-background-size-cover-in-canvas
     * by By Ken Fyrstenberg
     */
-    TidalSimulation.prototype.addBackground = function () {
-        var img = this.bckgImage;
-        var ctx = this.ctx;
-        var x = 0;
-        var y = 0;
-        var w = ctx.canvas.width;
-        var h = ctx.canvas.height;
-        var offsetX = 0.5;
-        var offsetY = 0.5;
+    addBackground() {
+        let img = this.bckgImage;
+        let ctx = this.ctx;
+        let x = 0;
+        let y = 0;
+        let w = ctx.canvas.width;
+        let h = ctx.canvas.height;
+        let offsetX = 0.5;
+        let offsetY = 0.5;
         if (offsetX < 0)
             offsetX = 0;
         if (offsetY < 0)
@@ -242,16 +491,16 @@ var TidalSimulation = /** @class */ (function () {
             offsetX = 1;
         if (offsetY > 1)
             offsetY = 1;
-        var iw = img.width;
-        var ih = img.height;
-        var r = Math.min(w / iw, h / ih);
-        var nw = iw * r; // new prop. width
-        var nh = ih * r; // new prop. height
-        var cx;
-        var cy;
-        var cw;
-        var ch;
-        var ar = 1;
+        let iw = img.width;
+        let ih = img.height;
+        let r = Math.min(w / iw, h / ih);
+        let nw = iw * r; // new prop. width
+        let nh = ih * r; // new prop. height
+        let cx;
+        let cy;
+        let cw;
+        let ch;
+        let ar = 1;
         // decide which gap to fill    
         if (nw < w)
             ar = w / nw;
@@ -274,13 +523,13 @@ var TidalSimulation = /** @class */ (function () {
         if (ch > ih)
             ch = ih;
         ctx.drawImage(img, cx, cy, cw, ch, x, y, w, h);
-    };
-    TidalSimulation.prototype.resizeToCanvas = function () {
+    }
+    resizeToCanvas() {
         this.w = this.canvas.width;
         this.h = this.canvas.height;
-    };
-    TidalSimulation.prototype.mapToScreen = function (v, scale) {
-        var vecScreen = v.clone();
+    }
+    mapToScreen(v, scale) {
+        let vecScreen = v.clone();
         vecScreen.subtract(this.lookAt);
         // If no scale is provided take default distance scale, otherwise take custom value
         if (scale == null) {
@@ -289,14 +538,14 @@ var TidalSimulation = /** @class */ (function () {
         vecScreen.multiplyValue(scale);
         vecScreen.addXY(this.w / 2, this.h / 2);
         return vecScreen;
-    };
+    }
     //-------------------------------------------------------------------------------------------------
     //
     // Moving Earth and Moon
     //
     //-------------------------------------------------------------------------------------------------
     // Set angular Position of Sun, Earth and Moon
-    TidalSimulation.prototype.setPositions = function (angleSun, angleMoon) {
+    setPositions(angleSun, angleMoon) {
         // Earth position is relative to the center of mass
         this.earth.pos.x = -Math.sin(angleMoon) * this.distCenterOfMass;
         this.earth.pos.y = -Math.cos(angleMoon) * this.distCenterOfMass;
@@ -306,38 +555,38 @@ var TidalSimulation = /** @class */ (function () {
         // Sun motion, shown by beams of light
         this.sun.pos.x = this.earth.pos.x + Math.sin(angleSun) * this.distEarthSun;
         this.sun.pos.y = this.earth.pos.y + Math.cos(angleSun) * this.distEarthSun;
-    };
-    TidalSimulation.prototype.move = function () {
+    }
+    move() {
         if (this.config.autoMove) {
-            var angleMoon = this.time * 2 * Math.PI / this.moon.p;
-            var angleSun = this.time * 2 * Math.PI / this.earth.p;
+            let angleMoon = this.time * 2 * Math.PI / this.moon.p;
+            let angleSun = this.time * 2 * Math.PI / this.earth.p;
             this.setPositions(angleSun, angleMoon);
             this.time += this.ts;
         }
         // update the position vectors
-        this.vecEarthMoon = Vec2d.subtractEx(this.moon.pos, this.earth.pos);
-        this.vecEarthSun = Vec2d.subtractEx(this.sun.pos, this.earth.pos);
+        this.vecEarthMoon = _shared_vec2d__WEBPACK_IMPORTED_MODULE_0__.Vec2d.subtractEx(this.moon.pos, this.earth.pos);
+        this.vecEarthSun = _shared_vec2d__WEBPACK_IMPORTED_MODULE_0__.Vec2d.subtractEx(this.sun.pos, this.earth.pos);
         // compute center of mass
-        var v1 = this.earth.pos.clone().multiplyValue(this.earth.m);
-        var v2 = this.moon.pos.clone().multiplyValue(this.moon.m);
-        this.vecCenterOfMass = Vec2d.addEx(v1, v2).divideValue(this.earth.m + this.moon.m);
+        let v1 = this.earth.pos.clone().multiplyValue(this.earth.m);
+        let v2 = this.moon.pos.clone().multiplyValue(this.moon.m);
+        this.vecCenterOfMass = _shared_vec2d__WEBPACK_IMPORTED_MODULE_0__.Vec2d.addEx(v1, v2).divideValue(this.earth.m + this.moon.m);
         switch (this.config.lookAtTarget) {
             case 'Earth':
                 this.lookAt = this.earth.pos.clone();
                 break;
             case 'CenterOfMass':
             default:
-                this.lookAt = new Vec2d(0, 0);
+                this.lookAt = new _shared_vec2d__WEBPACK_IMPORTED_MODULE_0__.Vec2d(0, 0);
         }
-    };
+    }
     //-------------------------------------------------------------------------------------------------
     //
     // Updating the forcefield indicators
     //
     //-------------------------------------------------------------------------------------------------
-    TidalSimulation.prototype.update = function () {
+    update() {
         this.move();
-        var delta = 2 * Math.PI / this.numArrows;
+        let delta = 2 * Math.PI / this.numArrows;
         if (this.config.scaleForceToModel == null || !this.config.scaleForceToModel) {
             // Disable all the unphysical fancy stuff that is in here to make the
             // vectors point to the moon in the model display
@@ -358,76 +607,76 @@ var TidalSimulation = /** @class */ (function () {
             var zerolength = 60; // an arbitrary factor to make the overall vector lengths not suck...
         }
         // Compute the acceleration at the earth center and store it as the first entry
-        var accEarthMoon = this.vecEarthMoon.clone();
+        let accEarthMoon = this.vecEarthMoon.clone();
         accEarthMoon.normalize();
         accEarthMoon.multiplyValue(this.gamma * this.moon.m / Math.pow(zerolength + this.vecEarthMoon.length() * scaleDist, 2));
         this.earth.tidalForce[0] = accEarthMoon.multiplyValue(scaleCompensation);
-        var accEarthSun = this.vecEarthSun.clone();
+        let accEarthSun = this.vecEarthSun.clone();
         accEarthSun.normalize();
         accEarthSun.multiplyValue(this.gamma * this.sun.m / Math.pow(zerolength + this.vecEarthSun.length() * scaleDist, 2));
         this.earth.tidalForceSun[0] = accEarthSun.multiplyValue(scaleCompensation);
         // Compute accelerations for the earths surface
-        for (var i = 1; i < this.numArrows + 1; ++i) {
-            var posSurface = new Vec2d(Math.sin(i * delta) * this.earth.r * scaleSize, Math.cos(i * delta) * this.earth.r * scaleSize);
+        for (let i = 1; i < this.numArrows + 1; ++i) {
+            let posSurface = new _shared_vec2d__WEBPACK_IMPORTED_MODULE_0__.Vec2d(Math.sin(i * delta) * this.earth.r * scaleSize, Math.cos(i * delta) * this.earth.r * scaleSize);
             //
             // Tidal effect of the moon
             //
-            var posMoon = this.vecEarthMoon.clone();
+            let posMoon = this.vecEarthMoon.clone();
             posMoon.multiplyValue(scaleDist);
             // Create a normalized vector pointing from the earth surface to the moon center and compute 
             // the gavitation force
-            var accMoon = Vec2d.subtractEx(posMoon, posSurface);
+            let accMoon = _shared_vec2d__WEBPACK_IMPORTED_MODULE_0__.Vec2d.subtractEx(posMoon, posSurface);
             accMoon.normalize();
-            var len = Vec2d.subtractEx(posMoon, posSurface).length() + zerolength;
+            let len = _shared_vec2d__WEBPACK_IMPORTED_MODULE_0__.Vec2d.subtractEx(posMoon, posSurface).length() + zerolength;
             accMoon.multiplyValue(this.gamma * this.moon.m / (len * len));
             // The resulting Gravitational force
             this.earth.tidalForce[i] = accMoon.multiplyValue(scaleCompensation);
             //
             // Tidal effect of the sun
             //
-            var posSun = this.vecEarthSun.clone();
+            let posSun = this.vecEarthSun.clone();
             posSun.multiplyValue(scaleDist);
             // Create a normalized vector pointing from the earth surface to the moon center and compute 
             // the gavitation force
-            var accSun = Vec2d.subtractEx(posSun, posSurface);
+            let accSun = _shared_vec2d__WEBPACK_IMPORTED_MODULE_0__.Vec2d.subtractEx(posSun, posSurface);
             accSun.normalize();
-            len = Vec2d.subtractEx(posSun, posSurface).length() + zerolength;
+            len = _shared_vec2d__WEBPACK_IMPORTED_MODULE_0__.Vec2d.subtractEx(posSun, posSurface).length() + zerolength;
             accSun.multiplyValue(this.gamma * this.sun.m / (len * len));
             // The resulting Gravitational force
             this.earth.tidalForceSun[i] = accSun.multiplyValue(scaleCompensation);
         }
-    };
+    }
     //-------------------------------------------------------------------------------------------------
     //
     // Render Functions
     //
     //-------------------------------------------------------------------------------------------------
-    TidalSimulation.prototype.renderSun = function () {
+    renderSun() {
         // center of the screen in pixel
-        var cm = this.mapToScreen(this.lookAt);
+        let cm = this.mapToScreen(this.lookAt);
         // Draw an arrow pointing from the sun towards earth
-        var posSunScreen = this.mapToScreen(this.sun.pos, this.scaleDist);
-        var posEarthScreen = this.mapToScreen(this.earth.pos, this.scaleDist);
-        var vecBeam = posSunScreen.clone().subtract(cm).normalize();
-        var vecBeamOrtho = new Vec2d(vecBeam.y, -vecBeam.x).multiplyValue(this.earth.r * this.scaleSize);
-        var offset = vecBeam.multiplyValue(this.earth.r * this.scaleSize * -1);
+        let posSunScreen = this.mapToScreen(this.sun.pos, this.scaleDist);
+        let posEarthScreen = this.mapToScreen(this.earth.pos, this.scaleDist);
+        let vecBeam = posSunScreen.clone().subtract(cm).normalize();
+        let vecBeamOrtho = new _shared_vec2d__WEBPACK_IMPORTED_MODULE_0__.Vec2d(vecBeam.y, -vecBeam.x).multiplyValue(this.earth.r * this.scaleSize);
+        let offset = vecBeam.multiplyValue(this.earth.r * this.scaleSize * -1);
         // render 5 lightbeams as an indication of where the sun is
-        for (var i = 0; i < 10; ++i) {
+        for (let i = 0; i < 10; ++i) {
             this.ctx.drawArrow(posSunScreen.x, posSunScreen.y, cm.x + i * vecBeamOrtho.x - offset.x, cm.y + i * vecBeamOrtho.y - offset.y, 10, 2, this.style.colSun);
             if (i > 0) {
                 this.ctx.drawArrow(posSunScreen.x, posSunScreen.y, cm.x - i * vecBeamOrtho.x - offset.x, cm.y - i * vecBeamOrtho.y - offset.y, 10, 2, this.style.colSun);
             }
         }
-    };
-    TidalSimulation.prototype.renderMoon = function () {
+    }
+    renderMoon() {
         // compute the render position of the moon
-        var posMoon = this.moon.pos.clone();
+        let posMoon = this.moon.pos.clone();
         posMoon = this.mapToScreen(posMoon, this.scaleDist);
-        var r = this.moon.r * this.scaleSize;
+        let r = this.moon.r * this.scaleSize;
         if (this.config.setup == 0 && this.vecEarthMoon.length() > 100000000) {
-            var posEarth = this.mapToScreen(this.earth.pos.clone(), this.scaleDist);
+            let posEarth = this.mapToScreen(this.earth.pos.clone(), this.scaleDist);
             // If moon is far away just render an arrow pointing towards it
-            var buf = this.vecEarthMoon.normalize().multiplyValue(100);
+            let buf = this.vecEarthMoon.normalize().multiplyValue(100);
             this.ctx.drawVector(posEarth.x + 3 * buf.x, posEarth.y + 3 * buf.y, buf.x, buf.y, 30, 2, this.style.colMoon);
             this.ctx.font = "20px Arial";
             this.ctx.fillStyle = 'White';
@@ -435,10 +684,10 @@ var TidalSimulation = /** @class */ (function () {
         }
         else {
             // bright side
-            var colOutline = this.style.colMoonOutline;
-            var thickness = 2;
+            let colOutline = this.style.colMoonOutline;
+            let thickness = 2;
             if (this.config.setup != 1) {
-                var v = Math.round(128 + 128 * Math.sin(this.time * 0.15));
+                let v = Math.round(128 + 128 * Math.sin(this.time * 0.15));
                 colOutline = 'rgb(' + v + ',' + v + ',' + v + ')';
                 thickness = 4;
             }
@@ -455,30 +704,30 @@ var TidalSimulation = /** @class */ (function () {
             }
             // dark side
             if (this.config.showSun) {
-                var a1 = this.vecEarthSun.verticalAngle();
-                var a2 = a1 + Math.PI;
+                let a1 = this.vecEarthSun.verticalAngle();
+                let a2 = a1 + Math.PI;
                 this.ctx.drawCircle(posMoon, r, a1, a2, this.style.colMoonDark, this.style.colMoonOutline);
             }
             if (this.config.setup == 0) {
                 this.ctx.drawImage(this.dragDropImage, posMoon.x - r, posMoon.y - r, 2 * r, 2 * r);
             }
-            var offset = this.moon.r * this.scaleSize;
+            let offset = this.moon.r * this.scaleSize;
             this.ctx.font = "20px Arial";
             this.ctx.fillStyle = 'White';
             this.ctx.fillText("Moon", posMoon.x - 24, posMoon.y + offset + 25);
         }
-    };
-    TidalSimulation.prototype.renderEarth = function () {
-        var f = this.accMultiplier;
-        var f2 = this.forceMultiplier;
+    }
+    renderEarth() {
+        let f = this.accMultiplier;
+        let f2 = this.forceMultiplier;
         // visual position of the earth for illustrating center of mass as where it really is inside earth
         // Technically our model is geocentric, yeah you heard that right... (my apologies Galileo) 
         // It doesn't matter, i'm just interested invisualizing the proper period of moon and sun. No harm done
         // by using this simplification. However i'm interested in displaying the correct center of mass 
         // in our fucked up coordinates that scale sizes and distances differently. So here is the correct
         // visual on screen position of the an earth that is scaled differently in size than in distance:
-        var posEarthScreen = this.mapToScreen(this.earth.pos, this.scaleSize);
-        var r = this.earth.r * this.scaleSize;
+        let posEarthScreen = this.mapToScreen(this.earth.pos, this.scaleSize);
+        let r = this.earth.r * this.scaleSize;
         // Daysite
         this.ctx.drawCircle(posEarthScreen, r, 0, 2 * Math.PI, this.style.colEarth, this.style.colEarthOutline);
         // continents
@@ -494,41 +743,41 @@ var TidalSimulation = /** @class */ (function () {
         }
         // Nightside
         if (this.config.showSun) {
-            var a1 = this.vecEarthSun.verticalAngle();
-            var a2 = a1 + Math.PI;
+            let a1 = this.vecEarthSun.verticalAngle();
+            let a2 = a1 + Math.PI;
             this.ctx.drawCircle(posEarthScreen, r, a1, a2, this.style.colEarthDark, this.style.colEarthOutline);
         }
-        var tf = this.earth.tidalForce[0].clone();
-        var tfs = this.earth.tidalForceSun[0].clone();
+        let tf = this.earth.tidalForce[0].clone();
+        let tfs = this.earth.tidalForceSun[0].clone();
         if (this.config.showGravAcc ||
             this.config.showCentAcc ||
             this.config.showTidalAcc ||
             this.config.showTidalAccSun ||
             this.config.showAccSum) {
-            var results = [this.numArrows + 1];
+            let results = [this.numArrows + 1];
             // Draw Vector arrows
-            var delta = 2 * Math.PI / this.numArrows;
-            for (var i = 1; i < this.numArrows + 1; ++i) {
+            let delta = 2 * Math.PI / this.numArrows;
+            for (let i = 1; i < this.numArrows + 1; ++i) {
                 // Earth position in world coordinates
-                var posScreen = Vec2d.addEx(posEarthScreen, new Vec2d(Math.sin(i * delta) * this.earth.r * this.scaleSize, Math.cos(i * delta) * this.earth.r * this.scaleSize));
+                let posScreen = _shared_vec2d__WEBPACK_IMPORTED_MODULE_0__.Vec2d.addEx(posEarthScreen, new _shared_vec2d__WEBPACK_IMPORTED_MODULE_0__.Vec2d(Math.sin(i * delta) * this.earth.r * this.scaleSize, Math.cos(i * delta) * this.earth.r * this.scaleSize));
                 //
                 // Tidal force Moon
                 //
-                var tfi = this.earth.tidalForce[i];
+                let tfi = this.earth.tidalForce[i];
                 if (this.config.showGravAcc) {
                     this.ctx.drawVector(posScreen.x, posScreen.y, tfi.x * f, tfi.y * f, 5, 2, this.style.colVec1);
                 }
                 if (this.config.showCentAcc) {
                     this.ctx.drawVector(posScreen.x, posScreen.y, -tf.x * f, -tf.y * f, 5, 2, this.style.colVec2);
                 }
-                var v3 = Vec2d.subtractEx(tfi, tf);
+                let v3 = _shared_vec2d__WEBPACK_IMPORTED_MODULE_0__.Vec2d.subtractEx(tfi, tf);
                 if (this.config.showTidalAcc) {
                     this.ctx.drawVector(posScreen.x, posScreen.y, v3.x * f2, v3.y * f2, 4, 3, this.style.colVec3);
                 }
                 //
                 // Tidal force Sun
                 //
-                var v6 = Vec2d.subtractEx(this.earth.tidalForceSun[i], tfs);
+                let v6 = _shared_vec2d__WEBPACK_IMPORTED_MODULE_0__.Vec2d.subtractEx(this.earth.tidalForceSun[i], tfs);
                 if (this.config.showTidalAccSun) {
                     this.ctx.drawVector(posScreen.x, posScreen.y, v6.x * f2, v6.y * f2, 4, 3, this.style.colVec4);
                 }
@@ -542,7 +791,7 @@ var TidalSimulation = /** @class */ (function () {
                 this.ctx.fillStyle = this.style.colWater;
                 this.ctx.beginPath();
                 this.ctx.moveTo(results[0].x, results[0].y);
-                for (var i = 1; i < this.numArrows + 1; ++i) {
+                for (let i = 1; i < this.numArrows + 1; ++i) {
                     this.ctx.lineTo(results[i].x, results[i].y);
                 }
                 this.ctx.closePath();
@@ -558,59 +807,59 @@ var TidalSimulation = /** @class */ (function () {
         }
         // Draw Center of the earth and its acceleration vector
         this.ctx.drawCross(posEarthScreen.x, posEarthScreen.y, 2, 5, this.style.colCenterOfEarth);
-    }; // function renderEarth
-    TidalSimulation.prototype.renderSurfacePoints = function () {
-        var f = this.accMultiplier;
-        var cm = this.mapToScreen(this.vecCenterOfMass, this.scaleSize);
+    } // function renderEarth
+    renderSurfacePoints() {
+        let f = this.accMultiplier;
+        let cm = this.mapToScreen(this.vecCenterOfMass, this.scaleSize);
         // Earth Position on screen
-        var posEarthScreen = this.mapToScreen(this.earth.pos, this.scaleSize);
-        var orig = new Vec2d(0, this.earth.r * this.scaleSize);
-        var len = this.earth.tidalForce[0].clone().length() * f;
+        let posEarthScreen = this.mapToScreen(this.earth.pos, this.scaleSize);
+        let orig = new _shared_vec2d__WEBPACK_IMPORTED_MODULE_0__.Vec2d(0, this.earth.r * this.scaleSize);
+        let len = this.earth.tidalForce[0].clone().length() * f;
         // Orbits of a number of reference points at the earths surface
-        var v;
-        for (var angle = 0; angle < 360; angle += 120) {
-            var ref = orig.rotateEx(angle); // Vector from the earth center to a point at the surface
-            var point = Vec2d.addEx(posEarthScreen, ref); // Point on the earth surface
-            var refScreen = Vec2d.addEx(cm, ref.clone());
+        let v = new _shared_vec2d__WEBPACK_IMPORTED_MODULE_0__.Vec2d(0, 0);
+        for (let angle = 0; angle < 360; angle += 120) {
+            let ref = orig.rotateEx(angle); // Vector from the earth center to a point at the surface
+            let point = _shared_vec2d__WEBPACK_IMPORTED_MODULE_0__.Vec2d.addEx(posEarthScreen, ref); // Point on the earth surface
+            let refScreen = _shared_vec2d__WEBPACK_IMPORTED_MODULE_0__.Vec2d.addEx(cm, ref.clone());
             this.ctx.drawCircle(refScreen, this.distCenterOfMass * this.scaleSize, 0, 2 * Math.PI, null, this.style.colVec1);
             this.ctx.drawCircle(point, 3, 0, 2 * Math.PI, this.style.colVec1, this.style.colVec1);
             // draw centrifugal force vectors
-            v = Vec2d.subtractEx(point, refScreen);
+            v = _shared_vec2d__WEBPACK_IMPORTED_MODULE_0__.Vec2d.subtractEx(point, refScreen);
             v.normalize();
             v.multiplyValue(len);
             this.ctx.drawVector(point.x, point.y, v.x, v.y, 5, 2, this.style.colVec1, this.style.colVec1);
         }
         // Render an arrow at the earths center
-        var ce = this.mapToScreen(this.earth.pos, this.scaleSize);
+        let ce = this.mapToScreen(this.earth.pos, this.scaleSize);
         this.ctx.drawVector(ce.x, ce.y, v.x, v.y, 5, 2, this.style.colOrbit, 'white');
-    };
-    TidalSimulation.prototype.renderOverlays = function () {
+    }
+    renderOverlays() {
         // Draw Center of Mass of the system Earth-Moon
         // Use scaling to size since the center of mass shall be drawn at the correct size relative to earth
-        var cm = this.mapToScreen(this.vecCenterOfMass, this.scaleSize);
+        let cm = this.mapToScreen(this.vecCenterOfMass, this.scaleSize);
         this.ctx.drawCenterOfMass(cm, 4);
         // Render Reference Frame Origin
         if (this.config.showSurfacePoints) {
             this.renderSurfacePoints();
         }
-    };
-    TidalSimulation.prototype.renderUnderlay = function () {
+    }
+    renderUnderlay() {
         if (this.config.showEarthOrbit || this.config.showMoonOrbit) {
             // Earth Orbit
             if (this.config.showEarthOrbit) {
                 // Draw Center of Mass of the system Earth-Moon, use size scaling factor
-                var cm = this.mapToScreen(this.vecCenterOfMass, this.scaleSize);
+                let cm = this.mapToScreen(this.vecCenterOfMass, this.scaleSize);
                 this.ctx.drawCircle(cm, this.distCenterOfMass * this.scaleSize, 0, 2 * Math.PI, null, this.style.colOrbit);
             }
             // Moon Orbit
             if (this.config.showMoonOrbit) {
                 // Draw Center of Mass of the system Earth-Moon, use distance scaling factor
-                var cm = this.mapToScreen(this.vecCenterOfMass, this.scaleDist);
+                let cm = this.mapToScreen(this.vecCenterOfMass, this.scaleDist);
                 this.ctx.drawCircle(cm, (this.distMoonEarth - this.distCenterOfMass) * this.scaleDist, 0, 2 * Math.PI, null, this.style.colOrbit);
             }
         }
-    };
-    TidalSimulation.prototype.render = function () {
+    }
+    render() {
         if (this.config.showBackgroundImage) {
             this.addBackground();
         }
@@ -627,7 +876,71 @@ var TidalSimulation = /** @class */ (function () {
             this.renderMoon();
         }
         this.renderOverlays();
-    };
-    return TidalSimulation;
-}()); // class TidalSimulation
-//# sourceMappingURL=tides.js.map
+    }
+} // class TidalSimulation
+
+
+/***/ })
+
+/******/ 	});
+/************************************************************************/
+/******/ 	// The module cache
+/******/ 	var __webpack_module_cache__ = {};
+/******/ 	
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+/******/ 		// Check if module is in cache
+/******/ 		if(__webpack_module_cache__[moduleId]) {
+/******/ 			return __webpack_module_cache__[moduleId].exports;
+/******/ 		}
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = __webpack_module_cache__[moduleId] = {
+/******/ 			// no module.id needed
+/******/ 			// no module.loaded needed
+/******/ 			exports: {}
+/******/ 		};
+/******/ 	
+/******/ 		// Execute the module function
+/******/ 		__webpack_modules__[moduleId](module, module.exports, __webpack_require__);
+/******/ 	
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/ 	
+/************************************************************************/
+/******/ 	/* webpack/runtime/define property getters */
+/******/ 	(() => {
+/******/ 		// define getter functions for harmony exports
+/******/ 		__webpack_require__.d = (exports, definition) => {
+/******/ 			for(var key in definition) {
+/******/ 				if(__webpack_require__.o(definition, key) && !__webpack_require__.o(exports, key)) {
+/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
+/******/ 				}
+/******/ 			}
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
+/******/ 	(() => {
+/******/ 		__webpack_require__.o = (obj, prop) => Object.prototype.hasOwnProperty.call(obj, prop)
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/make namespace object */
+/******/ 	(() => {
+/******/ 		// define __esModule on exports
+/******/ 		__webpack_require__.r = (exports) => {
+/******/ 			if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 			}
+/******/ 			Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/************************************************************************/
+/******/ 	// module exports must be returned from runtime so entry inlining is disabled
+/******/ 	// startup
+/******/ 	// Load entry module and return exports
+/******/ 	return __webpack_require__("./src/index.ts");
+/******/ })()
+;
+//# sourceMappingURL=tides-bundle.js.map

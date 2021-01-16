@@ -2,7 +2,7 @@
 //
 //      Tidal Simulation Applet for Javascript
 //
-//      (C) Ingo Berg 2020
+//      (C) Ingo Berg 2021
 //      https://beltoforion.de/en/tides
 //
 //      This program is free software: you can redistribute it and/or modify
@@ -27,14 +27,15 @@
 //              - Added capabilitie to display static states (for neap tide and spring tide visualization)
 //      Version 2.0 (2016-09-27):
 //              - Code converted to TypeScript
-//
+//      Version 2.1 (2021-01-16):
+//              - turned into a package with webpack
 //-------------------------------------------------------------------------------------------------
 
-/// <reference path="../shared/vec2d.ts"/>
-/// <reference path="../shared/context2d.ts"/>
+import { Vec2d } from '../../shared/vec2d'
+import { Context2d } from '../../shared/context2d'
 
-class TidalSimulation {
-        private canvas : any;
+export class TidalSimulation {
+        private canvas : HTMLCanvasElement;
         private config : any;
         private w : number;
         private h : number;
@@ -45,18 +46,18 @@ class TidalSimulation {
         private gamma : number;
         private distMoonEarth : number;
         private distEarthSun : number;
-        private distCenterOfMass : number;
+        private distCenterOfMass : number = 0;
         private vecEarthSun : Vec2d;
         private vecEarthMoon : Vec2d;
         private vecCenterOfMass : Vec2d;
-        private forceMultiplier : number;
-        private accMultiplier : number;
-        private ts : number;
-        private scaleSize : number;
-        private scaleDist : number;
-        private scaleContext : number;
+        private forceMultiplier : number = 0;
+        private accMultiplier : number = 0;
+        private ts : number = 0;
+        private scaleSize : number = 0;
+        private scaleDist : number = 0;
+        private scaleContext : number = 0;
         private style : any;
-        private dragMoon : boolean;
+        private dragMoon : boolean = false;
 
         // Earth moon and sun data objects
         private earth : any;
@@ -73,7 +74,7 @@ class TidalSimulation {
                 this.config = cfg
 
                 // The primary drawing canvas
-                this.canvas = document.getElementById(cfg.cvid)
+                this.canvas = document.getElementById(cfg.cvid) as HTMLCanvasElement
                 this.ctx = Context2d.Create(this.canvas);
                 this.w = this.canvas.width
                 this.h = this.canvas.height
@@ -123,7 +124,7 @@ class TidalSimulation {
                         this.canvas.addEventListener('mousedown', this.onMouseDown.bind(this), false)
                         this.canvas.addEventListener('mouseup',   this.onMouseUp.bind(this), false)
                         this.canvas.addEventListener('mousemove', this.onMouseMove.bind(this), false)
-                        this.canvas.world = this
+//                        this.canvas.world = this
                 } else if (cfg.setup==1) {
                         this.setScaleForceToModel(cfg.scaleForceToModel)
                         this.ts = cfg.timestep                     // timestep size in seconds timesteps for the blinking 
@@ -747,7 +748,7 @@ class TidalSimulation {
                 let len : number = this.earth.tidalForce[0].clone().length() * f
 
                 // Orbits of a number of reference points at the earths surface
-                let v : Vec2d;
+                let v : Vec2d = new Vec2d(0, 0);
                 for (let angle=0; angle < 360; angle+=120) {
                         let ref = orig.rotateEx(angle)                // Vector from the earth center to a point at the surface
                         let point = Vec2d.addEx(posEarthScreen, ref) // Point on the earth surface

@@ -1,10 +1,24 @@
 {
     // See https://go.microsoft.com/fwlink/?LinkId=733558
     // for the documentation about the tasks.json format
-    "version": "0.1.0",
-    "command": "tsc",
-    "isShellCommand": true,
-    "args": ["-p", "."],
-    "showOutput": "always",
-    "problemMatcher": "$tsc"
+    "version": "2.0.0",
+    "echoCommand": true,
+    "tasks": [
+        {
+            "label": "Build Tidal Simulation (Develop)",
+            "type": "npm",
+            "script": "build",
+            "group": "build",
+            "problemMatcher": [],
+            "detail": "webpack --mode development"
+        },
+        {
+            "label": "Build Tidal Simulation (Production)",
+            "type": "npm",
+            "script": "prod",
+            "group": "build",
+            "problemMatcher": [],
+            "detail": "webpack --mode production"
+        }
+    ]
 }

@@ -1,4 +1,4 @@
-class Context2d {
+export class Context2d {
     static Create(cv : any) : any {
         var ctx = cv.getContext("2d")
 

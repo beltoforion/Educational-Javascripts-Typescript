@@ -14,8 +14,8 @@ module.exports = {
     },
     output: {
         path: __dirname + '/dist', 
-        filename: 'galaxy-renderer-bundle.js',
-        library: 'GalaxyRenderer'
+        filename: 'tides-bundle.js',
+        library: 'TidalSimulation'
 //        pathinfo: true
     },
     devtool: 'source-map'
