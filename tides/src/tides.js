@@ -32,7 +32,7 @@
 import { Vec2d } from '../../shared/vec2d';
 import { Context2d } from '../../shared/context2d';
 
-class TidalSimulation {
+export class TidalSimulation {
     constructor(cfg) {
         this.distCenterOfMass = 0;
         this.forceMultiplier = 0;

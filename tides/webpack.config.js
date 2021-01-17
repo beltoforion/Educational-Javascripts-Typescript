@@ -15,7 +15,7 @@ module.exports = {
     output: {
         path: __dirname + '/dist', 
         filename: 'tides-bundle.js',
-        library: 'TidalSimulation'
+        library: 'TidalSimulationLibrary'
 //        pathinfo: true
     },
     devtool: 'source-map'
