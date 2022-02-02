@@ -36,4 +36,4 @@ https://beltoforion.de/de/exoplaneten/radialgeschwindigkeitsmethode.php
 https://beltoforion.de/de/exoplaneten/pulsar_timing.php
 
 - An applet for computing the height difference of a laser beam due to earths curvature: (german)<br/>
-https://beltoforion.de/de/terra-x-und-die-flache-erde/index.php
+https://beltoforion.de/de/terra-x-und-die-flache-erde/
