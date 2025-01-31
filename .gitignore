@@ -2,3 +2,4 @@
 *.sqlite
 */node_modules/*
 shared/*.js
+tides/dist.zip
