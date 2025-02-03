@@ -1,5 +1,8 @@
+const path = require('path');
+const CopyWebpackPlugin = require("copy-webpack-plugin");
+
 module.exports = {
-    entry: './src/index.ts',
+  entry: './src/index.ts',
     module: {
         rules: [
           {
@@ -13,10 +16,11 @@ module.exports = {
         extensions: [ '.tsx', '.ts', '.js' ]
     },
     output: {
-        path: __dirname + '/dist', 
+        path: path.resolve(__dirname, 'dist'), // Output directory
+        library: 'TidalSimulationLibrary',
         filename: 'tides-bundle.js',
-        library: 'TidalSimulationLibrary'
-//        pathinfo: true
+        libraryTarget: 'umd', // Universal Module Definition
+        globalObject: 'this', // Ensure compatibility
     },
     devtool: 'source-map'
 }
