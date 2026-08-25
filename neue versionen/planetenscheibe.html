@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+	<title>Planetenscheibe</title>
+	<link rel="stylesheet" href="./local/applet.css"/>
+	<script src="./local/applet.js"></script>
+</head>
+<body>
+<div class="page">
+
+	<nav class="appnav">
+		<a href="./magnetisches_pendel.html">Magnetisches Pendel</a>
+		<a href="./wator.html">Wa-Tor</a>
+		<a class="current" href="./planetenscheibe.html">Planetenscheibe</a>
+		<a href="./simulierte_evolution.html">Simulierte Evolution</a>
+	</nav>
+
+	<h1>Planetenscheibe — Lagrange-Punkte &amp; Trojaner</h1>
+	<p>WebGL2-Tracer-Simulation einer Staubscheibe um die Sonne, gestört durch Erde und Jupiter.
+	   Co-Rotation lässt L4/L5 sichtbar werden, das Exzentrizitäts-Gate filtert exzentrische Bahnen,
+	   Strahlungsdruck (Poynting-Robertson) lässt kleine Körner spiralig in die Sonne fallen.</p>
+	<p class="hint">Tastenkürzel wirken, sobald man in das Applet geklickt hat: <b>+</b>/<b>−</b> Zoom,
+	   <b>S</b> Sonnensystem, <b>T</b> Co-Rotation, <b>C</b> Dauerquelle, <b>R</b> Reset,
+	   <b>1</b>/<b>2</b>/<b>3</b> Fokus, <b>F1</b>–<b>F3</b> Resonanz, <b>[</b>/<b>]</b> Schritte pro Frame.</p>
+
+	<span class="applet-fit" style="--applet-w:1600; --applet-h:900;">
+		<span id='cvDisk'><span class="applet-controls">
+			<span class="ac-row">
+				<b>Exzentrizitäts-Gate</b>
+				<input id="diskEcc" type="range" min="0" max="0.95" step="0.01" value="0.75" oninput="updateDiskEcc(this.value)"/>
+				<span id="diskEccVal" style="min-width:7em; display:inline-block;">0.75 (e≈0.14)</span>
+				<b>Strahlungsdruck</b>
+				<input id="diskPr" type="range" min="0" max="2000" step="1" value="0" oninput="updateDiskPr(this.value)"/>
+				<span id="diskPrVal" style="min-width:4em; display:inline-block;">aus</span>
+			</span>
+			<span class="ac-row">
+				<button type="button" title="Tastenkürzel: +" onclick="disk.zoom(1.2)">Zoom +</button>
+				<button type="button" title="Tastenkürzel: −" onclick="disk.zoom(1/1.2)">Zoom −</button>
+				<button type="button" title="Tastenkürzel: S" onclick="disk.toggleSolarSystem()">Sonnensystem</button>
+				<button type="button" title="Tastenkürzel: T" onclick="disk.cycleCoRotate()">Co-Rotation</button>
+				<button type="button" title="Tastenkürzel: C" onclick="disk.toggleContSource()">Dauerquelle</button>
+				<button type="button" title="Tastenkürzel: R" onclick="disk.reset()">Reset</button>
+			</span>
+			<span class="ac-row">
+				<b>Fokus:</b>
+				<button type="button" title="Tastenkürzel: 1" onclick="disk.setCenter(0)">Sonne</button>
+				<button type="button" title="Tastenkürzel: 2" onclick="disk.setCenter(1)">Erde</button>
+				<button type="button" title="Tastenkürzel: 3" onclick="disk.setCenter(2)">Jupiter</button>
+				<b>Resonanz:</b>
+				<button type="button" title="Tastenkürzel: F1" onclick="disk.toggleResonance(0)">Sonne</button>
+				<button type="button" title="Tastenkürzel: F2" onclick="disk.toggleResonance(1)">Erde</button>
+				<button type="button" title="Tastenkürzel: F3" onclick="disk.toggleResonance(2)">Jupiter</button>
+				<b>Schritte/Frame:</b>
+				<button type="button" title="Tastenkürzel: [" onclick="disk.bumpStepsPerFrame(-1)">−</button>
+				<button type="button" title="Tastenkürzel: ]" onclick="disk.bumpStepsPerFrame(+1)">+</button>
+			</span>
+		</span>
+		<span class="applet-controls corner-tl">
+			<span class="ac-row">
+				<button class="ac-icon" type="button" title="Vollbild" aria-label="Vollbild" onclick="toggleFullscreen(this)">⛶</button>
+				<button class="ac-icon" type="button" title="Steuerung ein/aus" aria-label="Steuerung ein/aus" onclick="toggleAppletControls(this)">⚙</button>
+			</span>
+		</span></span>
+	</span>
+
+	<script src="./scripts/PlanetaryDiskGPU.js"></script>
+	<script>
+	var disk = new PlanetaryDiskGPU({ cvid: 'cvDisk', width: 1600, height: 900 });
+
+	function updateDiskEcc(v) {
+	  var x = parseFloat(v);
+	  disk.setEccGate(x);
+	  var e = (1 - x) / (1 + x);
+	  document.getElementById('diskEccVal').textContent =
+	    (x === 0) ? '0.00 (aus)' : x.toFixed(2) + ' (e≈' + e.toFixed(2) + ')';
+	}
+	function updateDiskPr(v) {
+	  var x = parseFloat(v);
+	  disk.setPrScale(x);
+	  document.getElementById('diskPrVal').textContent = (x === 0) ? 'aus' : x.toFixed(0);
+	}
+	</script>
+
+</div>
+</body>
+</html>

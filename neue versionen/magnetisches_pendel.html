@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+	<title>Magnetisches Pendel</title>
+	<link rel="stylesheet" href="./local/applet.css"/>
+	<script src="./local/applet.js"></script>
+</head>
+<body>
+<div class="page">
+
+	<nav class="appnav">
+		<a class="current" href="./magnetisches_pendel.html">Magnetisches Pendel</a>
+		<a href="./wator.html">Wa-Tor</a>
+		<a href="./planetenscheibe.html">Planetenscheibe</a>
+		<a href="./simulierte_evolution.html">Simulierte Evolution</a>
+	</nav>
+
+	<h1>Magnetisches Pendel</h1>
+	<p>Jeder Bildpunkt der Simulation ist ein eigenständiges Pendel, das auf der GPU
+	   parallel integriert wird. Die Farbe kodiert, über welchem Magneten das Pendel
+	   zur Ruhe kommt — das Ergebnis ist das Fraktal der Einzugsgebiete.</p>
+	<p class="hint">Magnete lassen sich mit der Maus verschieben. ⛶ schaltet Vollbild, ⚙ blendet die Bedienelemente aus.</p>
+
+	<span class="applet-fit" style="--applet-w:1600; --applet-h:900;">
+		<span id='cv'><span class="applet-controls">
+			<span class="ac-row">
+				<b>Weniger Reibung</b>
+				<input id="sliderFriction" type="range" min="0" max="100" onchange="updateSlider(this.value)"/>
+				<b>Mehr Reibung</b>
+				<button type="button" onclick="resetSimulation()">Reset</button>
+			</span>
+		</span>
+		<span class="applet-controls corner-tl">
+			<span class="ac-row">
+				<button class="ac-icon" type="button" title="Vollbild" aria-label="Vollbild" onclick="toggleFullscreen(this)">⛶</button>
+				<button class="ac-icon" type="button" title="Steuerung ein/aus" aria-label="Steuerung ein/aus" onclick="toggleAppletControls(this)">⚙</button>
+			</span>
+		</span></span>
+	</span>
+
+	<script src="./scripts/MagPendGPU.js"></script>
+	<script>
+	var magpend = new MagPendGPU({ cvid   : 'cv',
+	                               font   : "17px Arial",
+	                               width  : 1600,
+	                               height : 900 });
+
+	function updateSlider(v) {
+	  let friction = Math.pow(10, -3.5 + (v/100) * 1.5);
+	  magpend.setFriction(friction);
+	}
+	function resetSimulation() {
+	  // friction default 0.001 corresponds to slider position ≈ 33 via
+	  // 10^(-3.5 + 0.015·v) = 0.001 → v = 33.33
+	  document.getElementById('sliderFriction').value = 33;
+	  magpend.resetToInitialState();
+	}
+	document.getElementById('sliderFriction').value = 33;
+	</script>
+
+</div>
+</body>
+</html>

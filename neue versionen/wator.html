@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+	<title>Wa-Tor</title>
+	<link rel="stylesheet" href="./local/applet.css"/>
+	<script src="./local/applet.js"></script>
+</head>
+<body>
+<div class="page">
+
+	<nav class="appnav">
+		<a href="./magnetisches_pendel.html">Magnetisches Pendel</a>
+		<a class="current" href="./wator.html">Wa-Tor</a>
+		<a href="./planetenscheibe.html">Planetenscheibe</a>
+		<a href="./simulierte_evolution.html">Simulierte Evolution</a>
+	</nav>
+
+	<h1>Wa-Tor</h1>
+	<p>Räuber-Beute-Simulation auf einer toroidalen Wasserwelt: Fische vermehren sich
+	   nach einer festen Anzahl Runden, Haie verlieren pro Runde Energie und müssen
+	   fressen, um sich fortzupflanzen. Das Ergebnis sind gekoppelte Populations-
+	   schwingungen (Lotka-Volterra), die sich auch im Phasenraum darstellen lassen.</p>
+	<p class="hint">⛶ schaltet Vollbild, ⚙ blendet die Bedienelemente aus.</p>
+
+	<span class="applet-fit" style="--applet-w:1600; --applet-h:900;">
+		<span id='cvWator'><span class="applet-controls top">
+			<span class="ac-row">
+				<b>Pixel Size</b><input type="number" id="watorPix"   min="1" max="20"  onchange="updateWator('pixSize',this.value,true)"/>
+				<b>Prey Breed Time</b><input type="number" id="watorBreed" min="1" max="200" onchange="updateWator('breedTime',this.value)"/>
+				<b>Energy per Prey</b><input type="number" id="watorEpp" min="1" max="500" onchange="updateWator('energyPerPrey',this.value)"/>
+			</span>
+			<span class="ac-row">
+				<b>Min shark spawn energy</b><input type="number" id="watorEmin"   min="1" max="1000" onchange="updateWator('energyMin',this.value)"/>
+				<span hidden><b>Chart Skip</b><input type="number" id="watorChartSkip" min="1" max="5" onchange="updateWator('chartSkip',this.value)"/></span>
+				<label><input type="checkbox" id="watorPhase" onchange="wator.showPhase = this.checked"/> Phasenraum</label>
+				<button type="button" onclick="wator.reset()">Reset</button>
+			</span>
+		</span>
+		<span class="applet-controls corner-tl">
+			<span class="ac-row">
+				<button class="ac-icon" type="button" title="Vollbild" aria-label="Vollbild" onclick="toggleFullscreen(this)">⛶</button>
+				<button class="ac-icon" type="button" title="Steuerung ein/aus" aria-label="Steuerung ein/aus" onclick="toggleAppletControls(this)">⚙</button>
+			</span>
+		</span></span>
+	</span>
+
+	<script src="./scripts/WatorGPU.js"></script>
+	<script src="./local/wator-textures.js"></script>
+	<script>
+	// Lokal (file://) sind die JPEGs aus scripts/assets/ für WebGL cross-origin,
+	// texImage2D() würde einen SecurityError werfen. Deshalb werden die Pfade
+	// hier auf die eingebetteten Data-URIs umgebogen; die Applet-Quelle selbst
+	// bleibt unverändert.
+	(function () {
+	  var orig = WatorGPU.prototype._loadTexture;
+	  WatorGPU.prototype._loadTexture = function (name, src, repeat) {
+	    var file = String(src).split('/').pop();
+	    var data = window.WATOR_TEXTURES && window.WATOR_TEXTURES[file];
+	    return orig.call(this, name, data || src, repeat);
+	  };
+	})();
+
+	var wator = new WatorGPU({ cvid          : 'cvWator',
+	                           width         : 1600,
+	                           height        : 900,
+	                           texPath       : './scripts/assets/',
+	                           pixSize       : 2,
+	                           breedTime     : 15,
+	                           energyPerPrey : 40,
+	                           energyMin     : 90,
+	                           chartSkip     : 4,
+	                           showStat      : true,
+	                           showFps       : false,
+	                           showParam     : false });
+
+	// Sync inputs to the simulation's current parameters (single source of truth).
+	document.getElementById('watorPix').value       = wator.pixSize;
+	document.getElementById('watorBreed').value     = wator.breedTime;
+	document.getElementById('watorEpp').value       = wator.energyPerPrey;
+	document.getElementById('watorEmin').value      = wator.energyMin;
+	document.getElementById('watorChartSkip').value = wator.chartSkip;
+	document.getElementById('watorPhase').checked   = wator.showPhase;
+
+	function updateWator(prop, val, resetField) {
+	  var v = parseInt(val, 10);
+	  if (!v || v < 1) v = 1;
+	  wator[prop] = v;
+	  if (resetField) wator.reset();
+	}
+	</script>
+
+</div>
+</body>
+</html>
