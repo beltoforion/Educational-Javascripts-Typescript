@@ -54,6 +54,10 @@
 //   1.6.2  2026-11-20  Zeitleiste unten ist anfangs eingeklappt (Knopf
 //                      "Zeitleiste"); der Filter für Mehrplanetensysteme steht
 //                      nur noch unter "Weitere Filter", nicht mehr oben.
+//   1.6.3  2026-11-20  Titius-Bode-Reihe vorsichtiger beschrieben: "freie Plätze
+//                      der Reihe" statt "vermutete Lücken", keine Aussage mehr
+//                      darüber, was dort kreisen könnte; Hinweis auf die
+//                      Gegenprüfung von Huang & Bakos (2014).
 //   1.1.0  2026-11-20  Einbetten in eine Website: Logo und Links (site),
 //                      Sprachschalter mit Zieladressen (langUrls), Basispfad
 //                      (base); Berichte werden über http(s) direkt geladen
@@ -62,7 +66,7 @@
 (function () {
   'use strict';
 
-  const VERSION = '1.6.2';
+  const VERSION = '1.6.3';
 
   // ============================================================ Konstanten
   const EARTH_PER_JUPITER = 317.83;   // Erdmassen je Jupitermasse
@@ -223,8 +227,9 @@
   // innerste hat n = 1. Passt die Reihe nicht (R² unter 0,992, der Wert der
   // klassischen Regel im Sonnensystem), werden zwischen den Planeten freie
   // Plätze eingefügt, erst einer, dann zwei usw.; es gilt die Anpassung mit
-  // den wenigsten freien Plätzen. Ein freier Platz ist eine Vermutung, wo ein
-  // noch unentdeckter Körper kreisen könnte, kein Fund. Die Arbeit wendet das
+  // den wenigsten freien Plätzen. Ein freier Platz ist ein Ergebnis der
+  // Rechnung, kein Fund; die Texte behaupten nicht, dass dort etwas kreist. Die
+  // Arbeit wendet das
   // auf Systeme ab vier Planeten an und findet dort höchstens vier freie
   // Plätze; mehr werden hier nicht versucht. Über den äußersten Planeten
   // hinaus wird (wie in Abschnitt 4 der Arbeit) nichts vorhergesagt.
@@ -295,30 +300,31 @@
         mr: 'Woraus die Planeten bestehen: Masse, Größe und Dichte',
         sys: 'Sterne mit vielen Planeten: je Zeile ein System, von innen nach außen' },
       sysGroup: 'Planeten je System', sysMin: { 4: 'ab 4', 5: 'ab 5', 6: 'ab 6' },
-      gaps: 'Vermutete Lücken zeigen',
-      gapsHint: 'Gestrichelte Ringe: Plätze, an denen nach der Titius-Bode-Regel ein noch unentdeckter Körper kreisen könnte',
+      gaps: 'Freie Plätze der Reihe zeigen',
+      gapsHint: 'Gestrichelte Ringe: Plätze, die in der Titius-Bode-Reihe des Systems unbesetzt bleiben. Ein Ergebnis der Rechnung, kein Fund.',
       multiOnly: 'Nur Sterne mit mehreren Planeten',
       solarSystem: 'Sonnensystem', systemTitle: 'Planetensystem', systemOf: (i, n) => 'System ' + i + ' von ' + n,
       sysPlanets: (n) => n + ' bekannte Planeten',
       sysLink: (name, n) => 'System ' + name + ': ' + n + ' bekannte Planeten',
       sysStrip: (name) => name + ', von innen nach außen', sysStar: 'Stern: das ganze System zeigen',
-      sysLegend: { star: 'Stern', hz: 'habitable Zone', gap: 'vermutete Lücke' },
+      sysLegend: { star: 'Stern', hz: 'habitable Zone', gap: 'freier Platz der Reihe' },
       sysFacts: { starMass: 'Masse des Sterns', starRadius: 'Radius des Sterns', hzRange: 'Habitable Zone', inHz: 'Planeten in der Zone', none: 'keiner' },
       hzRangeNote: 'Abstand vom Stern, großzügige Grenzen',
       sunMasses: ' Sonnenmassen', sunRadii: ' Sonnenradien', range: (a, b) => a + ' bis ' + b,
       sysList: 'Planeten von innen nach außen', sysSearch: (n) => 'System, ' + n + ' Planeten',
       clickSystem: 'Klicken für das System',
-      gapTitle: 'Vermutete Lücke', gapAt: (period) => 'Umlaufzeit etwa ' + period, gapNote: 'nach der Titius-Bode-Regel, kein Fund',
+      gapTitle: 'Freier Platz der Reihe', gapAt: (period) => 'Umlaufzeit etwa ' + period, gapNote: 'aus der Titius-Bode-Reihe berechnet, kein Fund',
       tb: {
         title: 'Regelmäßige Abstände (Titius-Bode-Regel)',
         few: 'Ob die Umlaufzeiten einer festen Regel folgen, lässt sich erst ab vier bekannten Planeten prüfen.',
         fit: (factor, r2) => 'Von Planet zu Planet wächst die Umlaufzeit im Mittel auf das ' + factor + '-Fache (Güte der Anpassung: R² = ' + r2 + ').',
-        full: 'Die Reihe geht ohne Lücke auf: Zwischen den bekannten Planeten fehlt nach dieser Regel keiner.',
+        full: 'Die Reihe geht auf, ohne dass ein Platz frei bleibt.',
         gaps: (n, list) => (n === 1 ? 'Damit die Reihe aufgeht, bleibt ein Platz frei' : 'Damit die Reihe aufgeht, bleiben ' + n + ' Plätze frei') +
-          ' (Umlaufzeit etwa ' + list + '). Dort könnte ein noch unentdeckter Planet oder ein Asteroidengürtel kreisen. Das ist eine Vermutung, kein Fund.',
+          ' (Umlaufzeit etwa ' + list + '). Diese Plätze ergeben sich allein aus der Rechnung; ob dort etwas kreist, ist nicht bekannt.',
         solar: 'Im Sonnensystem liegt dort, zwischen Mars und Jupiter, der Asteroidengürtel mit dem Zwergplaneten Ceres (Umlaufzeit 4,6 Jahre).',
         none: 'Die Umlaufzeiten folgen keiner solchen Reihe, auch nicht mit bis zu vier freien Plätzen.',
-        source: 'Verfahren: ', sourceAfter: ', hier auf den aktuellen Katalog angewandt. Die Arbeit nennt eine Trefferquote von 78 %; die Regel ist umstritten, weil eine physikalische Begründung fehlt.',
+        source: 'Verfahren: ', sourceAfter: ', hier auf den aktuellen Katalog angewandt. Die Arbeit nennt für ihre Vorhersagen eine Trefferquote von 78 %. Eine unabhängige Suche in den Kepler-Daten nach 97 Planeten, die eine ähnliche Arbeit vorhergesagt hatte, fand fünf Kandidaten (',
+        sourceEnd: '). Eine physikalische Begründung der Regel fehlt.',
         and: ' und ',
         dev: (name, pct) => 'Am weitesten neben der Reihe liegt ' + name + ' (' + pct + ').',
         chartTop: 'Umlaufzeit in Tagen', chartBottom: 'Abweichung von der Reihe', chartX: 'Platz',
@@ -360,7 +366,7 @@
       guideAxes: { mp: 'Nach rechts werden die Planeten schwerer, nach oben dauert ein Umlauf länger.',
         rs: 'Nach rechts bekommen die Planeten weniger Licht von ihrem Stern, nach oben werden sie größer.',
         mr: 'Nach rechts werden die Planeten schwerer, nach oben größer. Die gestrichelten Linien verbinden Planeten gleicher Dichte; gezeigt sind nur Planeten, bei denen Masse und Größe gemessen sind.',
-        sys: 'Jede Zeile ist ein Stern mit seinen bekannten Planeten: links die inneren, rechts die äußeren. Das grüne Band ist die habitable Zone, gestrichelte Ringe sind vermutete Lücken.' },
+        sys: 'Jede Zeile ist ein Stern mit seinen bekannten Planeten: links die inneren, rechts die äußeren. Das grüne Band ist die habitable Zone, gestrichelte Ringe sind freie Plätze der Titius-Bode-Reihe.' },
       guide: 'Jeder Punkt ist ein Planet bei einem fremden Stern.',
       facts: { type: 'Typ', mass: 'Masse', radius: 'Radius', period: 'Umlaufzeit', axis: 'Abstand zum Stern',
         flux: 'Licht vom Stern', hz: 'Habitable Zone', esi: 'Erdähnlichkeit', star: 'Stern', dist: 'Entfernung',
@@ -410,30 +416,31 @@
         mr: 'What the planets are made of: mass, size and density',
         sys: 'Stars with many planets: one system per row, from the inside out' },
       sysGroup: 'Planets per system', sysMin: { 4: '4+', 5: '5+', 6: '6+' },
-      gaps: 'Show suspected gaps',
-      gapsHint: 'Dashed rings: places where, by the Titius-Bode relation, an undiscovered body could be orbiting',
+      gaps: 'Show empty places of the sequence',
+      gapsHint: 'Dashed rings: places that stay empty in the Titius-Bode sequence of the system. A result of the calculation, not a discovery.',
       multiOnly: 'Only stars with several planets',
       solarSystem: 'Solar System', systemTitle: 'Planetary system', systemOf: (i, n) => 'System ' + i + ' of ' + n,
       sysPlanets: (n) => n + ' known planets',
       sysLink: (name, n) => name + ' system: ' + n + ' known planets',
       sysStrip: (name) => name + ', from the inside out', sysStar: 'Star: show the whole system',
-      sysLegend: { star: 'star', hz: 'habitable zone', gap: 'suspected gap' },
+      sysLegend: { star: 'star', hz: 'habitable zone', gap: 'empty place in the sequence' },
       sysFacts: { starMass: 'Mass of the star', starRadius: 'Radius of the star', hzRange: 'Habitable zone', inHz: 'Planets in the zone', none: 'none' },
       hzRangeNote: 'Distance from the star, generous limits',
       sunMasses: ' solar masses', sunRadii: ' solar radii', range: (a, b) => a + ' to ' + b,
       sysList: 'Planets from the inside out', sysSearch: (n) => 'System, ' + n + ' planets',
       clickSystem: 'Click for the system',
-      gapTitle: 'Suspected gap', gapAt: (period) => 'orbital period about ' + period, gapNote: 'from the Titius-Bode relation, not a discovery',
+      gapTitle: 'Empty place in the sequence', gapAt: (period) => 'orbital period about ' + period, gapNote: 'calculated from the Titius-Bode sequence, not a discovery',
       tb: {
         title: 'Regular spacing (Titius-Bode relation)',
         few: 'Whether the orbital periods follow a fixed rule can only be tested with at least four known planets.',
         fit: (factor, r2) => 'From one planet to the next, the orbital period grows by a factor of ' + factor + ' on average (goodness of fit: R² = ' + r2 + ').',
-        full: 'The sequence works without a gap: by this rule, no planet is missing between the known ones.',
+        full: 'The sequence works without leaving a place empty.',
         gaps: (n, list) => (n === 1 ? 'For the sequence to work, one place stays empty' : 'For the sequence to work, ' + n + ' places stay empty') +
-          ' (orbital period about ' + list + '). An undiscovered planet or an asteroid belt could be orbiting there. This is a conjecture, not a discovery.',
+          ' (orbital period about ' + list + '). These places follow from the calculation alone; whether anything orbits there is not known.',
         solar: 'In the Solar System, the asteroid belt with the dwarf planet Ceres (orbital period 4.6 years) lies there, between Mars and Jupiter.',
         none: 'The orbital periods do not follow such a sequence, not even with up to four empty places.',
-        source: 'Method: ', sourceAfter: ', applied here to the current catalog. The paper reports a success rate of 78%; the relation is disputed because it has no physical explanation.',
+        source: 'Method: ', sourceAfter: ', applied here to the current catalog. The paper reports a success rate of 78% for its predictions. An independent search of the Kepler data for 97 planets predicted by a similar study found five candidates (',
+        sourceEnd: '). The relation has no physical explanation.',
         and: ' and ',
         dev: (name, pct) => 'Farthest from the sequence: ' + name + ' (' + pct + ').',
         chartTop: 'Orbital period in days', chartBottom: 'Deviation from the sequence', chartX: 'Place',
@@ -475,7 +482,7 @@
       guideAxes: { mp: 'Planets get heavier to the right; higher up, one orbit takes longer.',
         rs: 'To the right, planets receive less light from their star; higher up, they are larger.',
         mr: 'Planets get heavier to the right and larger toward the top. The dashed lines connect planets of equal density; only planets with a measured mass and size are shown.',
-        sys: 'Each row is a star with its known planets: inner ones on the left, outer ones on the right. The green band is the habitable zone; dashed rings are suspected gaps.' },
+        sys: 'Each row is a star with its known planets: inner ones on the left, outer ones on the right. The green band is the habitable zone; dashed rings are empty places in the Titius-Bode sequence.' },
       guide: 'Every dot is a planet around another star.',
       facts: { type: 'Type', mass: 'Mass', radius: 'Radius', period: 'Orbital period', axis: 'Distance from star',
         flux: 'Starlight', hz: 'Habitable zone', esi: 'Earth similarity', star: 'Star', dist: 'Distance',
@@ -549,7 +556,7 @@
     colorBy: 'type',      // type | method | star
     view: 'mp',           // mp: Masse/Umlaufzeit, rs: Einstrahlung/Radius, mr: Masse/Radius, sys: Planetensysteme
     sysMin: 5,            // Ansicht "Planetensysteme": Systeme ab so vielen Planeten
-    gaps: true,           // vermutete Lücken (Titius-Bode) zeigen
+    gaps: true,           // freie Plätze der Titius-Bode-Reihe zeigen
     preset: 'all',
   };
   const PRESETS = {
@@ -1075,7 +1082,7 @@
   }
 
   // ---- Ansicht "Planetensysteme": Zeilen. layer 'under' liegt unter den
-  // Punkten (Leitlinien, habitable Zone, vermutete Lücken), 'over' darüber
+  // Punkten (Leitlinien, habitable Zone, freie Plätze der Reihe), 'over' darüber
   // (die feste Namensspalte am linken Rand mit dem Stern jeder Zeile).
   function fitText(g, text, width) {
     if (g.measureText(text).width <= width) return text;
@@ -1794,7 +1801,7 @@
     gView.querySelector('.atlas-seg').classList.add('atlas-seg-stack');
 
     // Nur in der Ansicht "Planetensysteme": wie viele Planeten ein System
-    // mindestens haben muss, und ob die vermuteten Lücken zu sehen sind.
+    // mindestens haben muss, und ob die freien Plätze der Reihe zu sehen sind.
     dom.sysGroup = group('sysGroup');
     segmented(dom.sysGroup, [{ value: 4, tx: 'sysMin.4' }, { value: 5, tx: 'sysMin.5' }, { value: 6, tx: 'sysMin.6' }],
       () => state.sysMin, (v) => { state.sysMin = v; applyFilters(); syncControls(); if (shown) renderPanel(); });
@@ -2525,7 +2532,7 @@
   function selectBody(q, fly) { if (q.isSolar) selectSolar(q, fly); else selectPlanet(q, fly); }
   // Schematische Leiste eines Planetensystems: links der Stern, rechts davon
   // die Planeten nach ihrer Umlaufzeit (logarithmisch), dahinter die
-  // habitable Zone, gestrichelt die vermuteten Lücken. current: der gerade
+  // habitable Zone, gestrichelt die freien Plätze der Reihe. current: der gerade
   // gezeigte Planet (dann führt ein Klick auf den Stern zum System).
   function systemStrip(sys, current, big) {
     const box = el('div', 'atlas-sys-strip' + (big ? ' is-big' : ''));
@@ -2734,7 +2741,11 @@
       const note = el('p', 'atlas-tb-note', tx.tb.source);
       const link = el('a', '', 'Lara, Cordero-Tercero & Allen (2020)');
       link.href = 'https://arxiv.org/abs/2003.05121'; link.target = '_blank'; link.rel = 'noopener';
-      note.append(link, tx.tb.sourceAfter);
+      // Gegenprüfung: Huang & Bakos 2014 (MNRAS 442, 674) suchten nach den
+      // Vorhersagen von Bovaird & Lineweaver 2013.
+      const check = el('a', '', 'Huang & Bakos 2014');
+      check.href = 'https://arxiv.org/abs/1405.2259'; check.target = '_blank'; check.rel = 'noopener';
+      note.append(link, tx.tb.sourceAfter, check, tx.tb.sourceEnd);
       tb.appendChild(note);
     }
     card.appendChild(tb);
@@ -3014,7 +3025,7 @@
     }
     if (bestStory) return { kind: 'planet', p: bestStory };
     if (inSys && state.gaps) {
-      // Vermutete Lücke, wenn kein Planet näher liegt.
+      // Freier Platz der Reihe, wenn kein Planet näher liegt.
       let gapHit = null, gapD = Math.min(bestD, 9 * 9);
       for (const s of sysRows) {
         if (!s.fit || !s.on) continue;

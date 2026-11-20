@@ -198,7 +198,7 @@ a.atlas-tool { display: inline-block; color: inherit; text-decoration: none; }
 }
 .atlas-switch[aria-checked="false"] .atlas-check-name { color: var(--ink-2); text-decoration: none; }
 .atlas-ring { flex: none; width: 9px; height: 9px; margin-left: auto; border: 1.5px solid #cfd5ee; border-radius: 50%; }
-/* So sieht eine vermutete Lücke aus (Ansicht "Planetensysteme"). */
+/* So sieht ein freier Platz der Reihe aus (Ansicht "Planetensysteme"). */
 .atlas-ring.is-dashed { width: 11px; height: 11px; border-style: dashed; }
 .atlas-gaps { margin-top: 5px; }
 .atlas-group[hidden] { display: none; }
@@ -425,7 +425,7 @@ button.atlas-chip:hover { border-color: #fff; }
 
 /* ---- Planetensystem als Leiste: links der Stern, rechts die Planeten nach
    ihrer Umlaufzeit, dahinter grün die habitable Zone, gestrichelt die
-   vermuteten Lücken (siehe systemStrip in atlas.js). ---- */
+   freien Plätze der Reihe (siehe systemStrip in atlas.js). ---- */
 .atlas-sys { margin: 2px 0 4px; }
 .atlas-sys-link { padding-left: 0; font-size: 12.5px; text-align: left; }
 .atlas-sys-strip { --y: 12px; display: flex; align-items: flex-start; gap: 12px; height: 38px; margin-top: 5px; }
@@ -593,13 +593,19 @@ button.atlas-sys-star:hover { outline: 1.5px solid #fff; outline-offset: 2px; }
 .atlas-panel-body.fit-3 .atlas-planet.has-story .atlas-fact:nth-child(n+4) { display: none; }
 .atlas-panel-body.fit-4 .atlas-story.is-compact .atlas-story-content img { height: 56px; }
 /* Infofeld eines Systems: wird es eng, rücken Liste und Werte zusammen,
-   dann entfallen die Zeichenerklärung der Leiste und die Erläuterung zum Diagramm. */
+   dann entfällt die Zeichenerklärung der Leiste, die Schrift wird kleiner und
+   erst zuletzt entfällt die Erläuterung zum Diagramm. */
 .atlas-panel-body.fit-1 .atlas-sys-row { padding-top: 1px; padding-bottom: 1px; }
 .atlas-panel-body.fit-1 .atlas-system-title { margin-top: 9px; }
 .atlas-panel-body.fit-1 .atlas-system .atlas-facts { gap: 6px 14px; margin-bottom: 4px; }
 .atlas-panel-body.fit-2 .atlas-sys-legend { display: none; }
 .atlas-panel-body.fit-2 .atlas-tb p { line-height: 1.35; margin-bottom: 5px; }
-.atlas-panel-body.fit-3 .atlas-tb-chart-note { display: none; }
+.atlas-panel-body.fit-3 .atlas-sys-row { padding-top: 0; padding-bottom: 0; font-size: 12.5px; line-height: 1.25; }
+.atlas-panel-body.fit-3 .atlas-tb .atlas-tb-note { font-size: 11.5px; line-height: 1.3; margin-bottom: 4px; }
+.atlas-panel-body.fit-3 .atlas-system-name { font-size: 20px; }
+.atlas-panel-body.fit-3 .atlas-sys-strip.is-big { margin-top: 6px; }
+.atlas-panel-body.fit-3 .atlas-system-title { margin-top: 6px; margin-bottom: 3px; }
+.atlas-panel-body.fit-4 .atlas-tb-chart-note { display: none; }
 /* Leiste des Systems: wird es eng, entfällt erst die Zeile darüber, dann die Leiste. */
 .atlas-panel-body.fit-3 .atlas-planet.has-story .atlas-sys-link { display: none; }
 .atlas-panel-body.fit-4 .atlas-planet.has-story .atlas-sys { display: none; }
