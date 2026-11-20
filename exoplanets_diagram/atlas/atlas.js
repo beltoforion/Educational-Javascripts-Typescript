@@ -23,6 +23,15 @@
 //   setTitle  false: den Seitentitel (document.title) nicht verändern
 //
 // Version: bei jeder Änderung hochzählen und hier eintragen.
+//   1.1.1  2026-11-20  Zoom zurücksetzen als Symbolknopf unten rechts neben
+//                      dem Diagramm (verdeckt keine Punkte mehr); ein
+//                      einheitlicher, eckiger Stil für alle Knöpfe
+//   1.2.0  2026-11-20  Neue Bedienung: Klick wählt einen Planeten aus, Klick
+//                      ins Freie hebt die Auswahl auf und zeigt die Übersicht;
+//                      Überfahren zeigt nur noch den Hinweis am Mauszeiger.
+//                      Die Übersicht zeigt Kacheln für alle Berichte (mit den
+//                      Cursortasten ansteuerbar); in den Berichten oben
+//                      Knöpfe zum Vor- und Zurückblättern (auch Pfeiltasten).
 //   1.1.0  2026-11-20  Einbetten in eine Website: Logo und Links (site),
 //                      Sprachschalter mit Zieladressen (langUrls), Basispfad
 //                      (base); Berichte werden über http(s) direkt geladen
@@ -31,7 +40,7 @@
 (function () {
   'use strict';
 
-  const VERSION = '1.1.0';
+  const VERSION = '1.2.0';
 
   // ============================================================ Konstanten
   const EARTH_PER_JUPITER = 317.83;   // Erdmassen je Jupitermasse
@@ -201,14 +210,12 @@
         uranus: 'Uranus', neptune: 'Neptun' },
       solarNote: 'Planet unseres Sonnensystems',
       timeline: 'Entdeckt bis', play: 'Zeitraffer', pause: 'Anhalten', stories: 'Berichte',
-      allStories: (n) => 'Alle ' + n + ' Berichte der Reihe nach ansehen',
       guideTitle: 'Tausende Welten auf einen Blick',
       guideAxes: { mp: 'Nach rechts werden die Planeten schwerer, nach oben dauert ein Umlauf länger.',
         rs: 'Nach rechts bekommen die Planeten weniger Licht von ihrem Stern, nach oben werden sie größer.' },
       guide: [
         'Jeder Punkt ist ein Planet bei einem fremden Stern.',
-        'Fahre über einen Punkt, um mehr zu erfahren. Leuchtende Ringe markieren Planeten, über die es hier einen Bericht gibt.',
-        'Mausrad vergrößert, Ziehen verschiebt, Doppelklick zeigt wieder alles. Ein Klick hält die Auswahl fest.',
+        'Klicke auf einen Punkt für seinen Steckbrief; leuchtende Ringe markieren Planeten mit Bericht. Mausrad vergrößert, Ziehen verschiebt.',
       ],
       facts: { type: 'Typ', mass: 'Masse', radius: 'Radius', period: 'Umlaufzeit', axis: 'Abstand zum Stern',
         flux: 'Einstrahlung', hz: 'Habitable Zone', esi: 'Erdähnlichkeit', star: 'Stern', dist: 'Entfernung',
@@ -220,16 +227,19 @@
       esiNote: 'Earth Similarity Index aus Radius und Einstrahlung; 1 = wie die Erde',
       hzClass: { unknown: 'nicht bestimmbar', none: 'nicht bestimmbar (Sterntemperatur außerhalb des Modells)',
         hot: 'nein, zu heiß', inner: 'am inneren Rand', yes: 'ja', outer: 'am äußeren Rand', cold: 'nein, zu kalt' },
-      storyOf: (i, n) => 'Bericht ' + i + ' von ' + n, prev: 'Vorheriger Bericht', next: 'Nächster Bericht',
+      storyOf: (i, n) => 'Bericht ' + i + ' von ' + n, prev: 'Vorheriger (älterer) Bericht', next: 'Nächster (neuerer) Bericht',
+      planetStories: 'Berichte zu diesem Planeten',
       storyPlanets: 'Im Diagramm', notInChart: 'nicht im Diagramm',
       allFacts: 'Alle Werte zeigen', showStory: (n) => (n === 1 ? 'Bericht zeigen' : n + ' Berichte zeigen'),
       loading: 'Bericht wird geladen …', loadError: 'Der Bericht konnte nicht geladen werden.',
-      pinned: 'Auswahl festgehalten', unpin: 'Auswahl lösen', close: 'Schließen',
+      pinned: 'Ein Klick auf eine freie Stelle im Diagramm hebt die Auswahl auf.', close: 'Schließen',
+      clickStory: 'Klicken für Bericht und Steckbrief', clickFacts: 'Klicken für den Steckbrief',
+      tileHint: (n) => n + ' Berichte, neueste zuerst. Auswahl mit Maus oder Cursortasten und Eingabetaste.',
       footData: 'Daten: ', footText: (date, n, est, comp) => ', Stand ' + date + '. ' + n + ' Planeten, davon ' + est +
         ' mit aus dem Radius geschätzter Masse und ' + comp + ' mit berechneter Umlaufzeit.',
       date: (iso) => iso.split('-').reverse().join('.'),
       hidden: 'Dieser Planet ist mit den aktuellen Filtern ausgeblendet.',
-      showAll: 'Alle Filter zurücksetzen', resetView: 'Ganzes Diagramm zeigen',
+      showAll: 'Alle Filter zurücksetzen', resetView: 'Zoom zurücksetzen: ganzes Diagramm zeigen (Doppelklick)',
       noData: 'Keine Daten gefunden: data.js fehlt. Bitte "node update-data.js" ausführen.',
       sysSiblings: 'Weitere Planeten dieses Sterns',
     },
@@ -273,14 +283,12 @@
         uranus: 'Uranus', neptune: 'Neptune' },
       solarNote: 'Planet of our Solar System',
       timeline: 'Discovered by', play: 'Time lapse', pause: 'Pause', stories: 'Stories',
-      allStories: (n) => 'Step through all ' + n + ' stories',
       guideTitle: 'Thousands of worlds at a glance',
       guideAxes: { mp: 'Planets get heavier to the right; higher up, one orbit takes longer.',
         rs: 'To the right, planets receive less light from their star; higher up, they are larger.' },
       guide: [
         'Every dot is a planet around another star.',
-        'Hover over a dot to learn more. Glowing rings mark planets that have a story here.',
-        'The mouse wheel zooms, dragging pans, a double click shows everything again. A click keeps the selection.',
+        'Click a dot for its fact sheet; glowing rings mark planets with a story. The mouse wheel zooms, dragging pans.',
       ],
       facts: { type: 'Type', mass: 'Mass', radius: 'Radius', period: 'Orbital period', axis: 'Distance from star',
         flux: 'Irradiation', hz: 'Habitable zone', esi: 'Earth similarity', star: 'Star', dist: 'Distance',
@@ -292,16 +300,19 @@
       esiNote: 'Earth Similarity Index from radius and irradiation; 1 = like Earth',
       hzClass: { unknown: 'cannot be determined', none: 'cannot be determined (stellar temperature outside the model)',
         hot: 'no, too hot', inner: 'at the inner edge', yes: 'yes', outer: 'at the outer edge', cold: 'no, too cold' },
-      storyOf: (i, n) => 'Story ' + i + ' of ' + n, prev: 'Previous story', next: 'Next story',
+      storyOf: (i, n) => 'Story ' + i + ' of ' + n, prev: 'Previous (older) story', next: 'Next (newer) story',
+      planetStories: 'Stories about this planet',
       storyPlanets: 'In the chart', notInChart: 'not in the chart',
       allFacts: 'Show all values', showStory: (n) => (n === 1 ? 'Show story' : 'Show ' + n + ' stories'),
       loading: 'Loading story …', loadError: 'The story could not be loaded.',
-      pinned: 'Selection pinned', unpin: 'Release selection', close: 'Close',
+      pinned: 'Click an empty spot in the chart to clear the selection.', close: 'Close',
+      clickStory: 'Click for story and fact sheet', clickFacts: 'Click for the fact sheet',
+      tileHint: (n) => n + ' stories, newest first. Select with the mouse or with the arrow keys and Enter.',
       footData: 'Data: ', footText: (date, n, est, comp) => ', as of ' + date + '. ' + n + ' planets, ' + est +
         ' of them with a mass estimated from the radius and ' + comp + ' with a computed orbital period.',
       date: (iso) => iso,
       hidden: 'This planet is hidden by the current filters.',
-      showAll: 'Reset all filters', resetView: 'Show the whole chart',
+      showAll: 'Reset all filters', resetView: 'Reset zoom: show the whole chart (double click)',
       noData: 'No data found: data.js is missing. Please run "node update-data.js".',
       sysSiblings: 'Other planets of this star',
     },
@@ -647,13 +658,14 @@
     g.fillStyle = '#8f98bd';
     g.font = '12.5px ' + FONT_UI;
     g.textAlign = 'center'; g.textBaseline = 'top';
-    for (const e of xs) g.fillText(ax.xLabel(e), sxOf(v, e), plot.b + 8);
+    const clearOfButton = (x) => M.r >= 40 || x < W - 62;   // Platz für den Knopf unten rechts
+    for (const e of xs) if (clearOfButton(sxOf(v, e))) g.fillText(ax.xLabel(e), sxOf(v, e), plot.b + 8);
     g.textAlign = 'right'; g.textBaseline = 'middle';
     for (const e of ys) g.fillText(ax.yLabel(e), plot.l - 9, syOf(v, e));
     g.fillStyle = '#6f789c';
     g.font = '11.5px ' + FONT_UI;
     for (const m of minor) {
-      if (m[0] === 'x') { g.textAlign = 'center'; g.textBaseline = 'top'; g.fillText(m[2], sxOf(v, m[1]), plot.b + 8); }
+      if (m[0] === 'x') { g.textAlign = 'center'; g.textBaseline = 'top'; if (clearOfButton(sxOf(v, m[1]))) g.fillText(m[2], sxOf(v, m[1]), plot.b + 8); }
       else { g.textAlign = 'right'; g.textBaseline = 'middle'; g.fillText(m[2], plot.l - 9, syOf(v, m[1])); }
     }
     // Achsentitel
@@ -768,7 +780,12 @@
     flyToPoints(list.concat(SOLAR.filter((s) => s.key === 'earth' || s.key === 'venus' || s.key === 'mars')), ms, 0.22);
   }
 
+  function isHomeView() {
+    const h = home[state.view];
+    return !morph && ['x0', 'x1', 'y0', 'y1'].every((k) => Math.abs(view[k] - h[k]) < 1e-6);
+  }
   function renderStatic() {
+    dom.homeBtn.disabled = isHomeView();
     const g = dom.base.getContext('2d');
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     drawBackground(g);
@@ -1290,7 +1307,10 @@
     dom.overlay.tabIndex = 0;
     dom.tip = el('div', 'atlas-tip');
     dom.tip.hidden = true;
+    // Zoom zurücksetzen: Symbolknopf in der freien Ecke unten rechts, außerhalb
+    // der Zeichenfläche. Symbol: vier Pfeile von der Mitte in die Ecken.
     dom.homeBtn = button('atlas-home', '', () => flyTo(home[state.view], 600));
+    dom.homeBtn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4H4v5M4 4l6 6M15 4h5v5M20 4l-6 6M9 20H4v-5M4 20l6-6M15 20h5v-5M20 20l-6-6"/></svg>';
     dom.toast = el('div', 'atlas-toast');
     dom.toast.setAttribute('role', 'status');
     dom.toast.hidden = true;
@@ -1352,9 +1372,11 @@
       b.style.bottom = (row * 11) + 'px';
       const main = s.main[0];
       b.style.setProperty('--c', main ? TYPES[main.ti].glow : '#c9cfe8');
-      b.addEventListener('pointerenter', () => { if (!pinned) { hlStory = s; show({ kind: 'story', story: s }); overlayDirty = true; schedule(); } });
-      b.addEventListener('pointerleave', () => { if (!pinned) { hlStory = null; overlayDirty = true; schedule(); } });
-      b.addEventListener('focus', () => { if (!pinned) { hlStory = s; show({ kind: 'story', story: s }); overlayDirty = true; schedule(); } });
+      const peek = (on) => { if (!pinned) { hlStory = on ? s : null; overlayDirty = true; schedule(); } };
+      b.addEventListener('pointerenter', () => peek(true));
+      b.addEventListener('pointerleave', () => peek(false));
+      b.addEventListener('focus', () => peek(true));
+      b.addEventListener('blur', () => peek(false));
       dom.markerLayer.appendChild(b);
       dom.markers.push({ el: b, story: s });
     }
@@ -1436,9 +1458,14 @@
     dom.yearInput.setAttribute('aria-label', tx.timeline);
     dom.yearLabel.textContent = tx.timeline + ' ' + state.yearMax;
     dom.playBtn.textContent = (playTimer ? '❚❚ ' + tx.pause : '▶ ' + tx.play);
-    dom.homeBtn.textContent = tx.resetView;
+    dom.homeBtn.title = tx.resetView;
+    dom.homeBtn.setAttribute('aria-label', tx.resetView);
     dom.overlay.setAttribute('aria-label', tx.title);
-    dom.markers.forEach((m) => { m.el.setAttribute('aria-label', dateText(m.story.date) + ': ' + (m.story.title[lang] || m.story.title.de)); });
+    dom.markers.forEach((m) => {
+      const text = dateText(m.story.date) + ': ' + (m.story.title[lang] || m.story.title.de);
+      m.el.setAttribute('aria-label', text);
+      m.el.title = text;
+    });
     dom.foot.replaceChildren(tx.footData);
     const link = el('a', '', 'exoplanet.eu');
     link.href = 'https://exoplanet.eu/catalog/'; link.target = '_blank'; link.rel = 'noopener';
@@ -1690,6 +1717,32 @@
     }
   }
 
+  // Berichte, die zu den aktuellen Filtern gehören, älteste zuerst. Ohne
+  // Filter alle; sonst nur die, deren Planeten gerade zu sehen sind.
+  function listedStories() {
+    const unfiltered = points.every((p) => p.vis);
+    return stories.filter((s) => storyVisible(s) && (unfiltered || s.points.some((p) => p.vis)));
+  }
+
+  // Cursortasten in den Kacheln: links/rechts zur Nachbarkachel, hoch/runter
+  // zur Zeile darüber bzw. darunter, Pos1/Ende zur ersten bzw. letzten.
+  function galleryKey(event) {
+    const grid = event.currentTarget;
+    const tiles = Array.from(grid.children);
+    const i = tiles.indexOf(document.activeElement);
+    if (i < 0) return;
+    const cols = getComputedStyle(grid).gridTemplateColumns.split(' ').length;
+    const step = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -cols, ArrowDown: cols }[event.key];
+    let j = step !== undefined ? i + step : event.key === 'Home' ? 0 : event.key === 'End' ? tiles.length - 1 : -1;
+    if (j < 0 || j >= tiles.length || j === i) { if (step !== undefined) event.preventDefault(); return; }
+    event.preventDefault();
+    event.stopPropagation();
+    tiles[j].focus();
+    tiles[j].scrollIntoView({ block: 'nearest' });
+  }
+
+  let lastStory = null;      // zuletzt gezeigter Bericht (für die Rückkehr zur Übersicht)
+  let returnFocus = false;   // Übersicht wurde per Tastatur geöffnet
   let panelToken = 0;
   function renderPanel() {
     const body = dom.panelBody;
@@ -1700,7 +1753,6 @@
     if (!shown) {
       const box = el('div', 'atlas-guide');
       const active = Object.keys(PRESETS).find((name) => name !== 'all' && matchesPreset(name));
-      let tiles = 12;
       if (active) {
         // Aktiver Filtersatz: was er zeigt und welche Planeten dazugehören.
         box.appendChild(el('h2', 'atlas-guide-title', tx.presets[active]));
@@ -1719,42 +1771,52 @@
             chips.appendChild(b);
           });
           box.appendChild(chips);
-          tiles = list.length > 24 ? 3 : 6;
         }
       } else {
         box.appendChild(el('h2', 'atlas-guide-title', tx.guideTitle));
-        box.appendChild(el('p', '', tx.guide[0] + ' ' + tx.guideAxes[state.view]));
-        tx.guide.slice(1).forEach((t) => box.appendChild(el('p', '', t)));
+        box.appendChild(el('p', '', tx.guide[0] + ' ' + tx.guideAxes[state.view] + ' ' + tx.guide[1]));
       }
       body.appendChild(box);
-      // Galerie: die neuesten Berichte mit Bild.
-      const withImg = stories.filter((s) => s.img && storyVisible(s) && (!state.storiesOnly || s.points.some((p) => p.vis)))
-        .reverse().slice(0, tiles);
-      if (withImg.length) {
+      // Kacheln für alle Berichte, neueste zuerst. Sind Filter aktiv, nur die
+      // Berichte, deren Planeten gerade zu sehen sind.
+      const list = listedStories().reverse();
+      if (list.length) {
         body.appendChild(el('h3', 'atlas-gallery-title', tx.stories));
+        body.appendChild(el('p', 'atlas-gallery-hint', tx.tileHint(list.length)));
         const grid = el('div', 'atlas-gallery');
-        withImg.forEach((s) => {
+        grid.addEventListener('keydown', galleryKey);
+        let focusTile = null;
+        list.forEach((s) => {
           const b = button('atlas-tile', '', () => selectStory(s, true));
-          b.style.backgroundImage = 'url("' + assetBase() + 'atlas/images/' + s.img + '")';
-          b.title = s.title[lang] || s.title.de;
-          const name = s.main[0] ? s.main[0].name : (s.missing[0] || '');
-          b.append(el('span', 'atlas-tile-year', s.date.slice(0, 4)), el('span', 'atlas-tile-name', name));
-          b.addEventListener('pointerenter', () => { hlStory = s; overlayDirty = true; schedule(); });
-          b.addEventListener('pointerleave', () => { hlStory = null; overlayDirty = true; schedule(); });
+          const main = s.main[0];
+          if (s.img) b.style.backgroundImage = 'url("' + assetBase() + 'atlas/images/' + s.img + '")';
+          else { b.classList.add('is-plain'); b.style.setProperty('--c', main ? TYPES[main.ti].glow : '#c9cfe8'); }
+          const text = dateText(s.date) + ': ' + (s.title[lang] || s.title.de);
+          b.setAttribute('aria-label', text);
+          b.title = text;
+          b.append(el('span', 'atlas-tile-year', s.date.slice(0, 4)), el('span', 'atlas-tile-name', main ? main.name : (s.missing[0] || '')));
+          if (s === lastStory) focusTile = b;
+          const peek = (on) => { hlStory = on ? s : null; overlayDirty = true; schedule(); };
+          b.addEventListener('pointerenter', () => peek(true));
+          b.addEventListener('pointerleave', () => peek(false));
+          b.addEventListener('focus', () => peek(true));
+          b.addEventListener('blur', () => peek(false));
           grid.appendChild(b);
         });
         body.appendChild(grid);
-        const row = el('div', 'atlas-guide-actions');
-        row.appendChild(button('atlas-link', tx.allStories(stories.filter(storyVisible).length), () => stepStory(1)));
-        body.appendChild(row);
+        // Zurück aus einem Bericht: dessen Kachel wieder ins Bild holen; kam
+        // man per Tastatur zurück, bekommt sie auch den Fokus.
+        if (focusTile) {
+          focusTile.scrollIntoView({ block: 'center' });
+          if (returnFocus) focusTile.focus({ preventScroll: true });
+        }
+        returnFocus = false;
       }
       return;
     }
-    if (pinned) {
-      const bar = el('div', 'atlas-pinbar');
-      bar.append(el('span', '', tx.pinned), button('atlas-link', tx.unpin, unpin));
-      body.appendChild(bar);
-    }
+    // Kopfzeile des Infofelds; ihr Inhalt folgt weiter unten.
+    const bar = el('div', 'atlas-pinbar');
+    body.appendChild(bar);
     if (shown.kind === 'solar') {
       const s = shown.s;
       body.appendChild(el('h2', 'atlas-planet-name', tx.planets[s.key]));
@@ -1771,15 +1833,36 @@
     const index = p ? clamp(shown.storyIndex || 0, 0, Math.max(0, list.length - 1)) : 0;
     const story = (p && shown.factsOnly) ? null : (list[index] || null);
 
+    lastStory = story || lastStory;
+    if (story) {
+      // Zwischen den Berichten blättern (zeitlich geordnet, ältere links).
+      const listed = listedStories();
+      const all = listed.indexOf(story) >= 0 ? listed : stories;
+      const pos = all.indexOf(story);
+      const nav = (delta, glyph, label) => {
+        const b = button('atlas-tool atlas-nav', glyph, () => selectStory(all[pos + delta], true));
+        b.disabled = !all[pos + delta];
+        b.title = label;
+        b.setAttribute('aria-label', label);
+        return b;
+      };
+      bar.append(nav(-1, '‹', tx.prev), el('span', 'atlas-nav-pos', tx.storyOf(pos + 1, all.length)), nav(1, '›', tx.next));
+    } else {
+      bar.textContent = tx.pinned;
+    }
+
     if (story) {
       const holder = el('div', 'atlas-story' + (p ? ' is-compact' : ''));
-      if (list.length > 1) {
-        const pager = el('div', 'atlas-pager');
-        const go = (d) => { shown.storyIndex = (index + d + list.length) % list.length; renderPanel(); };
-        const prev = button('atlas-link', '‹', () => go(-1)); prev.setAttribute('aria-label', tx.prev);
-        const next = button('atlas-link', '›', () => go(1)); next.setAttribute('aria-label', tx.next);
-        pager.append(prev, el('span', '', tx.storyOf(index + 1, list.length)), next);
-        holder.appendChild(pager);
+      if (p && list.length > 1) {
+        // Mehrere Berichte zu diesem Planeten: Auswahl nach Jahr.
+        const tabs = el('div', 'atlas-chips atlas-story-tabs');
+        tabs.appendChild(el('span', 'atlas-chips-label', tx.planetStories));
+        list.forEach((other, i) => {
+          const b = button('atlas-chip' + (i === index ? ' is-current' : ''), other.date.slice(0, 4), () => { shown.storyIndex = i; renderPanel(); });
+          b.title = dateText(other.date) + ': ' + (other.title[lang] || other.title.de);
+          tabs.appendChild(b);
+        });
+        holder.appendChild(tabs);
       }
       const content = el('div', 'atlas-story-content');
       const skeleton = el('div', 'atlas-skeleton');
@@ -1876,6 +1959,7 @@
         const s = p.stories[p.stories.length - 1];
         dom.tip.appendChild(el('em', '', s.title[lang] || s.title.de));
       }
+      dom.tip.appendChild(el('small', '', p.stories.length ? tx.clickStory : tx.clickFacts));
     }
     dom.tip.hidden = false;
     const w = dom.tip.offsetWidth, h = dom.tip.offsetHeight;
@@ -1913,7 +1997,6 @@
       c.style.cursor = target ? 'pointer' : 'grab';
       showTip(target, q[0], q[1]);
       if (!same) {
-        if (target && !pinned) { hlStory = null; show(target.kind === 'planet' ? { kind: 'planet', p: target.p, storyIndex: 0 } : target); }
         overlayDirty = true; schedule();
       }
     });
@@ -1930,8 +2013,9 @@
       if (!d || d.moved) return;
       const q = local(event);
       const target = pick(q[0], q[1]);
+      // Klick auf einen Planeten wählt ihn aus, Klick ins Freie hebt die Auswahl auf.
       if (target && target.kind === 'planet') selectPlanet(target.p, false);
-      else if (target && target.kind === 'solar') { pinned = null; hlStory = null; show(target); }
+      else if (target && target.kind === 'solar') { pinned = target; hlStory = null; show(target); overlayDirty = true; schedule(); }
       else if (pinned) unpin();
     });
     c.addEventListener('pointerleave', () => { hover = null; dom.tip.hidden = true; overlayDirty = true; schedule(); });
@@ -1950,13 +2034,23 @@
       viewTween = null; staticDirty = true; dom.tip.hidden = true; schedule();
     }, { passive: false });
     c.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') unpin();
-      if (event.key === 'ArrowRight') { stepStory(1); event.preventDefault(); }
-      if (event.key === 'ArrowLeft') { stepStory(-1); event.preventDefault(); }
+      if (!shown && event.key === 'ArrowRight') { stepStory(1); event.preventDefault(); }
+      if (!shown && event.key === 'ArrowLeft') { stepStory(-1); event.preventDefault(); }
       if (event.key === '0' || event.key === 'Home') flyTo(home[state.view], 600);
     });
     document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && document.activeElement !== dom.search) unpin();
+      const typing = /^(INPUT|TEXTAREA|SELECT)$/.test((event.target && event.target.tagName) || '');
+      if (event.key === 'Escape' && document.activeElement !== dom.search) {
+        if (shown) returnFocus = true;
+        unpin();
+        return;
+      }
+      // Im Bericht blättern die Pfeiltasten zum vorherigen bzw. nächsten Bericht.
+      if (!typing && shown && (event.key === 'ArrowLeft' || event.key === 'ArrowRight')) {
+        const nav = dom.panelBody.querySelectorAll('.atlas-nav');
+        const b = nav[event.key === 'ArrowLeft' ? 0 : 1];
+        if (b && !b.disabled) { event.preventDefault(); b.click(); }
+      }
     });
   }
 

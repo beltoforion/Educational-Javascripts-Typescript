@@ -21,6 +21,11 @@
   --ink: #eef1ff;
   --ink-2: #b9c1e0;
   --muted: #7f88ad;
+  /* Ein Stil für alle Knöpfe: leicht aufgehellte Fläche, feiner Rand, kleine Rundung. */
+  --btn-bg: rgba(255, 255, 255, 0.06);
+  --btn-border: var(--line);
+  --btn-radius: 8px;
+  --btn-radius-small: 6px;
   --font-ui: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Ubuntu, Roboto, sans-serif;
   --font-display: "Bricolage Grotesque", "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Ubuntu, Roboto, sans-serif;
   color-scheme: dark;
@@ -65,25 +70,25 @@ button:focus-visible, input:focus-visible, canvas:focus-visible { outline: 2px s
 
 .atlas-presets { display: flex; flex-wrap: wrap; gap: 8px; flex: 1; }
 .atlas-pill {
-  background: transparent;
-  border: 1px solid var(--line-strong);
-  border-radius: 999px;
-  padding: 7px 15px;
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-border);
+  border-radius: var(--btn-radius);
+  padding: 7px 14px;
   font-size: 14px;
-  color: var(--ink-2);
+  color: var(--ink);
   cursor: pointer;
   transition: background-color .15s, color .15s, border-color .15s;
 }
-.atlas-pill:hover { color: var(--ink); border-color: #fff; }
+.atlas-pill:hover { border-color: #fff; }
 .atlas-pill[aria-pressed="true"] { background: var(--ink); color: #0a102a; border-color: var(--ink); font-weight: 600; }
 
 .atlas-tools { display: flex; align-items: center; gap: 8px; flex: none; }
 .atlas-search { position: relative; }
 .atlas-search input {
   width: 210px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-border);
+  border-radius: var(--btn-radius);
   padding: 7px 11px;
   color: var(--ink);
   font: inherit;
@@ -103,9 +108,9 @@ button:focus-visible, input:focus-visible, canvas:focus-visible { outline: 2px s
 .atlas-search-type { margin-left: auto; color: var(--muted); font-size: 12px; white-space: nowrap; }
 .atlas-search-none { padding: 6px 8px; color: var(--muted); }
 .atlas-tool {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-border);
+  border-radius: var(--btn-radius);
   padding: 7px 12px;
   cursor: pointer;
 }
@@ -140,14 +145,14 @@ button:focus-visible, input:focus-visible, canvas:focus-visible { outline: 2px s
 .atlas-site-links a:hover { color: #fff; }
 a.atlas-tool { display: inline-block; color: inherit; text-decoration: none; }
 .atlas-group-title { margin: 0 0 6px; font-size: 12.5px; font-weight: 600; color: var(--muted); }
-.atlas-seg { display: flex; border: 1px solid var(--line-strong); border-radius: 8px; overflow: hidden; }
+.atlas-seg { display: flex; background: var(--btn-bg); border: 1px solid var(--btn-border); border-radius: var(--btn-radius); overflow: hidden; }
 .atlas-seg-btn {
   flex: 1 1 0; min-width: 0;
   background: none; border: 0; border-left: 1px solid var(--line);
-  padding: 6px 4px; font-size: 12.5px; line-height: 1.2; color: var(--ink-2); cursor: pointer;
+  padding: 6px 4px; font-size: 12.5px; line-height: 1.2; color: var(--ink); cursor: pointer;
 }
 .atlas-seg-btn:first-child { border-left: 0; }
-.atlas-seg-btn:hover { color: var(--ink); background: rgba(255, 255, 255, 0.05); }
+.atlas-seg-btn:hover { background: rgba(255, 255, 255, 0.07); }
 .atlas-seg-btn[aria-pressed="true"] { background: var(--ink); color: #0a102a; font-weight: 600; }
 
 .atlas-check {
@@ -209,6 +214,7 @@ a.atlas-tool { display: inline-block; color: inherit; text-decoration: none; }
 .atlas-tip strong { font-size: 14px; }
 .atlas-tip span { color: var(--ink-2); }
 .atlas-tip em { margin-top: 3px; font-style: normal; font-size: 12.5px; line-height: 1.3; color: var(--ink); }
+.atlas-tip small { margin-top: 3px; font-size: 11.5px; color: var(--muted); }
 .atlas-toast {
   position: absolute; left: 50%; top: 14px; transform: translateX(-50%); z-index: 6; max-width: min(560px, 90%);
   padding: 9px 16px; border-radius: 10px;
@@ -216,12 +222,17 @@ a.atlas-tool { display: inline-block; color: inherit; text-decoration: none; }
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 .atlas-toast[hidden] { display: none; }
+/* Zoom zurücksetzen: in der freien Ecke unten rechts, außerhalb der Zeichenfläche.
+   Aussehen wie der Vollbild-Knopf in der Kopfzeile. */
 .atlas-home {
-  position: absolute; right: 76px; bottom: 62px; z-index: 4;
-  background: rgba(13, 20, 50, 0.85); border: 1px solid var(--line-strong); border-radius: 999px;
-  padding: 5px 12px; font-size: 12.5px; color: var(--ink-2); cursor: pointer;
+  position: absolute; right: 10px; bottom: 6px; z-index: 4;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 34px; height: 32px; padding: 0;
+  background: var(--btn-bg); border: 1px solid var(--btn-border); border-radius: var(--btn-radius);
+  color: var(--ink); cursor: pointer;
 }
-.atlas-home:hover { color: var(--ink); border-color: #fff; }
+.atlas-home:disabled { opacity: 0.35; cursor: default; }
+.atlas-home:hover:not(:disabled) { border-color: #fff; }
 
 /* ------------------------------------------------------------ Zeitleiste */
 .atlas-time {
@@ -233,8 +244,8 @@ a.atlas-tool { display: inline-block; color: inherit; text-decoration: none; }
 }
 .atlas-play {
   flex: none; width: 118px;
-  background: none; border: 1px solid var(--line-strong); border-radius: 999px;
-  padding: 6px 10px; font-size: 13px; cursor: pointer; margin-bottom: 18px;
+  background: var(--btn-bg); border: 1px solid var(--btn-border); border-radius: var(--btn-radius);
+  padding: 6px 10px; font-size: 13px; color: var(--ink); cursor: pointer; margin-bottom: 18px;
 }
 .atlas-play:hover { border-color: #fff; }
 .atlas-year-label { flex: none; width: 132px; margin-bottom: 20px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
@@ -277,10 +288,10 @@ a.atlas-tool { display: inline-block; color: inherit; text-decoration: none; }
 .atlas-foot a { color: var(--ink-2); }
 
 .atlas-guide-title { margin: 4px 0 12px; font: 700 25px/1.15 var(--font-display); letter-spacing: -0.01em; }
-.atlas-guide p { margin: 0 0 11px; color: var(--ink-2); font-size: 14.5px; line-height: 1.5; max-width: 40ch; }
-.atlas-guide-actions { margin-top: 10px; }
-.atlas-gallery-title { margin: 18px 0 8px; font-size: 12.5px; font-weight: 600; color: var(--muted); }
-.atlas-gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.atlas-guide p { margin: 0 0 8px; color: var(--ink-2); font-size: 14px; line-height: 1.45; }
+.atlas-gallery-title { margin: 12px 0 2px; font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.atlas-gallery-hint { margin: 0 0 7px; font-size: 12.5px; line-height: 17px; color: var(--muted); }
+.atlas-gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 2px; margin: 0 -2px; }
 .atlas-tile {
   position: relative; aspect-ratio: 4 / 3; padding: 0; overflow: hidden;
   border: 1px solid var(--line); border-radius: 8px; cursor: pointer;
@@ -289,18 +300,25 @@ a.atlas-tool { display: inline-block; color: inherit; text-decoration: none; }
 }
 .atlas-tile::before { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(6, 9, 23, 0) 35%, rgba(6, 9, 23, 0.9)); }
 .atlas-tile:hover, .atlas-tile:focus-visible { border-color: #fff; }
+.atlas-tile:focus-visible { outline-offset: 1px; }
 .atlas-tile span { position: relative; padding: 0 7px; line-height: 1.2; }
 .atlas-tile-year { font-size: 11px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .atlas-tile-name { font-size: 12.5px; font-weight: 600; padding-bottom: 6px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Bericht ohne Bild: ein Punkt in der Farbe des Planetentyps. */
+.atlas-tile.is-plain { background: radial-gradient(circle at 50% 46%, var(--c, #c9cfe8) 0 15%, transparent 17%), #101a3c; }
 
 .atlas-pinbar {
-  display: flex; justify-content: space-between; align-items: center;
-  margin: -6px 0 10px; font-size: 12px; color: var(--muted);
+  display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  margin: -8px 0 8px; min-height: 26px; font-size: 12px; color: var(--muted);
 }
+/* Vor und zurück zwischen den Berichten. */
+.atlas-nav { padding: 0 12px; font-size: 19px; line-height: 24px; color: var(--ink); }
+.atlas-nav:disabled { opacity: 0.3; cursor: default; }
+.atlas-nav:disabled:hover { border-color: var(--btn-border); }
+.atlas-nav-pos { font-variant-numeric: tabular-nums; }
+.atlas-story-tabs { margin: 0 0 8px; }
 .atlas-link { background: none; border: 0; padding: 2px 6px; color: var(--ink-2); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 .atlas-link:hover { color: #fff; }
-.atlas-pager { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-size: 12.5px; color: var(--muted); }
-.atlas-pager .atlas-link { text-decoration: none; font-size: 18px; line-height: 1; border: 1px solid var(--line-strong); border-radius: 6px; padding: 1px 8px 3px; }
 
 /* Inhalt eines nachgeladenen Berichts (discoveries/<sprache>/<id>.html). */
 .atlas-story-content figure { margin: 0 0 9px; }
@@ -320,13 +338,13 @@ a.atlas-tool { display: inline-block; color: inherit; text-decoration: none; }
 .atlas-chips-label { font-size: 12px; color: var(--muted); margin-right: 2px; }
 .atlas-chip {
   display: inline-flex; align-items: center; gap: 6px;
-  background: rgba(255, 255, 255, 0.05); border: 1px solid var(--line); border-radius: 999px;
-  padding: 2px 10px 2px 8px; font-size: 12.5px; color: var(--ink-2); cursor: pointer;
+  background: var(--btn-bg); border: 1px solid var(--btn-border); border-radius: var(--btn-radius-small);
+  padding: 2px 9px 2px 7px; font-size: 12.5px; color: var(--ink); cursor: pointer;
 }
 .atlas-chip .atlas-dot { width: 8px; height: 8px; }
-button.atlas-chip:hover { border-color: #fff; color: #fff; }
-.atlas-chip.is-current { border-color: #fff; color: #fff; }
-.atlas-chip.is-missing { cursor: default; border-style: dashed; color: var(--muted); padding-left: 10px; }
+button.atlas-chip:hover { border-color: #fff; }
+.atlas-chip.is-current { background: var(--ink); border-color: var(--ink); color: #0a102a; font-weight: 600; }
+.atlas-chip.is-missing { cursor: default; background: none; border-style: dashed; color: var(--muted); padding-left: 9px; }
 
 .atlas-planet.has-story { margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--line); }
 .atlas-planet-name { margin: 0 0 8px; font: 700 19px/1.2 var(--font-display); }
@@ -369,7 +387,6 @@ button.atlas-chip:hover { border-color: #fff; color: #fff; }
   .atlas-time { padding: 8px 16px 10px; gap: 10px; }
   .atlas-year-label { display: none; }
   .atlas-panel { border-left: 0; border-top: 1px solid var(--line); }
-  .atlas-home { right: 22px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .atlas-pill, .atlas-marker { transition: none; }
