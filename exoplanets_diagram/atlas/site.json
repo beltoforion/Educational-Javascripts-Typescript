@@ -1,0 +1,21 @@
+{
+  "siteName": "beltoforion.de",
+  "siteUrl": "https://beltoforion.de/",
+  "storyBase": "https://beltoforion.de/de/exoplaneten/atlas/atlas/discoveries/",
+  "imageBase": "https://beltoforion.de/de/exoplaneten/atlas/atlas/images/",
+  "sitemapUrl": "https://beltoforion.de/de/exoplaneten/atlas/atlas/sitemap.xml",
+  "atlas": {
+    "de": "https://beltoforion.de/de/exoplaneten/atlas/",
+    "en": "https://beltoforion.de/en/exoplanets/atlas/"
+  },
+  "links": {
+    "de": [
+      { "text": "Impressum", "href": "https://beltoforion.de/de/contact/" },
+      { "text": "Datenschutzerklärung", "href": "https://beltoforion.de/de/datenschutzerklärung" }
+    ],
+    "en": [
+      { "text": "Contact", "href": "https://beltoforion.de/en/contact" },
+      { "text": "Privacy Policy", "href": "https://beltoforion.de/en/privacy-policy/" }
+    ]
+  }
+}

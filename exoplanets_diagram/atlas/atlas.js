@@ -58,6 +58,8 @@
 //                      der Reihe" statt "vermutete Lücken", keine Aussage mehr
 //                      darüber, was dort kreisen könnte; Hinweis auf die
 //                      Gegenprüfung von Huang & Bakos (2014).
+//   1.6.4  2026-11-21  Übersicht: Link "als Liste" zur Seite mit allen Berichten
+//                      (discoveries/<sprache>/index.html, für Suchmaschinen).
 //   1.1.0  2026-11-20  Einbetten in eine Website: Logo und Links (site),
 //                      Sprachschalter mit Zieladressen (langUrls), Basispfad
 //                      (base); Berichte werden über http(s) direkt geladen
@@ -66,7 +68,7 @@
 (function () {
   'use strict';
 
-  const VERSION = '1.6.3';
+  const VERSION = '1.6.4';
 
   // ============================================================ Konstanten
   const EARTH_PER_JUPITER = 317.83;   // Erdmassen je Jupitermasse
@@ -388,7 +390,7 @@
       close: 'Schließen: zurück zur Übersicht (Esc)', factSheet: 'Steckbrief',
       resetShort: 'Alles zeigen', regionHint: 'Klicken, um in diese Region zu zoomen',
       clickStory: 'Klicken für Bericht und Steckbrief', clickFacts: 'Klicken für den Steckbrief',
-      tileHint: (n) => n + ' Berichte, neueste zuerst',
+      tileHint: (n) => n + ' Berichte, neueste zuerst', storyList: 'als Liste',
       footData: 'Daten: ', footText: (date, n, est, comp) => ', Stand ' + date + '. ' + n + ' Planeten, davon ' + est +
         ' mit aus dem Radius geschätzter Masse und ' + comp + ' mit berechneter Umlaufzeit.',
       date: (iso) => iso.split('-').reverse().join('.'),
@@ -504,7 +506,7 @@
       close: 'Close: back to the overview (Esc)', factSheet: 'Fact sheet',
       resetShort: 'Show all', regionHint: 'Click to zoom into this region',
       clickStory: 'Click for story and fact sheet', clickFacts: 'Click for the fact sheet',
-      tileHint: (n) => n + ' stories, newest first',
+      tileHint: (n) => n + ' stories, newest first', storyList: 'as a list',
       footData: 'Data: ', footText: (date, n, est, comp) => ', as of ' + date + '. ' + n + ' planets, ' + est +
         ' of them with a mass estimated from the radius and ' + comp + ' with a computed orbital period.',
       date: (iso) => iso,
@@ -2830,7 +2832,13 @@
       const list = listedStories().reverse();
       if (list.length) {
         body.appendChild(el('h3', 'atlas-gallery-title', tx.stories));
-        body.appendChild(el('p', 'atlas-gallery-hint', tx.tileHint(list.length)));
+        // Daneben ein gewöhnlicher Link zur Seite mit allen Berichten (auch für Suchmaschinen).
+        const hint = el('p', 'atlas-gallery-hint', tx.tileHint(list.length) + ' · ');
+        const all = el('a', '', tx.storyList);
+        all.href = assetBase() + 'atlas/discoveries/' + lang + '/index.html';
+        all.target = '_blank'; all.rel = 'noopener';
+        hint.appendChild(all);
+        body.appendChild(hint);
         const grid = el('div', 'atlas-gallery');
         grid.addEventListener('keydown', galleryKey);
         list.forEach((s) => {

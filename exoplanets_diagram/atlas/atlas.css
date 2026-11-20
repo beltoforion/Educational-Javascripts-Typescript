@@ -342,6 +342,8 @@ a.atlas-tool { display: inline-block; color: inherit; text-decoration: none; }
 .atlas-guide p { margin: 0 0 8px; color: var(--ink-2); font-size: 15px; line-height: 1.45; }
 .atlas-gallery-title { margin: 12px 0 2px; font-size: 13.5px; font-weight: 600; color: var(--muted); }
 .atlas-gallery-hint { margin: 0 0 7px; font-size: 13px; line-height: 17px; color: var(--muted); }
+.atlas-gallery-hint a { color: var(--ink-2); text-underline-offset: 3px; }
+.atlas-gallery-hint a:hover { color: #fff; }
 .atlas-gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 2px; margin: 0 -2px; }
 .atlas-tile {
   position: relative; aspect-ratio: 4 / 3; padding: 0; overflow: hidden;

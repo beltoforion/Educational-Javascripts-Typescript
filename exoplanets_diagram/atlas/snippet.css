@@ -1,5 +1,7 @@
-/* Aussehen eines Berichts, wenn die Datei direkt im Browser geöffnet wird.
-   In atlas.html gelten stattdessen die Regeln aus atlas.css. */
+/* Aussehen eines Berichts, wenn die Datei direkt im Browser geöffnet wird
+   (z. B. über eine Suchmaschine), und der Übersicht aller Berichte.
+   In atlas.html gelten stattdessen die Regeln aus atlas.css. Navigation, Blättern
+   und Fuß schreibt update-index.js um den Bericht herum. */
 @font-face {
   font-family: "Bricolage Grotesque";
   src: url("fonts/bricolage-grotesque-latin.woff2") format("woff2");
@@ -23,3 +25,43 @@ body {
 .exo-story a { color: #b9c1e0; }
 .exo-story .moons { padding-top: 8px; border-top: 1px solid rgba(150, 170, 255, 0.16); }
 .exo-story .moons strong { color: #f4f1e4; }
+
+/* Kopfzeile: zum Atlas, zur Übersicht, zur anderen Sprache. */
+.exo-nav, .exo-pager, .exo-to-atlas, .exo-foot { max-width: 440px; margin-left: auto; margin-right: auto; }
+.exo-nav {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px;
+  margin-bottom: 18px; padding-bottom: 10px; border-bottom: 1px solid rgba(150, 170, 255, 0.16); font-size: 13px;
+}
+.exo-nav a { color: #b9c1e0; text-underline-offset: 3px; }
+.exo-nav a:hover, .exo-foot a:hover, .exo-to-atlas a:hover, .exo-index a:hover { color: #fff; }
+.exo-nav .exo-nav-home {
+  margin-right: auto; color: #eef1ff; text-decoration: none;
+  font: 700 17px/1.2 "Bricolage Grotesque", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Ubuntu, Roboto, sans-serif;
+}
+/* Blättern zum älteren bzw. neueren Bericht. */
+.exo-pager { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; }
+.exo-pager:empty { display: none; }
+.exo-pager a {
+  display: block; padding: 8px 10px; border: 1px solid rgba(150, 170, 255, 0.16); border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06); color: #eef1ff; font-size: 13px; line-height: 1.3; text-decoration: none;
+}
+.exo-pager a:hover { border-color: #fff; }
+.exo-pager small { display: block; margin-bottom: 2px; color: #7f88ad; font-size: 11.5px; }
+.exo-pager .exo-pager-next { grid-column: 2; text-align: right; }
+.exo-to-atlas { margin-top: 14px; margin-bottom: 0; font-size: 14px; }
+.exo-to-atlas a { color: #eef1ff; text-underline-offset: 3px; }
+.exo-foot {
+  display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 22px; padding-top: 10px;
+  border-top: 1px solid rgba(150, 170, 255, 0.16); font-size: 12px;
+}
+.exo-foot a { color: #7f88ad; }
+/* Übersicht aller Berichte (discoveries/<sprache>/index.html). */
+.exo-index, .exo-index-page .exo-nav, .exo-index-page .exo-foot { max-width: 720px; margin-left: auto; margin-right: auto; }
+.exo-index h1 { margin: 0 0 8px; color: #eef1ff; font: 700 27px/1.15 "Bricolage Grotesque", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Ubuntu, Roboto, sans-serif; }
+.exo-index h2 { margin: 22px 0 4px; color: #7f88ad; font-size: 14px; font-weight: 600; }
+.exo-index p { margin: 0 0 10px; }
+.exo-index ul { margin: 0; padding: 0; list-style: none; }
+.exo-index li { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; padding: 4px 0; border-bottom: 1px solid rgba(150, 170, 255, 0.08); }
+.exo-index li a { color: #eef1ff; text-underline-offset: 3px; }
+.exo-index li span { flex: none; color: #7f88ad; font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.exo-index .exo-index-note { margin-top: 22px; font-size: 12px; color: #7f88ad; }
