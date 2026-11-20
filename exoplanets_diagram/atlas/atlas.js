@@ -7,13 +7,31 @@
 //
 // Läuft ohne Server (file://) und lädt nichts von fremden Servern.
 //
+// Einbetten in eine andere Website: Angaben als JSON im Attribut
+// data-atlas-config am Element (oder vorab in window.EXO_ATLAS_CONFIG), alle
+// optional:
+//   lang      'de' oder 'en' (wie data-lang)
+//   langUrls  { "de": "/de/…/", "en": "/en/…/" }: der Sprachschalter führt
+//             dann zu dieser Adresse, statt an Ort und Stelle zu wechseln
+//   base      Ordner, in dem der Ordner atlas/ liegt (z. B. "/de/exoplaneten/
+//             atlas/"), wenn die Seite selbst woanders liegt
+//   site      { "logo": { "src": …, "href": …, "alt": … },
+//               "links": [ { "text": "Impressum", "href": … }, … ] }
+//             erscheint unten in der linken Leiste. text und href dürfen
+//             auch { "de": …, "en": … } sein.
+//   intro     false: kein Zeitraffer beim Öffnen
+//   setTitle  false: den Seitentitel (document.title) nicht verändern
+//
 // Version: bei jeder Änderung hochzählen und hier eintragen.
+//   1.1.0  2026-11-20  Einbetten in eine Website: Logo und Links (site),
+//                      Sprachschalter mit Zieladressen (langUrls), Basispfad
+//                      (base); Berichte werden über http(s) direkt geladen
 //   1.0.0  2026-11-20  erste Fassung
 
 (function () {
   'use strict';
 
-  const VERSION = '1.0.0';
+  const VERSION = '1.1.0';
 
   // ============================================================ Konstanten
   const EARTH_PER_JUPITER = 317.83;   // Erdmassen je Jupitermasse
@@ -288,6 +306,31 @@
       sysSiblings: 'Other planets of this star',
     },
   };
+
+  // ======================================================== Konfiguration
+  let config = {};
+  function readConfig(root) {
+    let fromAttr = {};
+    const raw = root.getAttribute('data-atlas-config');
+    if (raw) {
+      try { fromAttr = JSON.parse(raw); } catch (e) { console.warn('Atlas: data-atlas-config ist kein gültiges JSON.'); }
+    }
+    return Object.assign({}, window.EXO_ATLAS_CONFIG || {}, fromAttr);
+  }
+  // Angaben dürfen je Sprache verschieden sein: "text" oder { de: …, en: … }.
+  function localized(value) {
+    return (value && typeof value === 'object') ? (value[lang] || value.de || '') : (value || '');
+  }
+  // Nur gewöhnliche Adressen zulassen (kein "javascript:" und Ähnliches).
+  function safeUrl(value) {
+    const url = String(localized(value)).trim();
+    return /^(https?:|mailto:|\/|\.|#|\?)/i.test(url) || /^[\w-]+([/.?#]|$)/.test(url) ? url : '';
+  }
+  // Ordner, in dem atlas/ liegt; leer = neben der Seite.
+  function assetBase() {
+    const base = String(config.base || '');
+    return base && !base.endsWith('/') ? base + '/' : base;
+  }
 
   // ============================================================== Zustand
   let lang = 'de';
@@ -1124,7 +1167,12 @@
     dom.searchList = el('div', 'atlas-search-list');
     dom.searchList.hidden = true;
     searchWrap.append(dom.search, dom.searchList);
-    dom.langBtn = button('atlas-tool', '', () => setLang(lang === 'de' ? 'en' : 'de'));
+    if (config.langUrls && typeof config.langUrls === 'object') {
+      // Die einbettende Seite hat je Sprache eine eigene Adresse.
+      dom.langBtn = el('a', 'atlas-tool');
+    } else {
+      dom.langBtn = button('atlas-tool', '', () => setLang(lang === 'de' ? 'en' : 'de'));
+    }
     dom.fullBtn = button('atlas-tool atlas-tool-icon', '', toggleFullscreen);
     dom.fullBtn.innerHTML = '<svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M3 8V3h5M12 3h5v5M17 12v5h-5M8 17H3v-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
     tools.append(searchWrap, dom.langBtn, dom.fullBtn);
@@ -1132,13 +1180,22 @@
 
     // ---- Filterleiste links
     const side = el('aside', 'atlas-side');
+    const sideScroll = el('div', 'atlas-side-scroll');
+    side.appendChild(sideScroll);
     function group(key) {
       const box = el('section', 'atlas-group');
       const title = el('h2', 'atlas-group-title');
       title.dataset.tx = key;
       box.appendChild(title);
-      side.appendChild(box);
+      sideScroll.appendChild(box);
       return box;
+    }
+    // Platz der einbettenden Website: Logo und Links (z. B. Impressum).
+    dom.site = null;
+    const site = config.site;
+    if (site && (site.logo || (Array.isArray(site.links) && site.links.length))) {
+      dom.site = el('div', 'atlas-site');
+      side.appendChild(dom.site);
     }
     function segmented(box, options, get, set) {
       const row = el('div', 'atlas-seg');
@@ -1306,9 +1363,42 @@
 
   function txPath(path) { return path.split('.').reduce((o, k) => o[k], tx); }
 
+  // Logo und Links der einbettenden Website; folgt der Sprache.
+  function renderSite() {
+    const site = config.site;
+    dom.site.replaceChildren();
+    if (site.logo && safeUrl(site.logo.src)) {
+      const img = el('img');
+      img.src = safeUrl(site.logo.src);
+      img.alt = localized(site.logo.alt);
+      img.decoding = 'async';
+      const href = safeUrl(site.logo.href);
+      if (href) {
+        const a = el('a', 'atlas-site-logo');
+        a.href = href;
+        a.appendChild(img);
+        dom.site.appendChild(a);
+      } else {
+        const box = el('span', 'atlas-site-logo');
+        box.appendChild(img);
+        dom.site.appendChild(box);
+      }
+    }
+    const links = (Array.isArray(site.links) ? site.links : []).filter((l) => l && localized(l.text) && safeUrl(l.href));
+    if (links.length) {
+      const nav = el('nav', 'atlas-site-links');
+      links.forEach((l) => {
+        const a = el('a', '', localized(l.text));
+        a.href = safeUrl(l.href);
+        nav.appendChild(a);
+      });
+      dom.site.appendChild(nav);
+    }
+  }
+
   function syncControls() {
     document.documentElement.lang = lang;
-    document.title = tx.title;
+    if (config.setTitle !== false) document.title = tx.title;
     dom.title.textContent = tx.title;
     dom.root.querySelectorAll('[data-tx]').forEach((n) => { n.textContent = tx[n.dataset.tx]; });
     dom.root.querySelectorAll('[data-tx-path]').forEach((n) => { n.textContent = txPath(n.dataset.txPath); });
@@ -1319,8 +1409,15 @@
     });
     dom.search.placeholder = tx.search;
     dom.search.setAttribute('aria-label', tx.search);
-    dom.langBtn.textContent = lang === 'de' ? 'English' : 'Deutsch';
+    const otherLang = lang === 'de' ? 'en' : 'de';
+    dom.langBtn.textContent = otherLang === 'en' ? 'English' : 'Deutsch';
     dom.langBtn.title = tx.language;
+    if (dom.langBtn.tagName === 'A') {
+      const target = safeUrl(config.langUrls[otherLang]);
+      if (target) { dom.langBtn.href = target; dom.langBtn.hreflang = otherLang; dom.langBtn.lang = otherLang; }
+      else dom.langBtn.removeAttribute('href');
+    }
+    if (dom.site) renderSite();
     const full = !!fullscreenElement();
     dom.fullBtn.title = full ? tx.exitFullscreen : tx.fullscreen;
     dom.fullBtn.setAttribute('aria-label', dom.fullBtn.title);
@@ -1485,13 +1582,25 @@
 
   // =============================================================== Infofeld
   const snippetCache = new Map();
-  // Lädt discoveries/<sprache>/<id>.html in einem unsichtbaren Rahmen. Das
-  // Skript snippet.js in der Datei schickt den Inhalt als Nachricht zurück;
-  // so funktioniert es auch ohne Webserver (file://).
+  // Holt den Inhalt des Berichts aus dem Text der Datei. Adressen von
+  // Bildern und Links gelten relativ zur Datei und werden ausgeschrieben.
+  function parseSnippet(text, url) {
+    const doc = new DOMParser().parseFromString(text, 'text/html');
+    const article = doc.querySelector('.exo-story');
+    if (!article) throw new Error('format');
+    article.querySelectorAll('script').forEach((n) => n.remove());
+    article.querySelectorAll('img[src]').forEach((n) => n.setAttribute('src', new URL(n.getAttribute('src'), url).href));
+    article.querySelectorAll('a[href]').forEach((n) => n.setAttribute('href', new URL(n.getAttribute('href'), url).href));
+    return article.innerHTML;
+  }
+  // Lädt discoveries/<sprache>/<id>.html. Über einen Webserver direkt; ohne
+  // Server (file://, dort ist fetch gesperrt) in einem unsichtbaren Rahmen:
+  // das Skript snippet.js in der Datei schickt den Inhalt als Nachricht zurück.
   function loadSnippet(id, language) {
     const key = language + '/' + id;
     if (snippetCache.has(key)) return snippetCache.get(key);
-    const promise = new Promise((resolve, reject) => {
+    const url = new URL(assetBase() + 'atlas/discoveries/' + language + '/' + id + '.html', document.baseURI).href;
+    const viaFrame = () => new Promise((resolve, reject) => {
       const frame = document.createElement('iframe');
       frame.className = 'atlas-loader';
       frame.setAttribute('aria-hidden', 'true');
@@ -1514,9 +1623,13 @@
       const timer = setTimeout(() => finish(reject, new Error('timeout')), 8000);
       window.addEventListener('message', onMessage);
       frame.addEventListener('error', () => finish(reject, new Error('load')));
-      frame.src = 'atlas/discoveries/' + language + '/' + id + '.html';
+      frame.src = url;
       document.body.appendChild(frame);
     });
+    const promise = /^https?:$/.test(location.protocol)
+      ? fetch(url).then((r) => { if (!r.ok) throw new Error('http ' + r.status); return r.text(); })
+        .then((text) => parseSnippet(text, url)).catch(viaFrame)
+      : viaFrame();
     snippetCache.set(key, promise);
     promise.catch(() => snippetCache.delete(key));
     return promise;
@@ -1622,7 +1735,7 @@
         const grid = el('div', 'atlas-gallery');
         withImg.forEach((s) => {
           const b = button('atlas-tile', '', () => selectStory(s, true));
-          b.style.backgroundImage = 'url("atlas/images/' + s.img + '")';
+          b.style.backgroundImage = 'url("' + assetBase() + 'atlas/images/' + s.img + '")';
           b.title = s.title[lang] || s.title.de;
           const name = s.main[0] ? s.main[0].name : (s.missing[0] || '');
           b.append(el('span', 'atlas-tile-year', s.date.slice(0, 4)), el('span', 'atlas-tile-name', name));
@@ -1854,8 +1967,9 @@
     dom.root = root;
     let stored = null;
     try { stored = localStorage.getItem('atlas-lang'); } catch (e) { /* kein Speicher */ }
+    config = readConfig(root);
     const fromUrl = new URLSearchParams(location.search).get('lang');
-    const wanted = fromUrl || root.getAttribute('data-lang') || stored || document.documentElement.lang || navigator.language || 'de';
+    const wanted = fromUrl || config.lang || root.getAttribute('data-lang') || stored || document.documentElement.lang || navigator.language || 'de';
     lang = String(wanted).toLowerCase().slice(0, 2) === 'en' ? 'en' : 'de';
     tx = TEXT[lang];
     const data = window.EXOPLANET_DATA;
@@ -1888,7 +2002,7 @@
     }
 
     // Auftakt: die Funde erscheinen einmal im Zeitraffer.
-    if (!reducedMotion && !new URLSearchParams(location.search).has('still')) {
+    if (!reducedMotion && config.intro !== false && !new URLSearchParams(location.search).has('still')) {
       state.yearMax = minYear;
       applyFilters(); syncControls();
       setTimeout(() => {

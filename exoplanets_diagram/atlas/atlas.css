@@ -116,12 +116,29 @@ button:focus-visible, input:focus-visible, canvas:focus-visible { outline: 2px s
 /* ---------------------------------------------------------- Filterleiste */
 .atlas-side {
   grid-column: 1; grid-row: 2;
-  padding: 14px 14px 12px 22px;
+  display: flex; flex-direction: column; min-height: 0;
   border-right: 1px solid var(--line);
   background: var(--panel);
-  overflow: hidden auto;
+}
+.atlas-side-scroll {
+  flex: 1; min-height: 0;
+  padding: 14px 14px 12px 22px;
+  overflow: hidden auto; scrollbar-width: thin;
   display: flex; flex-direction: column; gap: 13px;
 }
+/* Platz der einbettenden Website: Logo und Links, immer sichtbar. */
+.atlas-site {
+  flex: none;
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 14px 10px 22px;
+  border-top: 1px solid var(--line);
+}
+.atlas-site-logo { flex: none; display: block; line-height: 0; border-radius: 50%; }
+.atlas-site-logo img { display: block; width: 46px; height: 46px; object-fit: contain; }
+.atlas-site-links { display: flex; flex-direction: column; gap: 2px; min-width: 0; font-size: 12.5px; }
+.atlas-site-links a { color: var(--ink-2); text-underline-offset: 3px; }
+.atlas-site-links a:hover { color: #fff; }
+a.atlas-tool { display: inline-block; color: inherit; text-decoration: none; }
 .atlas-group-title { margin: 0 0 6px; font-size: 12.5px; font-weight: 600; color: var(--muted); }
 .atlas-seg { display: flex; border: 1px solid var(--line-strong); border-radius: 8px; overflow: hidden; }
 .atlas-seg-btn {
@@ -343,7 +360,10 @@ button.atlas-chip:hover { border-color: #fff; color: #fff; }
   body { overflow: auto; }
   .atlas { display: block; height: auto; }
   .atlas-head { flex-wrap: wrap; gap: 12px; padding: 12px 16px; }
-  .atlas-side { border-right: 0; border-bottom: 1px solid var(--line); padding: 12px 16px; flex-direction: row; flex-wrap: wrap; gap: 14px 22px; overflow: visible; }
+  .atlas-side { display: block; border-right: 0; border-bottom: 1px solid var(--line); }
+  .atlas-side-scroll { padding: 12px 16px; flex-direction: row; flex-wrap: wrap; gap: 14px 22px; overflow: visible; }
+  .atlas-site { padding: 9px 16px 10px; }
+  .atlas-site-links { flex-direction: row; flex-wrap: wrap; gap: 4px 16px; }
   .atlas-group { min-width: 200px; flex: 1; }
   .atlas-chart { height: 72vh; min-height: 420px; flex: none; }
   .atlas-time { padding: 8px 16px 10px; gap: 10px; }
