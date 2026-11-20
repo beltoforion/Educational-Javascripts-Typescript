@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atlas der Exoplaneten</title>
+<link rel="stylesheet" href="atlas/atlas.css">
+</head>
+<body>
+
+<!-- Eigenständige Seite: alle bekannten Exoplaneten mit Planetentyp,
+     Filtersätzen (z. B. erdähnliche Gesteinsplaneten) und Berichten zu
+     einzelnen Entdeckungen. Läuft per Doppelklick ohne Webserver.
+
+     Sprache: Schalter oben rechts, oder atlas.html?lang=en, oder
+     data-lang="en" am Element.
+     Daten aktualisieren:      node update-data.js
+     Neuen Bericht aufnehmen:  je eine Datei in atlas/discoveries/de/ und
+                               atlas/discoveries/en/ anlegen, dann
+                               node atlas/update-index.js -->
+<div class="atlas" data-exo-atlas></div>
+
+<script src="data.js"></script>
+<script src="data-extra.js"></script>
+<script src="atlas/discoveries.js"></script>
+<script src="atlas/atlas.js"></script>
+
+</body>
+</html>

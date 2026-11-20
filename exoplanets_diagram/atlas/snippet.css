@@ -1,0 +1,22 @@
+/* Aussehen eines Berichts, wenn die Datei direkt im Browser geöffnet wird.
+   In atlas.html gelten stattdessen die Regeln aus atlas.css. */
+@font-face {
+  font-family: "Bricolage Grotesque";
+  src: url("fonts/bricolage-grotesque-latin.woff2") format("woff2");
+  font-weight: 200 800;
+  font-display: swap;
+}
+body {
+  margin: 0; padding: 24px 16px;
+  background: #060917; color: #b9c1e0;
+  font: 15px/1.5 "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Ubuntu, Roboto, sans-serif;
+}
+.exo-story { max-width: 440px; margin: 0 auto; }
+.exo-story figure { margin: 0 0 14px; }
+.exo-story img { display: block; width: 100%; border-radius: 8px; }
+.exo-story figcaption { margin-top: 5px; font-size: 11.5px; line-height: 1.35; color: #7f88ad; }
+.exo-story h2 { margin: 0 0 8px; color: #eef1ff; font: 700 23px/1.2 "Bricolage Grotesque", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Ubuntu, Roboto, sans-serif; }
+.exo-story .date { margin: 0 0 3px; font-size: 13px; color: #7f88ad; }
+.exo-story p { margin: 0 0 10px; }
+.exo-story .sources { font-size: 12px; color: #7f88ad; }
+.exo-story a { color: #b9c1e0; }
