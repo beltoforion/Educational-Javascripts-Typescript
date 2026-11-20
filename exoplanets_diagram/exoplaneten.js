@@ -1,17 +1,50 @@
-// Exoplaneten-Applet: Masse vs. Umlaufzeit, interaktiv.
+// Exoplaneten-Applet: Masse vs. Umlaufzeit, interaktiv. Deutsch und Englisch
+// in einer Datei.
 //
 // Einbinden:
 //   <div data-exoplaneten></div>
 //   <script src="data.js"></script>
 //   <script src="exoplaneten.js"></script>
 //
-// oder von Hand:  Exoplaneten.mount('#mein-element', { title: 'Überschrift' });
+// oder von Hand:
+//   Exoplaneten.mount('#mein-element', { lang: 'en', title: 'Überschrift' });
+//
+// Optionen von mount() (alle optional); bei der automatischen Einbindung
+// stehen sie als Attribut am Element:
+//   lang / data-lang          Sprache: 'de' oder 'en'. Ohne Angabe gilt das
+//                             nächstgelegene lang-Attribut im Dokument (zum
+//                             Beispiel <html lang="en">), sonst Deutsch.
+//                             data-lang wird auch bei mount() von Hand gelesen.
+//   title / data-title        eigene Überschrift (leer = keine Überschrift)
+//   contours / data-contours  Konturen, die beim Start eingeschaltet sind:
+//                             Liste aus rv, tr, ti, im, ml (je Verfahren) und
+//                             all (die eine Kontur über die Funde aller
+//                             Verfahren zusammen). Ohne Angabe: nur all.
+//                             Alle Konturen: ['rv','tr','ti','im','ml','all']
+//                             bzw. data-contours="rv,tr,ti,im,ml,all"; keine:
+//                             [] bzw. data-contours="".
+//
+// Breite: Das Applet füllt die Breite seines Elements. Wer es schmaler haben
+// will, begrenzt das Element im eigenen CSS (max-width); es steht dann mittig.
 //
 // Daten: window.EXOPLANET_DATA aus data.js (Katalog von exoplanet.eu,
 // erzeugt mit "node update-data.js"). Läuft ohne Server (file://).
+//
+// Version: steht in VERSION, ist von außen als Exoplaneten.version lesbar und
+// hängt als Attribut data-exo-version am Applet-Element. Bei JEDER Änderung
+// am Skript hochzählen und hier eintragen (erste Stelle: Einbindung ändert
+// sich unverträglich, zweite: neue Funktion, dritte: Korrektur).
+//   1.2.0  2026-11-20  Voreinstellungen der Website beltoforion.de übernommen:
+//                      beim Start nur die Kontur über alle Verfahren, keine
+//                      Höchstbreite mehr (vorher 1100px)
+//   1.1.0  2026-11-20  Deutsch und Englisch in einer Datei (lang / data-lang),
+//                      Startkonturen wählbar (contours), Versionsnummer
+//   1.0.0  2026-11-16  erste Fassung
 
 (function () {
   'use strict';
+
+  const VERSION = '1.2.0';
 
   // ================================================================ Layout
   // Koordinatensystem der SVG-Grafik. Beide Histogramme teilen die Achsen in
@@ -31,22 +64,18 @@
 
   // ================================================== Entdeckungsmethoden
   // Farben mit dem Paletten-Validator geprüft (alle Paare, heller Grund);
-  // zusätzlich hat jede Methode eine eigene Markerform.
+  // zusätzlich hat jede Methode eine eigene Markerform. Die Namen stehen je
+  // Sprache in TEXT.methods.
   const METHODS = [
-    { key: 'rv', label: 'Radialgeschwindigkeit', wrapLabel: 'Radial\u00ADgeschwindigkeit', color: '#e34948',
-      d: 'M0-4.8L4 0 0 4.8-4 0Z' },
-    { key: 'tr', label: 'Transit', color: '#6250d6',
-      d: 'M-3.5 0a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0Z' },
-    { key: 'ti', label: 'Timing (Pulsar, TTV)', color: '#008300',
-      d: 'M0-4.6L4.6 3.6H-4.6Z' },
-    { key: 'im', label: 'Direkte Abbildung', color: '#eda100',
-      d: 'M-3.3-3.3H3.3V3.3H-3.3Z' },
-    { key: 'ml', label: 'Microlensing', color: '#12a3b8',
+    { key: 'rv', color: '#e34948', d: 'M0-4.8L4 0 0 4.8-4 0Z' },
+    { key: 'tr', color: '#6250d6', d: 'M-3.5 0a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0Z' },
+    { key: 'ti', color: '#008300', d: 'M0-4.6L4.6 3.6H-4.6Z' },
+    { key: 'im', color: '#eda100', d: 'M-3.3-3.3H3.3V3.3H-3.3Z' },
+    { key: 'ml', color: '#12a3b8',
       d: 'M-3.4 0a3.4 3.4 0 1 0 6.8 0a3.4 3.4 0 1 0-6.8 0ZM-3.4 0H3.4M0-3.4V3.4' },
   ];
   // Zusätzliche Kontur über die Funde aller Verfahren zusammen.
-  const ALL_METHODS = { key: 'all', label: 'Alle Verfahren',
-    d: 'M-3.6 0a3.6 3.6 0 1 0 7.2 0a3.6 3.6 0 1 0-7.2 0Z' };
+  const ALL_METHODS = { key: 'all', d: 'M-3.6 0a3.6 3.6 0 1 0 7.2 0a3.6 3.6 0 1 0-7.2 0Z' };
   const CONTOUR_SETS = METHODS.concat([ALL_METHODS]);
   // Bezeichnungen aus der Katalogspalte "detection_type".
   const METHOD_OF = {
@@ -65,25 +94,15 @@
   }
 
   // ============================================================ Sterntypen
-  // life: ungefähre Lebensdauer auf der Hauptreihe (Phase des
-  // Wasserstoffbrennens). Weiße Zwerge und Pulsare sind Sternreste und
-  // bekommen deshalb keine Angabe.
-  const STARS = [
-    { key: 'A', label: 'A, B (heiß)', life: '≈ 0,01–2 Mrd. Jahre' },
-    { key: 'F', label: 'F', life: '≈ 2–7 Mrd. Jahre' },
-    { key: 'G', label: 'G (sonnenähnlich)', life: '≈ 10 Mrd. Jahre' },
-    { key: 'K', label: 'K', life: '≈ 20–70 Mrd. Jahre' },
-    { key: 'M', label: 'M (Rote Zwerge)', life: '> 100 Mrd. Jahre' },
-    { key: 'WD', label: 'Weiße Zwerge' },
-    { key: 'PSR', label: 'Pulsare' },
-    { key: 'X', label: 'Andere / unbekannt' },
-  ];
+  // Namen und ungefähre Lebensdauer stehen je Sprache in TEXT.stars und
+  // TEXT.starLife.
+  const STARS = ['A', 'F', 'G', 'K', 'M', 'WD', 'PSR', 'X'].map((key) => ({ key: key }));
   const STAR_INDEX = { O: 0, B: 0, A: 0, F: 1, G: 2, K: 3, M: 4 };
   const STAR_OTHER = 7;
 
   // Ordnet den Stern nach Spektraltyp ein; fehlt der, nach der Temperatur.
   // Rückgabe: { i: Index in STARS, text: Beschreibung für den Tooltip }
-  function classifyStar(spType, teff) {
+  function classifyStar(spType, teff, loc) {
     const s = String(spType || '').trim();
     if (s) {
       if (/^(PSR|Pulsar|X-ray Pulsar)/i.test(s)) return { i: 6, text: s };
@@ -98,9 +117,9 @@
     }
     if (teff) {
       const i = teff < 3900 ? 4 : teff < 5300 ? 3 : teff < 6000 ? 2 : teff < 7500 ? 1 : 0;
-      return { i: i, text: 'Typ ' + STARS[i].key + ' (aus Temperatur ' + int(Math.round(teff)) + ' K)' };
+      return { i: i, text: loc.tx.starFromTeff(STARS[i].key, loc.int(Math.round(teff))) };
     }
-    return { i: STAR_OTHER, text: 'unbekannt' };
+    return { i: STAR_OTHER, text: loc.tx.unknown };
   }
 
   // ========================================================= Habitable Zone
@@ -119,13 +138,14 @@
     return c[0] + c[1] * t + c[2] * t * t + c[3] * t * t * t + c[4] * t * t * t * t;
   }
   // Einordnung eines Planeten; flux = Einstrahlung relativ zur Erde.
-  function hzText(flux, teff) {
-    if (!teff || teff < 2300 || teff > 7600) return 'nicht bestimmbar (Sterntemperatur außerhalb des Modells)';
-    if (flux > hzLimit(HZ.recentVenus, teff)) return 'nein, zu heiß';
-    if (flux > hzLimit(HZ.runaway, teff)) return 'am inneren Rand (optimistische Zone)';
-    if (flux >= hzLimit(HZ.maxGreen, teff)) return 'ja (konservative Zone)';
-    if (flux >= hzLimit(HZ.earlyMars, teff)) return 'am äußeren Rand (optimistische Zone)';
-    return 'nein, zu kalt';
+  // Rückgabe: Schlüssel in TEXT.hzClass.
+  function hzClass(flux, teff) {
+    if (!teff || teff < 2300 || teff > 7600) return 'none';
+    if (flux > hzLimit(HZ.recentVenus, teff)) return 'hot';
+    if (flux > hzLimit(HZ.runaway, teff)) return 'inner';
+    if (flux >= hzLimit(HZ.maxGreen, teff)) return 'yes';
+    if (flux >= hzLimit(HZ.earlyMars, teff)) return 'outer';
+    return 'cold';
   }
   // Einstrahlung am Ort des Planeten relativ zur Erde, oder null.
   // Leuchtkraft aus Sternradius und -temperatur; Bahnabstand aus dem Katalog,
@@ -293,42 +313,39 @@
     return rings.map((ring) => 'M' + ring.map((q) => f(q[0]) + ' ' + f(q[1])).join('L') + 'Z').join('');
   }
 
-  function fluxText(flux) {
-    return num(flux * SOLAR_CONSTANT) + ' W/m² = ' + num(flux) + ' × Erde';
-  }
-
   // ====================================================== Sonnensystem
   // Masse in Jupitermassen, Umlaufzeit in Tagen, Radius in Grafik-Einheiten.
+  // key ist sprachunabhängig (Schlüssel in PLANET_ART und TEXT.planets).
   const SOLAR = [
-    { name: 'Mars', mass: 3.381e-4, period: 686.98, r: 8.7, side: 1 },
-    { name: 'Venus', mass: 2.564e-3, period: 224.70, r: 8.7, side: -1 },
-    { name: 'Erde', mass: 3.146e-3, period: 365.26, r: 9.4, side: 1 },
-    { name: 'Uranus', mass: 4.574e-2, period: 30688.5, r: 8.7, side: -1 },
-    { name: 'Neptun', mass: 5.395e-2, period: 60189, r: 8.7, side: 1 },
-    { name: 'Saturn', mass: 0.2994, period: 10759.2, r: 9.8, side: -1, extent: 2.05 },
-    { name: 'Jupiter', mass: 1, period: 4332.59, r: 10.8, side: 1 },
+    { key: 'mars', mass: 3.381e-4, period: 686.98, r: 8.7, side: 1 },
+    { key: 'venus', mass: 2.564e-3, period: 224.70, r: 8.7, side: -1 },
+    { key: 'earth', mass: 3.146e-3, period: 365.26, r: 9.4, side: 1 },
+    { key: 'uranus', mass: 4.574e-2, period: 30688.5, r: 8.7, side: -1 },
+    { key: 'neptune', mass: 5.395e-2, period: 60189, r: 8.7, side: 1 },
+    { key: 'saturn', mass: 0.2994, period: 10759.2, r: 9.8, side: -1, extent: 2.05 },
+    { key: 'jupiter', mass: 1, period: 4332.59, r: 10.8, side: 1 },
   ];
 
   // Jeder Planet ist auf einen Kreis mit Radius 1 gezeichnet.
   // back/front liegen hinter bzw. vor der Scheibe (Saturnring, Venus-Dunst).
   const SATURN_RING = ' fill="none" stroke="#c9b589" stroke-width="0.36" transform="rotate(-18)"';
   const PLANET_ART = {
-    Mars: { disc:
+    mars: { disc:
       '<circle r="1" fill="#c1663a"/>' +
       '<path d="M-1-.25C-.5-.45-.1-.1.35-.2C.7-.28.9 0 1 .1V.4C.5.2.1.5-.4.35C-.7.26-.9.1-1 .1Z" fill="#7a3a1e" opacity=".6"/>' +
       '<path d="M-.6.62C-.2.5.3.7.7.58L.5.9H-.4Z" fill="#8b4424" opacity=".5"/>' +
       '<ellipse cx=".05" cy="-.93" rx=".36" ry=".1" fill="#f6e6da" opacity=".85"/>' },
-    Venus: { back: '<circle r="1.16" fill="#b4bcd8" opacity=".75"/>', disc:
+    venus: { back: '<circle r="1.16" fill="#b4bcd8" opacity=".75"/>', disc:
       '<circle r="1" fill="#ead9ab"/>' +
       '<path d="M-1-.3C-.4-.5.3-.1 1-.35V-.1C.3.12-.4-.25-1-.05Z" fill="#fff6dc" opacity=".7"/>' +
       '<path d="M-1 .3C-.3.1.4.5 1 .25V.5C.4.72-.3.35-1 .55Z" fill="#c9b27c" opacity=".6"/>' },
-    Erde: { disc:
+    earth: { disc:
       '<circle r="1" fill="#1f56c0"/>' +
       '<path d="M-.5-.9C-.15-.75.15-.8.3-.55C.4-.35.1-.3.05-.1C0 .1.3.15.25.4C.2.7-.05.9-.2.75C-.35.6-.2.35-.35.15C-.5-.05-.75-.1-.8-.4C-.83-.6-.7-.85-.5-.9Z" fill="#3f9a3a"/>' +
       '<path d="M.55-.2C.8-.3.95-.05.9.2C.85.4.6.35.55.15Z" fill="#3f9a3a"/>' +
       '<path d="M-.15-.5C0-.45.05-.3-.05-.2C-.2-.2-.3-.4-.15-.5Z" fill="#b99a4a" opacity=".8"/>' +
       '<path d="M-.9.05C-.5-.05-.2.2.3.05" stroke="#fff" stroke-width=".09" fill="none" opacity=".55"/>' },
-    Jupiter: { disc:
+    jupiter: { disc:
       '<circle r="1" fill="#d9c4a5"/>' +
       '<rect x="-1" y="-.82" width="2" height=".14" fill="#a98f74"/>' +
       '<rect x="-1" y="-.52" width="2" height=".22" fill="#8f6548"/>' +
@@ -337,7 +354,7 @@
       '<rect x="-1" y=".46" width="2" height=".1" fill="#b39a80"/>' +
       '<rect x="-1" y=".7" width="2" height=".3" fill="#a08c7a"/>' +
       '<ellipse cx=".38" cy=".2" rx=".24" ry=".13" fill="#b5482c"/>' },
-    Saturn: {
+    saturn: {
       back: '<ellipse rx="2" ry=".5"' + SATURN_RING + '/>',
       disc:
         '<circle r="1" fill="#e3cf9f"/>' +
@@ -345,56 +362,237 @@
         '<rect x="-1" y="-.15" width="2" height=".16" fill="#d3bd8c"/>' +
         '<rect x="-1" y=".35" width="2" height=".25" fill="#c4ab7a"/>',
       front: '<path d="M-2 0A2 .5 0 0 0 2 0"' + SATURN_RING + '/>' },
-    Uranus: { disc:
+    uranus: { disc:
       '<circle r="1" fill="#a5dde2"/>' +
       '<rect x="-1" y="-.35" width="2" height=".3" fill="#c3ecee" opacity=".7"/>' +
       '<rect x="-1" y=".3" width="2" height=".25" fill="#8fcdd4" opacity=".7"/>' },
-    Neptun: { disc:
+    neptune: { disc:
       '<circle r="1" fill="#3f66d8"/>' +
       '<rect x="-1" y="-.2" width="2" height=".3" fill="#2f50b8" opacity=".8"/>' +
       '<path d="M-.5-.5C-.2-.6.1-.55.35-.45" stroke="#fff" stroke-width=".1" fill="none" opacity=".7"/>' +
       '<ellipse cx="-.3" cy=".35" rx=".25" ry=".12" fill="#22408f"/>' },
   };
 
-  // Beschriftete Regionen im Diagramm (Position in Masse / Umlaufzeit).
+  // Beschriftete Regionen im Diagramm (Position in Masse / Umlaufzeit); die
+  // Texte stehen je Sprache in TEXT.notes.
   const NOTES = [
-    { text: 'Heiße Jupiter', mass: 1.1, period: 0.36, anchor: 'middle' },
-    { text: 'Supererden und Mini-Neptune', mass: 0.0015, period: 9, anchor: 'end' },
-    { text: 'Direkt abgebildete Begleiter auf weiten Bahnen', mass: 2.4, period: 4.5e6, anchor: 'end' },
-    { text: 'Enge Begleiter von Pulsaren und Weißen Zwergen', mass: 5.5, period: 0.07, anchor: 'end' },
+    { key: 'hotJupiters', mass: 1.1, period: 0.36, anchor: 'middle' },
+    { key: 'superEarths', mass: 0.0015, period: 9, anchor: 'end' },
+    { key: 'imaged', mass: 2.4, period: 4.5e6, anchor: 'end' },
+    { key: 'remnants', mass: 5.5, period: 0.07, anchor: 'end' },
   ];
+
+  // ================================================================ Sprachen
+  // Alle sichtbaren Texte je Sprache. Beide Blöcke müssen dieselben Schlüssel
+  // haben. Die englischen Texte sind in US-Schreibweise.
+  const DEFAULT_LANG = 'de';
+  const TEXT = {
+    de: {
+      locale: 'de-DE',   // Zahlenformat
+      billion: ' Mrd.', million: ' Mio.',
+      date: (iso) => iso.split('-').reverse().join('.'),
+      title: 'Exoplaneten: Masse und Umlaufzeit',
+      methods: { rv: 'Radialgeschwindigkeit', tr: 'Transit', ti: 'Timing (Pulsar, TTV)',
+        im: 'Direkte Abbildung', ml: 'Microlensing', all: 'Alle Verfahren' },
+      // Name mit weicher Trennstelle für schmale Bildschirme.
+      methodsWrap: { rv: 'Radial\u00ADgeschwindigkeit' },
+      stars: { A: 'A, B (heiß)', F: 'F', G: 'G (sonnenähnlich)', K: 'K', M: 'M (Rote Zwerge)',
+        WD: 'Weiße Zwerge', PSR: 'Pulsare', X: 'Andere / unbekannt' },
+      // Ungefähre Lebensdauer auf der Hauptreihe (Phase des Wasserstoffbrennens).
+      // Weiße Zwerge und Pulsare sind Sternreste und bekommen keine Angabe.
+      starLife: { A: '≈ 0,01–2 Mrd. Jahre', F: '≈ 2–7 Mrd. Jahre', G: '≈ 10 Mrd. Jahre',
+        K: '≈ 20–70 Mrd. Jahre', M: '> 100 Mrd. Jahre' },
+      starGroup: 'Sterntyp · ungefähre Lebensdauer',
+      starLifeTitle: 'Ungefähre Lebensdauer des Sterns',
+      starFromTeff: (type, kelvin) => 'Typ ' + type + ' (aus Temperatur ' + kelvin + ' K)',
+      unknown: 'unbekannt',
+      planets: { mars: 'Mars', venus: 'Venus', earth: 'Erde', uranus: 'Uranus', neptune: 'Neptun',
+        saturn: 'Saturn', jupiter: 'Jupiter' },
+      solarPlanet: 'Planet unseres Sonnensystems',
+      notes: {
+        hotJupiters: 'Heiße Jupiter',
+        superEarths: 'Supererden und Mini-Neptune',
+        imaged: 'Direkt abgebildete Begleiter auf weiten Bahnen',
+        remnants: 'Enge Begleiter von Pulsaren und Weißen Zwergen',
+      },
+      hz: 'Habitable Zone', hzSelect: 'Habitable Zone wählen', hzUnknown: 'nicht bestimmbar',
+      hzClass: {
+        none: 'nicht bestimmbar (Sterntemperatur außerhalb des Modells)',
+        hot: 'nein, zu heiß',
+        inner: 'am inneren Rand (optimistische Zone)',
+        yes: 'ja (konservative Zone)',
+        outer: 'am äußeren Rand (optimistische Zone)',
+        cold: 'nein, zu kalt',
+      },
+      timesEarth: ' × Erde',
+      jupiterMasses: ' Jupitermassen', earthMasses: ' Erdmassen',
+      hours: ' Stunden', days: ' Tage', year: ' Jahr', years: ' Jahre',
+      mass: 'Masse', period: 'Umlaufzeit', method: 'Methode', star: 'Stern', discovered: 'Entdeckt',
+      total: 'Gesamt', planetCount: (n, text) => text + (n === 1 ? ' Planet' : ' Planeten'),
+      errNoElement: 'Exoplaneten.mount: Element nicht gefunden',
+      errNoData: 'Keine Daten gefunden: data.js fehlt. Bitte "node update-data.js" ausführen.',
+      reset: 'Filter zurücksetzen',
+      shown: (n, total) => n + ' von ' + total + ' Planeten angezeigt',
+      methodGroup: 'Entdeckungsmethode', points: 'Punkte', contour: 'Kontur',
+      pointsOf: (name) => 'Punkte: ' + name,
+      pointsAll: 'Punkte aller Verfahren ein- oder ausblenden',
+      contourOf: (name) => 'Kontur des Nachweisbereichs: ' + name,
+      contourAll: 'Kontur über die Funde aller Verfahren zusammen',
+      contourTooFew: (min) => 'Zu wenige Funde für eine Kontur (mindestens ' + min + ')',
+      contourHelp: (min) => 'Die Zahl an jeder Linie gibt an, wie viel Prozent ' +
+        'der Funde außerhalb liegen; die 0-%-Linie umschließt alle. Ab ' + min + ' Funden.',
+      yearLabel: 'Entdeckungsjahr', yearFrom: 'Entdeckt ab Jahr', yearTo: 'Entdeckt bis Jahr',
+      play: '▶ Zeitraffer', pause: '❚❚ Anhalten',
+      flux: 'Einstrahlung', fluxMin: 'Einstrahlung mindestens', fluxMax: 'Einstrahlung höchstens',
+      fluxUnknown: 'nicht berechenbar', below: 'unter ', above: 'über ',
+      fluxNote: (n) => 'Grün: habitable Zone eines sonnenähnlichen Sterns (dunkel konservativ, hell optimistisch); ' +
+        'bei kühleren Sternen liegt sie bei etwas geringerer Einstrahlung. ' +
+        n + ' Planeten ohne berechenbare Einstrahlung erscheinen nur bei vollem Bereich.',
+      footData: 'Daten: ',
+      // skipped: Anzahl als Text, leer wenn keine Planeten ausgelassen wurden.
+      footText: (date, total, known, skipped) => ', Stand ' + date + '. ' +
+        total + ' bestätigte Planeten im Katalog, davon ' + known +
+        ' mit bekannter Masse und Umlaufzeit' +
+        (skipped ? '; ' + skipped + ' mit anderer Entdeckungsmethode (Astrometrie u. a.) sind nicht dargestellt' : '') +
+        '. Masse: wahre Masse, sonst M·sin i.',
+      svgLabel: 'Streudiagramm: Masse und Umlaufzeit der Exoplaneten, mit Häufigkeitsverteilungen am Rand',
+      axisMass: 'Masse in Jupitermassen', axisPeriod: 'Umlaufzeit in Tagen', axisEarthMasses: 'Erdmassen',
+    },
+    en: {
+      locale: 'en-US',
+      billion: ' billion', million: ' million',
+      date: (iso) => iso,
+      title: 'Exoplanets: Mass and Orbital Period',
+      methods: { rv: 'Radial velocity', tr: 'Transit', ti: 'Timing (Pulsar, TTV)',
+        im: 'Direct imaging', ml: 'Microlensing', all: 'All methods' },
+      methodsWrap: {},
+      stars: { A: 'A, B (hot)', F: 'F', G: 'G (Sun-like)', K: 'K', M: 'M (red dwarfs)',
+        WD: 'White dwarfs', PSR: 'Pulsars', X: 'Other / unknown' },
+      starLife: { A: '≈ 0.01–2 billion years', F: '≈ 2–7 billion years', G: '≈ 10 billion years',
+        K: '≈ 20–70 billion years', M: '> 100 billion years' },
+      starGroup: 'Star type · approximate lifetime',
+      starLifeTitle: 'Approximate lifetime of the star',
+      starFromTeff: (type, kelvin) => 'Type ' + type + ' (from temperature ' + kelvin + ' K)',
+      unknown: 'unknown',
+      planets: { mars: 'Mars', venus: 'Venus', earth: 'Earth', uranus: 'Uranus', neptune: 'Neptune',
+        saturn: 'Saturn', jupiter: 'Jupiter' },
+      solarPlanet: 'Planet of our Solar System',
+      notes: {
+        hotJupiters: 'Hot Jupiters',
+        superEarths: 'Super-Earths and mini-Neptunes',
+        imaged: 'Directly imaged companions on wide orbits',
+        remnants: 'Close companions of pulsars and white dwarfs',
+      },
+      hz: 'Habitable zone', hzSelect: 'Select habitable zone', hzUnknown: 'cannot be determined',
+      hzClass: {
+        none: 'cannot be determined (stellar temperature outside the model)',
+        hot: 'no, too hot',
+        inner: 'at the inner edge (optimistic zone)',
+        yes: 'yes (conservative zone)',
+        outer: 'at the outer edge (optimistic zone)',
+        cold: 'no, too cold',
+      },
+      timesEarth: ' × Earth',
+      jupiterMasses: ' Jupiter masses', earthMasses: ' Earth masses',
+      hours: ' hours', days: ' days', year: ' year', years: ' years',
+      mass: 'Mass', period: 'Orbital period', method: 'Method', star: 'Star', discovered: 'Discovered',
+      total: 'Total', planetCount: (n, text) => text + (n === 1 ? ' planet' : ' planets'),
+      errNoElement: 'Exoplaneten.mount: element not found',
+      errNoData: 'No data found: data.js is missing. Please run "node update-data.js".',
+      reset: 'Reset filters',
+      shown: (n, total) => n + ' of ' + total + ' planets shown',
+      methodGroup: 'Detection method', points: 'Points', contour: 'Contour',
+      pointsOf: (name) => 'Points: ' + name,
+      pointsAll: 'Show or hide the points of all methods',
+      contourOf: (name) => 'Contour of the detection range: ' + name,
+      contourAll: 'Contour over the discoveries of all methods combined',
+      contourTooFew: (min) => 'Too few discoveries for a contour (at least ' + min + ')',
+      contourHelp: (min) => 'The number on each line gives the percentage ' +
+        'of discoveries lying outside it; the 0 % line encloses all of them. Requires at least ' + min + ' discoveries.',
+      yearLabel: 'Year of discovery', yearFrom: 'Discovered from year', yearTo: 'Discovered up to year',
+      play: '▶ Time lapse', pause: '❚❚ Pause',
+      flux: 'Irradiation', fluxMin: 'Irradiation at least', fluxMax: 'Irradiation at most',
+      fluxUnknown: 'not computable', below: 'below ', above: 'above ',
+      fluxNote: (n) => 'Green: habitable zone of a Sun-like star (dark: conservative, light: optimistic); ' +
+        'for cooler stars it lies at slightly lower irradiation. ' +
+        n + ' planets without computable irradiation are only shown for the full range.',
+      footData: 'Data: ',
+      footText: (date, total, known, skipped) => ', as of ' + date + '. ' +
+        total + ' confirmed planets in the catalog, ' + known +
+        ' of them with known mass and orbital period' +
+        (skipped ? '; ' + skipped + ' with other detection methods (astrometry etc.) are not shown' : '') +
+        '. Mass: true mass, otherwise M·sin i.',
+      svgLabel: 'Scatter plot: mass and orbital period of the exoplanets, with frequency distributions along the edges',
+      axisMass: 'Mass in Jupiter masses', axisPeriod: 'Orbital period in days', axisEarthMasses: 'Earth masses',
+    },
+  };
+
+  // 'en-US' -> 'en'; unbekannte oder leere Angaben -> ''.
+  function langKey(value) {
+    const key = String(value || '').trim().toLowerCase().split(/[-_]/)[0];
+    return TEXT[key] ? key : '';
+  }
+  // Sprache eines Applets: Option lang, sonst data-lang am Element, sonst das
+  // nächstgelegene lang-Attribut (Element selbst, Vorfahren, <html>), sonst
+  // Deutsch. node darf null sein.
+  function resolveLang(node, options) {
+    const near = node && node.closest('[lang]');
+    return langKey(options && options.lang) ||
+      langKey(node && node.getAttribute('data-lang')) ||
+      langKey(near && near.getAttribute('lang')) ||
+      langKey(document.documentElement.getAttribute('lang')) ||
+      DEFAULT_LANG;
+  }
 
   // ========================================================== Hilfsmittel
   const log10 = Math.log10;
   const f = (v) => (Math.round(v * 100) / 100).toString();
 
-  function num(v, digits) {
-    return v.toLocaleString('de-DE', { maximumSignificantDigits: digits || 3 });
-  }
-  function int(v) { return v.toLocaleString('de-DE'); }
+  // Texte und Zahlenformat einer Sprache. Jedes Applet holt sich seinen Satz
+  // in mount(); so können Applets in verschiedenen Sprachen auf einer Seite
+  // stehen.
+  const localeCache = {};
+  function localeFor(lang) {
+    if (localeCache[lang]) return localeCache[lang];
+    const tx = TEXT[lang];
 
-  function pow10Label(e) {
-    if (e >= 9) return num(Math.pow(10, e - 9)) + ' Mrd.';
-    if (e >= 6) return num(Math.pow(10, e - 6)) + ' Mio.';
-    return num(Math.pow(10, e), 1);
-  }
-  // Kurze Zahl für sehr große und sehr kleine Werte: 2,4 Mio. / 7·10⁻⁶.
-  function compact(v) {
-    if (v >= 1e9) return num(v / 1e9, 2) + ' Mrd.';
-    if (v >= 1e6) return num(v / 1e6, 2) + ' Mio.';
-    if (v >= 0.001) return num(v, 2);
-    const e = Math.floor(log10(v));
-    const sup = String(e).replace(/[-0-9]/g, (c) => '⁻⁰¹²³⁴⁵⁶⁷⁸⁹'['-0123456789'.indexOf(c)]);
-    const mant = num(v / Math.pow(10, e), 1);
-    return (mant === '1' ? '' : mant + '·') + '10' + sup;
-  }
-  function massText(m) {
-    return num(m) + ' Jupitermassen = ' + num(m * EARTH_PER_JUPITER) + ' Erdmassen';
-  }
-  function periodText(days) {
-    if (days < 1) return num(days * 24) + ' Stunden';
-    if (days < 1000) return num(days) + ' Tage';
-    return num(days / DAYS_PER_YEAR) + ' Jahre (' + num(days) + ' Tage)';
+    function num(v, digits) {
+      return v.toLocaleString(tx.locale, { maximumSignificantDigits: digits || 3 });
+    }
+    function int(v) { return v.toLocaleString(tx.locale); }
+
+    function pow10Label(e) {
+      if (e >= 9) return num(Math.pow(10, e - 9)) + tx.billion;
+      if (e >= 6) return num(Math.pow(10, e - 6)) + tx.million;
+      return num(Math.pow(10, e), 1);
+    }
+    // Kurze Zahl für sehr große und sehr kleine Werte: 2,4 Mio. / 7·10⁻⁶.
+    function compact(v) {
+      if (v >= 1e9) return num(v / 1e9, 2) + tx.billion;
+      if (v >= 1e6) return num(v / 1e6, 2) + tx.million;
+      if (v >= 0.001) return num(v, 2);
+      const e = Math.floor(log10(v));
+      const sup = String(e).replace(/[-0-9]/g, (c) => '⁻⁰¹²³⁴⁵⁶⁷⁸⁹'['-0123456789'.indexOf(c)]);
+      const mant = num(v / Math.pow(10, e), 1);
+      return (mant === '1' ? '' : mant + '·') + '10' + sup;
+    }
+    function massText(m) {
+      return num(m) + tx.jupiterMasses + ' = ' + num(m * EARTH_PER_JUPITER) + tx.earthMasses;
+    }
+    function periodText(days) {
+      if (days < 1) return num(days * 24) + tx.hours;
+      if (days < 1000) return num(days) + tx.days;
+      return num(days / DAYS_PER_YEAR) + tx.years + ' (' + num(days) + tx.days + ')';
+    }
+    function fluxText(flux) {
+      return num(flux * SOLAR_CONSTANT) + ' W/m² = ' + num(flux) + tx.timesEarth;
+    }
+    function hzText(flux, teff) { return tx.hzClass[hzClass(flux, teff)]; }
+
+    return (localeCache[lang] = {
+      lang: lang, tx: tx, num: num, int: int, pow10Label: pow10Label, compact: compact,
+      massText: massText, periodText: periodText, fluxText: fluxText, hzText: hzText,
+    });
   }
 
   function extent(values) {
@@ -426,7 +624,7 @@
     '.exo-root{--exo-surface:#fcfcfb;--exo-ink:#0b0b0b;--exo-ink2:#52514e;--exo-muted:#898781;',
     '--exo-grid:#e1e0d9;--exo-axis:#c3c2b7;--exo-border:rgba(11,11,11,.12);',
     METHODS.map((m) => '--exo-c-' + m.key + ':' + m.color + ';').join(''),
-    'position:relative;box-sizing:border-box;max-width:1100px;margin:0 auto;padding:18px 20px 14px;',
+    'position:relative;box-sizing:border-box;margin:0 auto;padding:18px 20px 14px;',
     'background:var(--exo-surface);color:var(--exo-ink);border:1px solid var(--exo-border);border-radius:12px;',
     'font:14px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;text-align:left}',
     '.exo-root *{box-sizing:border-box}',
@@ -567,11 +765,16 @@
   // ================================================================ mount
   function mount(target, options) {
     const root = typeof target === 'string' ? document.querySelector(target) : target;
-    if (!root) throw new Error('Exoplaneten.mount: Element nicht gefunden');
     options = options || {};
+    const lang = resolveLang(root, options);
+    const loc = localeFor(lang), tx = loc.tx;
+    const num = loc.num, int = loc.int, pow10Label = loc.pow10Label, compact = loc.compact;
+    const massText = loc.massText, periodText = loc.periodText;
+    const fluxText = loc.fluxText, hzText = loc.hzText;
+    if (!root) throw new Error(tx.errNoElement);
     const data = options.data || window.EXOPLANET_DATA;
     if (!data || !Array.isArray(data.planets)) {
-      root.textContent = 'Keine Daten gefunden: data.js fehlt. Bitte "node update-data.js" ausführen.';
+      root.textContent = tx.errNoData;
       return null;
     }
     injectCss();
@@ -583,7 +786,7 @@
     for (const row of data.planets) {
       const mi = classifyMethod(row[3]);
       if (mi < 0) { skipped++; continue; }
-      const star = classifyStar(row[5], row[6]);
+      const star = classifyStar(row[5], row[6], loc);
       points.push({
         name: row[0], mass: row[1], period: row[2], method: row[3],
         year: typeof row[4] === 'number' ? row[4] : null,
@@ -601,7 +804,8 @@
       p.bx = Math.min(NX - 1, Math.max(0, Math.floor((p.x - PLOT.left) / BIN_PX)));
       p.by = Math.min(NY - 1, Math.max(0, Math.floor((PLOT.bottom - p.y) / BIN_PX)));
     }
-    const solar = SOLAR.map((p) => Object.assign({ x: sx(log10(p.mass)), y: sy(log10(p.period)) }, p));
+    const solar = SOLAR.map((p) => Object.assign(
+      { name: tx.planets[p.key], x: sx(log10(p.mass)), y: sy(log10(p.period)) }, p));
     const years = extent(points.filter((p) => p.year !== null).map((p) => p.year));
     const minYear = years[0], maxYear = years[1], nYears = maxYear - minYear + 1;
 
@@ -630,19 +834,29 @@
       stars: STARS.map(() => true),
       lo: minYear, hi: maxYear,      // Entdeckungsjahr
       flo: fMin, fhi: fMax,          // Einstrahlung, log10(W/m²)
-      contours: CONTOUR_SETS.map(() => true),   // Kontur je Verfahren und für alle zusammen
+      // Kontur je Verfahren und (letzter Eintrag) für alle zusammen; beim
+      // Start ist nur die gemeinsame an.
+      contours: CONTOUR_SETS.map((m) => m === ALL_METHODS),
     };
+    // Option contours: stattdessen sind genau die genannten Konturen an.
+    if (options.contours !== undefined && options.contours !== null) {
+      const wanted = (Array.isArray(options.contours) ? options.contours : String(options.contours).split(','))
+        .map((key) => String(key).trim());
+      state.contours = CONTOUR_SETS.map((m) => wanted.indexOf(m.key) >= 0);
+    }
 
     // -------------------------------------------------------------- DOM
     root.classList.add('exo-root');
+    root.setAttribute('lang', lang);
+    root.setAttribute('data-exo-version', VERSION);
     root.replaceChildren();
 
     const head = el('div', 'exo-head');
-    const title = options.title === undefined ? 'Exoplaneten: Masse und Umlaufzeit' : options.title;
+    const title = options.title === undefined ? tx.title : options.title;
     if (title) head.appendChild(el('h2', 'exo-title', title));
     const sub = el('span', 'exo-sub');
     sub.setAttribute('aria-live', 'polite');
-    const resetBtn = el('button', 'exo-reset', 'Filter zurücksetzen');
+    const resetBtn = el('button', 'exo-reset', tx.reset);
     resetBtn.type = 'button';
     head.append(sub, resetBtn);
 
@@ -664,7 +878,7 @@
         b.appendChild(el('span', 'exo-chip-label', item.label));
         if (item.life) {
           const life = el('span', 'exo-chip-life', item.life);
-          life.title = 'Ungefähre Lebensdauer des Sterns';
+          life.title = tx.starLifeTitle;
           b.appendChild(life);
         }
         const n = el('span', 'exo-chip-n', '');
@@ -688,11 +902,11 @@
     const methodGroup = el('div', 'exo-group');
     const matrix = el('div', 'exo-matrix');
     matrix.setAttribute('role', 'group');
-    matrix.setAttribute('aria-label', 'Entdeckungsmethode');
+    matrix.setAttribute('aria-label', tx.methodGroup);
     const matrixHead = el('div', 'exo-mrow exo-mhead');
     matrixHead.setAttribute('aria-hidden', 'true');   // steht in den Namen der Schalter
-    matrixHead.append(el('div', 'exo-label', 'Entdeckungsmethode'),
-      el('div', 'exo-label exo-mcol', 'Punkte'), el('div', 'exo-label exo-mcol', 'Kontur'));
+    matrixHead.append(el('div', 'exo-label', tx.methodGroup),
+      el('div', 'exo-label exo-mcol', tx.points), el('div', 'exo-label exo-mcol', tx.contour));
     matrix.appendChild(matrixHead);
     function matrixCell(label, title, toggle) {
       const b = el('button', 'exo-cell');
@@ -711,19 +925,18 @@
     }
     const methodRows = CONTOUR_SETS.map((item, i) => {
       const all = item === ALL_METHODS;
+      const label = tx.methods[item.key];
       const row = el('div', 'exo-mrow');
       const name = el('span', 'exo-mname');
       name.insertAdjacentHTML('beforeend', markerSvg(item));
-      // wrapLabel: Name mit weicher Trennstelle für schmale Bildschirme.
-      name.appendChild(el('span', 'exo-chip-label', item.wrapLabel || item.label));
+      name.appendChild(el('span', 'exo-chip-label', tx.methodsWrap[item.key] || label));
       const count = el('span', 'exo-chip-n', '');
       const togglePoints = all
         ? () => { state.methods.fill(!state.methods.every(Boolean)); }
         : () => { state.methods[i] = !state.methods[i]; };
-      const contourTitle = all ? 'Kontur über die Funde aller Verfahren zusammen'
-        : 'Kontur des Nachweisbereichs: ' + item.label;
-      const pointsCell = matrixCell('Punkte: ' + item.label,
-        all ? 'Punkte aller Verfahren ein- oder ausblenden' : 'Punkte: ' + item.label, togglePoints);
+      const contourTitle = all ? tx.contourAll : tx.contourOf(label);
+      const pointsCell = matrixCell(tx.pointsOf(label),
+        all ? tx.pointsAll : tx.pointsOf(label), togglePoints);
       const contourCell = matrixCell(contourTitle, contourTitle,
         () => { state.contours[i] = !state.contours[i]; });
       // Ein Klick auf den Namen schaltet die Punkte (große Zielfläche für die Maus).
@@ -735,7 +948,9 @@
     methodGroup.appendChild(matrix);
     filters.appendChild(methodGroup);
 
-    const starChips = chipGroup('Sterntyp · ungefähre Lebensdauer', STARS, state.stars, false);
+    const starChips = chipGroup(tx.starGroup,
+      STARS.map((s) => ({ key: s.key, label: tx.stars[s.key], life: tx.starLife[s.key] })),
+      state.stars, false);
 
     // Erklärung der eingezeichneten Konturlinien, unter der Matrix.
     const limitKey = el('div', 'exo-limit-key');
@@ -850,8 +1065,8 @@
     playBtn.type = 'button';
     const yearList = Array.from({ length: nYears }, (_, i) => minYear + i);
     const yearCtl = rangeControl({
-      label: 'Entdeckungsjahr', min: minYear, max: maxYear, step: 1,
-      loLabel: 'Entdeckt ab Jahr', hiLabel: 'Entdeckt bis Jahr',
+      label: tx.yearLabel, min: minYear, max: maxYear, step: 1,
+      loLabel: tx.yearFrom, hiLabel: tx.yearTo,
       bars: yearList, barWidth: 0.72,
       ticks: [{ value: minYear, text: String(minYear) }, { value: maxYear, text: String(maxYear) }],
       format: (a, b) => (a === b ? String(a) : a + ' – ' + b),
@@ -860,30 +1075,29 @@
     });
 
     // Einstrahlung am Ort des Planeten, logarithmisch, mit habitabler Zone.
-    const hzBtn = el('button', 'exo-play', 'Habitable Zone wählen');
+    const hzBtn = el('button', 'exo-play', tx.hzSelect);
     hzBtn.type = 'button';
     const fluxTicks = [];
     for (let e = fMin; e <= fMax; e++) {
       if (e % 2 === 0) fluxTicks.push({ value: e, text: pow10Label(e) });
     }
     const fluxCtl = rangeControl({
-      label: 'Einstrahlung', min: fMin, max: fMax, step: 0.01,
-      loLabel: 'Einstrahlung mindestens', hiLabel: 'Einstrahlung höchstens',
+      label: tx.flux, min: fMin, max: fMax, step: 0.01,
+      loLabel: tx.fluxMin, hiLabel: tx.fluxMax,
       bars: Array.from({ length: nFluxBins }, (_, i) => fMin + (i + 0.5) * FLUX_BIN),
       barWidth: FLUX_BIN * 0.8,
       ticks: fluxTicks,
-      marks: [{ value: (hzOpt[0] + hzOpt[1]) / 2, text: 'Habitable Zone' }],
+      marks: [{ value: (hzOpt[0] + hzOpt[1]) / 2, text: tx.hz }],
       bands: [
         { from: hzOpt[0], to: hzOpt[1], className: 'exo-hz-opt' },
         { from: hzCon[0], to: hzCon[1], className: 'exo-hz-con' },
       ],
-      format: (a, b) => (a <= fMin ? 'unter ' : '') + compact(Math.pow(10, a)) + ' – ' +
-        (b >= fMax ? 'über ' : '') + compact(Math.pow(10, b)) + ' W/m²  (' +
-        compact(Math.pow(10, a) / SOLAR_CONSTANT) + ' – ' + compact(Math.pow(10, b) / SOLAR_CONSTANT) + ' × Erde)',
+      format: (a, b) => (a <= fMin ? tx.below : '') + compact(Math.pow(10, a)) + ' – ' +
+        (b >= fMax ? tx.above : '') + compact(Math.pow(10, b)) + ' W/m²  (' +
+        compact(Math.pow(10, a) / SOLAR_CONSTANT) + ' – ' + compact(Math.pow(10, b) / SOLAR_CONSTANT) +
+        tx.timesEarth + ')',
       actions: [hzBtn],
-      note: 'Grün: habitable Zone eines sonnenähnlichen Sterns (dunkel konservativ, hell optimistisch); ' +
-        'bei kühleren Sternen liegt sie bei etwas geringerer Einstrahlung. ' +
-        int(noFlux) + ' Planeten ohne berechenbare Einstrahlung erscheinen nur bei vollem Bereich.',
+      note: tx.fluxNote(int(noFlux)),
       onChange: (a, b) => { state.flo = a; state.fhi = b; scheduleUpdate(); },
     });
     hzBtn.addEventListener('click', () => {
@@ -912,12 +1126,8 @@
     link.href = 'https://exoplanet.eu/catalog/';
     link.target = '_blank';
     link.rel = 'noopener';
-    foot.append('Daten: ', link,
-      ', Stand ' + String(data.fetched).split('-').reverse().join('.') + '. ' +
-      int(data.total) + ' bestätigte Planeten im Katalog, davon ' + int(data.planets.length) +
-      ' mit bekannter Masse und Umlaufzeit' +
-      (skipped ? '; ' + int(skipped) + ' mit anderer Entdeckungsmethode (Astrometrie u. a.) sind nicht dargestellt' : '') +
-      '. Masse: wahre Masse, sonst M·sin i.');
+    foot.append(tx.footData, link, tx.footText(tx.date(String(data.fetched)),
+      int(data.total), int(data.planets.length), skipped ? int(skipped) : ''));
 
     root.append(head, filters, plot, yearCtl.group, fluxCtl.group, foot, tip);
 
@@ -925,7 +1135,7 @@
     function buildSvg() {
       const s = [];
       s.push('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + W + ' ' + H + '" role="img" ' +
-        'aria-label="Streudiagramm: Masse und Umlaufzeit der Exoplaneten, mit Häufigkeitsverteilungen am Rand">');
+        'aria-label="' + tx.svgLabel + '">');
       s.push('<defs><radialGradient id="' + uid + '-shade" cx=".36" cy=".34" r=".72">' +
         '<stop offset="0" stop-color="#fff" stop-opacity=".3"/>' +
         '<stop offset=".55" stop-color="#000" stop-opacity="0"/>' +
@@ -956,12 +1166,12 @@
       yt.forEach((e) => s.push('<text x="' + (PLOT.left - 8) + '" y="' + f(sy(e) + 4.5) + '">' + pow10Label(e) + '</text>'));
       s.push('</g>');
       const cx = (PLOT.left + PLOT.right) / 2, cy = (PLOT.top + PLOT.bottom) / 2;
-      s.push('<text class="exo-axis-title" text-anchor="middle" x="' + cx + '" y="' + (PLOT.bottom + 46) + '">Masse in Jupitermassen</text>');
-      s.push('<text class="exo-axis-title" text-anchor="middle" transform="translate(16 ' + cy + ') rotate(-90)">Umlaufzeit in Tagen</text>');
+      s.push('<text class="exo-axis-title" text-anchor="middle" x="' + cx + '" y="' + (PLOT.bottom + 46) + '">' + tx.axisMass + '</text>');
+      s.push('<text class="exo-axis-title" text-anchor="middle" transform="translate(16 ' + cy + ') rotate(-90)">' + tx.axisPeriod + '</text>');
 
       // Zweite Skala oben: Erdmassen.
       s.push('<g class="exo-tick">');
-      s.push('<text x="' + PLOT.left + '" y="' + (PLOT.top - 8) + '">Erdmassen</text>');
+      s.push('<text x="' + PLOT.left + '" y="' + (PLOT.top - 8) + '">' + tx.axisEarthMasses + '</text>');
       for (let e = -3; e <= 6; e++) {
         const x = sx(e - log10(EARTH_PER_JUPITER));
         if (x < PLOT.left + 80 || x > PLOT.right - 10) continue;
@@ -976,7 +1186,7 @@
         const y = sy(e + log10(DAYS_PER_YEAR));
         if (y < PLOT.top + 12 || y > PLOT.bottom - 12) continue;
         s.push('<path class="exo-frame" d="M' + PLOT.left + ' ' + f(y) + 'h6"/>');
-        const text = pow10Label(e) + (e === 0 ? ' Jahr' : ' Jahre');
+        const text = pow10Label(e) + (e === 0 ? tx.year : tx.years);
         // Beschriftung weglassen, wo ein Körper des Sonnensystems darauf läge.
         const x1 = PLOT.left + 10 + text.length * 7;
         if (solar.some((p) => p.x - p.r < x1 + 4 && Math.abs(p.y - y) < p.r + 10)) continue;
@@ -1002,14 +1212,14 @@
       s.push('<g class="exo-note exo-halo">');
       for (const n of NOTES) {
         s.push('<text text-anchor="' + n.anchor + '" x="' + f(sx(log10(n.mass))) + '" y="' +
-          f(sy(log10(n.period)) + 4.5) + '">' + n.text + '</text>');
+          f(sy(log10(n.period)) + 4.5) + '">' + tx.notes[n.key] + '</text>');
       }
       s.push('</g>');
 
       // Planeten des Sonnensystems.
       s.push('<g class="exo-sol exo-halo">');
       for (const p of solar) {
-        const art = PLANET_ART[p.name];
+        const art = PLANET_ART[p.key];
         s.push('<g transform="translate(' + f(p.x) + ' ' + f(p.y) + ') scale(' + p.r + ')" stroke="none">' +
           (art.back || '') +
           '<g clip-path="url(#' + uid + '-disc)">' + art.disc +
@@ -1059,7 +1269,7 @@
           const cell = methodRows[mi].contour;
           cell.setAttribute('aria-disabled', String(!enough));
           cell.title = enough ? methodRows[mi].contourTitle
-            : 'Zu wenige Funde für eine Kontur (mindestens ' + MIN_CONTOUR_POINTS + ')';
+            : tx.contourTooFew(MIN_CONTOUR_POINTS);
           if (!state.contours[mi] || !enough) return;
           // Neu rechnen nur, wenn sich die Auswahl der Funde geändert hat.
           let key = pts.length;
@@ -1094,8 +1304,7 @@
 
       limitsG.innerHTML = lines + labels;
 
-      limitRows.contours.text.textContent = 'Die Zahl an jeder Linie gibt an, wie viel Prozent ' +
-        'der Funde außerhalb liegen; die 0-%-Linie umschließt alle. Ab ' + MIN_CONTOUR_POINTS + ' Funden.';
+      limitRows.contours.text.textContent = tx.contourHelp(MIN_CONTOUR_POINTS);
     }
 
     // --------------------------------------------------------- Aktualisieren
@@ -1190,10 +1399,10 @@
         bar.className = (center >= flo && center <= fhi) ? 'exo-in' : '';
       });
       fluxCtl.set(flo, fhi);
-      playBtn.textContent = timer ? '❚❚ Anhalten' : '▶ Zeitraffer';
+      playBtn.textContent = timer ? tx.pause : tx.play;
 
       renderLimits();
-      sub.textContent = int(shown) + ' von ' + int(points.length) + ' Planeten angezeigt';
+      sub.textContent = tx.shown(int(shown), int(points.length));
       resetBtn.disabled = fullRange && fullFlux && state.methods.every(Boolean) && state.stars.every(Boolean);
       hideTip();
     }
@@ -1210,7 +1419,7 @@
       if (!timer) return;
       clearInterval(timer);
       timer = 0;
-      playBtn.textContent = '▶ Zeitraffer';
+      playBtn.textContent = tx.play;
       scheduleUpdate();   // Balkenskala wieder an die sichtbaren Daten anpassen
     }
     playBtn.addEventListener('click', () => {
@@ -1270,9 +1479,9 @@
       let total = 0;
       counts.forEach((c, m) => {
         total += c;
-        if (c) rows.push([METHODS[m].label, int(c), METHODS[m].color]);
+        if (c) rows.push([tx.methods[METHODS[m].key], int(c), METHODS[m].color]);
       });
-      rows.push(['Gesamt', int(total) + (total === 1 ? ' Planet' : ' Planeten')]);
+      rows.push([tx.total, tx.planetCount(total, int(total))]);
       return [unitRange, rows];
     }
 
@@ -1289,9 +1498,9 @@
           if (Math.hypot(p.x - x, p.y - y) <= p.r + 2) {
             ring.setAttribute('visibility', 'hidden');
             showTip(event, p.name, [
-              ['Masse', massText(p.mass)], ['Umlaufzeit', periodText(p.period)],
-              ['Einstrahlung', fluxText(Math.pow(p.period / DAYS_PER_YEAR, -4 / 3))],
-              ['', 'Planet unseres Sonnensystems']]);
+              [tx.mass, massText(p.mass)], [tx.period, periodText(p.period)],
+              [tx.flux, fluxText(Math.pow(p.period / DAYS_PER_YEAR, -4 / 3))],
+              ['', tx.solarPlanet]]);
             return;
           }
         }
@@ -1306,13 +1515,13 @@
         ring.setAttribute('cy', f(best.y));
         ring.setAttribute('visibility', 'visible');
         showTip(event, best.name, [
-          ['Masse', massText(best.mass)],
-          ['Umlaufzeit', periodText(best.period)],
-          ['Methode', best.method, METHODS[best.mi].color],
-          ['Stern', best.starText],
-          ['Einstrahlung', best.flux === null ? 'nicht berechenbar' : fluxText(best.flux)],
-          ['Habitable Zone', best.flux === null ? 'nicht bestimmbar' : hzText(best.flux, best.teff)],
-          ['Entdeckt', best.year === null ? 'unbekannt' : String(best.year)]]);
+          [tx.mass, massText(best.mass)],
+          [tx.period, periodText(best.period)],
+          [tx.method, best.method, METHODS[best.mi].color],
+          [tx.star, best.starText],
+          [tx.flux, best.flux === null ? tx.fluxUnknown : fluxText(best.flux)],
+          [tx.hz, best.flux === null ? tx.hzUnknown : hzText(best.flux, best.teff)],
+          [tx.discovered, best.year === null ? tx.unknown : String(best.year)]]);
         return;
       }
       ring.setAttribute('visibility', 'hidden');
@@ -1321,7 +1530,7 @@
         const i = Math.min(NX - 1, Math.floor((x - PLOT.left) / BIN_PX));
         const dx = (xRange[1] - xRange[0]) / NX;
         const r = binRows(histX[i], num(Math.pow(10, xRange[0] + i * dx), 2) + ' – ' +
-          num(Math.pow(10, xRange[0] + (i + 1) * dx), 2) + ' Jupitermassen');
+          num(Math.pow(10, xRange[0] + (i + 1) * dx), 2) + tx.jupiterMasses);
         band.setAttribute('x', PLOT.left + i * BIN_PX);
         band.setAttribute('y', HIST_TOP.base - HIST_TOP.max);
         band.setAttribute('width', BIN_PX);
@@ -1332,8 +1541,8 @@
       if (inY && x > PLOT.right && x <= HIST_RIGHT.base + HIST_RIGHT.max + 6) {
         const i = Math.min(NY - 1, Math.floor((PLOT.bottom - y) / BIN_PX));
         const dy = (yRange[1] - yRange[0]) / NY;
-        const r = binRows(histY[i], 'Umlaufzeit ' + num(Math.pow(10, yRange[0] + i * dy), 2) + ' – ' +
-          num(Math.pow(10, yRange[0] + (i + 1) * dy), 2) + ' Tage');
+        const r = binRows(histY[i], tx.period + ' ' + num(Math.pow(10, yRange[0] + i * dy), 2) + ' – ' +
+          num(Math.pow(10, yRange[0] + (i + 1) * dy), 2) + tx.days);
         band.setAttribute('x', PLOT.left);
         band.setAttribute('y', PLOT.bottom - (i + 1) * BIN_PX);
         band.setAttribute('width', HIST_RIGHT.base + HIST_RIGHT.max - PLOT.left);
@@ -1357,7 +1566,8 @@
       if (node.classList.contains('exo-root')) return;
       const opts = {};
       if (node.hasAttribute('data-title')) opts.title = node.getAttribute('data-title');
-      mount(node, opts);
+      if (node.hasAttribute('data-contours')) opts.contours = node.getAttribute('data-contours');
+      mount(node, opts);   // data-lang liest mount() selbst
     });
   }
   if (typeof document !== 'undefined') {
@@ -1365,5 +1575,5 @@
     else autoMount();
   }
 
-  window.Exoplaneten = { mount: mount };
+  window.Exoplaneten = { mount: mount, version: VERSION, languages: Object.keys(TEXT) };
 })();
