@@ -24,6 +24,11 @@ Alle Bilder wurden von den verlinkten Seiten übernommen, verkleinert und in das
 umgewandelt; am Bildinhalt wurde nichts verändert. Die Urheberzeile steht außerdem in der
 Bildunterschrift des jeweiligen Berichts.
 
+Drei Bilder stehen nicht unter Creative Commons: `solar-mercury.webp`, `solar-venus.webp` und
+`solar-earth.webp` sind Aufnahmen der NASA. NASA-Material unterliegt in den USA in der Regel keinem
+Urheberrecht; maßgeblich sind die in der Tabelle verlinkten Nutzungsbedingungen. Das Merkur-Bild der
+MESSENGER-Mission ist danach nur für nicht-kommerzielle Bildungs- und Informationszwecke freigegeben.
+
 | Datei | Urheber | Lizenz | Quelle |
 |---|---|---|---|
 | `14Herculis-c.webp` | NASA, ESA, CSA, STScI, W. Balmer (JHU), D. Bardalez Gagliuffi (Amherst College) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | https://esawebb.org/images/14Herculis-c/ |
@@ -91,6 +96,14 @@ Bildunterschrift des jeweiligen Berichts.
 | `potw2317a.webp` | ESO/Hammond et al. | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | https://www.eso.org/public/images/potw2317a/ |
 | `potw2338a.webp` | ESO/A. Chomez et al. | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | https://www.eso.org/public/images/potw2338a/ |
 | `potw2534a.webp` | ESO/R. F. van Capelleveen et al. | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | https://www.eso.org/public/images/potw2534a/ |
+| `solar-earth.webp` | NASA | [Nutzungsbedingungen der NASA](https://www.nasa.gov/nasa-brand-center/images-and-media/) | https://images.nasa.gov/details/as17-148-22727 |
+| `solar-jupiter.webp` | NASA, ESA, A. Simon (Goddard Space Flight Center), and M.H. Wong (University of California, Berkeley) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | https://esahubble.org/images/heic1914a/ |
+| `solar-mars.webp` | NASA / ESA and The Hubble Heritage Team STScI / AURA | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | https://esahubble.org/images/opo0124a/ |
+| `solar-mercury.webp` | NASA/Johns Hopkins University Applied Physics Laboratory/Carnegie Institution of Washington | [Nutzungsbedingungen der MESSENGER-Mission (Bildung und Information, nicht kommerziell)](https://messenger.jhuapl.edu/Explore/Usage-Statement.html) | https://science.nasa.gov/photojournal/mercury-globe-0n-0e/ |
+| `solar-neptune.webp` | NASA, ESA, A.A. Simon (NASA Goddard), and M.H. Wong and A.I. Hsu (University of California, Berkeley) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | https://esahubble.org/images/potw1907a/ |
+| `solar-saturn.webp` | NASA, ESA, A. Simon (Goddard Space Flight Center), and M.H. Wong (University of California, Berkeley) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | https://esahubble.org/images/heic1917a/ |
+| `solar-uranus.webp` | NASA, ESA, A.A. Simon (NASA Goddard), and M.H. Wong and A.I. Hsu (University of California, Berkeley) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | https://esahubble.org/images/potw1906a/ |
+| `solar-venus.webp` | Courtesy NASA/JPL-Caltech | [Nutzungsbedingungen von NASA/JPL](https://www.jpl.nasa.gov/jpl-image-use-policy/) | https://science.nasa.gov/photojournal/venus-from-mariner-10/ |
 | `trappist1c-2.webp` | NASA, ESA, CSA, J. Olmsted (STScI), S. Zieba (MPI-A), L. Kreidberg (MPI-A) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | https://esawebb.org/images/trappist1c-2/ |
 | `trappist1e.webp` | NASA, ESA, CSA, STScI, J. Olmsted (STScI) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | https://esawebb.org/images/trappist1e/ |
 | `tyc-8998-760-1_2.webp` | ESO/Bohn et al. | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | https://www.eso.org/public/images/eso2011b/ |
