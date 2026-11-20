@@ -43,6 +43,17 @@
 //                      kürzere und einfachere Texte.
 //   1.5.0  2026-11-20  Dritte Ansicht "Masse · Größe" mit Linien gleicher Dichte
 //                      (nur Planeten mit gemessener Masse und gemessenem Radius).
+//   1.6.0  2026-11-20  Planetensysteme: vierte Ansicht (je Zeile ein Stern mit
+//                      seinen Planeten nach Umlaufzeit, habitable Zone als
+//                      Band), schematische Leiste des Systems im Steckbrief,
+//                      eigenes Infofeld je System. Vermutete Lücken nach der
+//                      Titius-Bode-Regel (Verfahren von Lara u. a. 2020).
+//   1.6.1  2026-11-20  Infofeld eines Systems: Diagramm zur Titius-Bode-Reihe
+//                      (Umlaufzeit je Platz mit der Reihe als Gerade, darunter
+//                      die Abweichung jedes Planeten von der Reihe).
+//   1.6.2  2026-11-20  Zeitleiste unten ist anfangs eingeklappt (Knopf
+//                      "Zeitleiste"); der Filter für Mehrplanetensysteme steht
+//                      nur noch unter "Weitere Filter", nicht mehr oben.
 //   1.1.0  2026-11-20  Einbetten in eine Website: Logo und Links (site),
 //                      Sprachschalter mit Zieladressen (langUrls), Basispfad
 //                      (base); Berichte werden über http(s) direkt geladen
@@ -51,7 +62,7 @@
 (function () {
   'use strict';
 
-  const VERSION = '1.5.0';
+  const VERSION = '1.6.2';
 
   // ============================================================ Konstanten
   const EARTH_PER_JUPITER = 317.83;   // Erdmassen je Jupitermasse
@@ -190,7 +201,77 @@
     s.hz = hzClass(s.s, SUN_TEFF);
     s.esi = esi(s.r, s.s);
     s.story = null;
+    s.period = s.p; s.plotRadius = s.r; s.isSolar = true;   // dieselben Namen wie bei den Exoplaneten
   });
+
+  // ------------------------------------------------------ Planetensysteme
+  // Habitable Zone eines Sterns als Bahnabstand a (AE) und Umlaufzeit p
+  // (Tage): o0/o1 die großzügigen, c0/c1 die vorsichtigen Grenzen, jeweils
+  // innen/außen. Leuchtkraft aus Radius und Temperatur des Sterns.
+  function systemHz(teff, starRadius, starMass) {
+    if (!teff || !starRadius || !starMass || teff < 2300 || teff > 7600) return null;
+    const lum = starRadius * starRadius * Math.pow(teff / SUN_TEFF, 4);
+    const at = (c) => {
+      const a = Math.sqrt(lum / hzLimit(c, teff));
+      return { a: a, p: DAYS_PER_YEAR * Math.sqrt(a * a * a / starMass) };
+    };
+    return { o0: at(HZ.recentVenus), c0: at(HZ.runaway), c1: at(HZ.maxGreen), o1: at(HZ.earlyMars) };
+  }
+
+  // Titius-Bode-Reihe nach Lara, Cordero-Tercero & Allen 2020 (PASJ 72, 24;
+  // arXiv:2003.05121): Umlaufzeit des n-ten Planeten p_n = p0·e^(b·n), der
+  // innerste hat n = 1. Passt die Reihe nicht (R² unter 0,992, der Wert der
+  // klassischen Regel im Sonnensystem), werden zwischen den Planeten freie
+  // Plätze eingefügt, erst einer, dann zwei usw.; es gilt die Anpassung mit
+  // den wenigsten freien Plätzen. Ein freier Platz ist eine Vermutung, wo ein
+  // noch unentdeckter Körper kreisen könnte, kein Fund. Die Arbeit wendet das
+  // auf Systeme ab vier Planeten an und findet dort höchstens vier freie
+  // Plätze; mehr werden hier nicht versucht. Über den äußersten Planeten
+  // hinaus wird (wie in Abschnitt 4 der Arbeit) nichts vorhergesagt.
+  // Geprüft an Tabelle 1 der Arbeit: Kepler-90 mit acht Planeten ergibt
+  // p0 = 4,0530, b = 0,4387 und freie Plätze bei n = 4 und 5.
+  const TB_MIN_PLANETS = 4, TB_R2 = 0.992, TB_MAX_GAPS = 4;
+  function tbFit(periods) {
+    const p = periods.slice().sort((a, b) => a - b), count = p.length;
+    if (count < TB_MIN_PLANETS) return null;
+    const ys = p.map(Math.log);
+    const regress = (ns) => {   // ln p = ln p0 + b·n
+      let sx = 0, sy = 0, sxx = 0, sxy = 0, syy = 0;
+      for (let i = 0; i < count; i++) { sx += ns[i]; sy += ys[i]; sxx += ns[i] * ns[i]; sxy += ns[i] * ys[i]; syy += ys[i] * ys[i]; }
+      const dx = count * sxx - sx * sx, dy = count * syy - sy * sy, c = count * sxy - sx * sy;
+      const b = c / dx;
+      return { p0: Math.exp((sy - b * sx) / count), b: b, r2: dy > 0 ? c * c / (dx * dy) : 0, ns: ns };
+    };
+    // Alle Arten, k freie Plätze auf die Zwischenräume zu verteilen.
+    function spread(k, slots) {
+      if (slots === 1) return [[k]];
+      const out = [];
+      for (let i = 0; i <= k; i++) for (const rest of spread(k - i, slots - 1)) out.push([i].concat(rest));
+      return out;
+    }
+    for (let k = 0; k <= TB_MAX_GAPS; k++) {
+      let best = null;
+      for (const free of spread(k, count - 1)) {
+        const ns = [1];
+        for (let i = 1; i < count; i++) ns.push(ns[i - 1] + 1 + free[i - 1]);
+        const f = regress(ns);
+        if (f.r2 >= TB_R2 && (!best || f.r2 > best.r2)) best = f;
+      }
+      if (best) {
+        const taken = new Set(best.ns);
+        best.gaps = [];
+        for (let n = 2; n < best.ns[count - 1]; n++) if (!taken.has(n)) best.gaps.push({ n: n, period: best.p0 * Math.exp(best.b * n) });
+        return best;
+      }
+    }
+    return null;
+  }
+  // Ein System: name, planets (von innen nach außen), Angaben zum Stern, hz
+  // (siehe systemHz), fit (tbFit: null = keine Reihe gefunden, undefined = zu
+  // wenige Planeten), row (Zeile in der Ansicht "Planetensysteme" oder -1).
+  const SUN = { name: '', solar: true, planets: SOLAR, teff: SUN_TEFF, starR: 1, starM: 1, sp: 'G2V', distLy: null, row: 0 };
+  SUN.hz = systemHz(SUN.teff, SUN.starR, SUN.starM);
+  SUN.fit = tbFit(SOLAR.map((s) => s.p));
 
   // ================================================================ Texte
   const TEXT = {
@@ -209,9 +290,42 @@
       search: 'Planet suchen …', noMatch: 'Kein Planet gefunden',
       fullscreen: 'Vollbild (F11)', exitFullscreen: 'Vollbild beenden (Esc)', language: 'Sprache',
       fullscreenBlocked: 'Vollbild lässt sich hier nicht einschalten. Öffne die Seite direkt in einem Browserfenster oder drücke F11.',
-      view: 'Ansicht', views: { mp: 'Masse · Umlaufzeit', rs: 'Größe · Licht vom Stern', mr: 'Masse · Größe' },
+      view: 'Ansicht', views: { mp: 'Masse · Umlaufzeit', rs: 'Größe · Licht vom Stern', mr: 'Masse · Größe', sys: 'Planetensysteme' },
       viewHints: { mp: 'Wie schwer die Planeten sind und wie lange ein Umlauf dauert', rs: 'Wie groß die Planeten sind und wie viel Licht sie bekommen (habitable Zone)',
-        mr: 'Woraus die Planeten bestehen: Masse, Größe und Dichte' },
+        mr: 'Woraus die Planeten bestehen: Masse, Größe und Dichte',
+        sys: 'Sterne mit vielen Planeten: je Zeile ein System, von innen nach außen' },
+      sysGroup: 'Planeten je System', sysMin: { 4: 'ab 4', 5: 'ab 5', 6: 'ab 6' },
+      gaps: 'Vermutete Lücken zeigen',
+      gapsHint: 'Gestrichelte Ringe: Plätze, an denen nach der Titius-Bode-Regel ein noch unentdeckter Körper kreisen könnte',
+      multiOnly: 'Nur Sterne mit mehreren Planeten',
+      solarSystem: 'Sonnensystem', systemTitle: 'Planetensystem', systemOf: (i, n) => 'System ' + i + ' von ' + n,
+      sysPlanets: (n) => n + ' bekannte Planeten',
+      sysLink: (name, n) => 'System ' + name + ': ' + n + ' bekannte Planeten',
+      sysStrip: (name) => name + ', von innen nach außen', sysStar: 'Stern: das ganze System zeigen',
+      sysLegend: { star: 'Stern', hz: 'habitable Zone', gap: 'vermutete Lücke' },
+      sysFacts: { starMass: 'Masse des Sterns', starRadius: 'Radius des Sterns', hzRange: 'Habitable Zone', inHz: 'Planeten in der Zone', none: 'keiner' },
+      hzRangeNote: 'Abstand vom Stern, großzügige Grenzen',
+      sunMasses: ' Sonnenmassen', sunRadii: ' Sonnenradien', range: (a, b) => a + ' bis ' + b,
+      sysList: 'Planeten von innen nach außen', sysSearch: (n) => 'System, ' + n + ' Planeten',
+      clickSystem: 'Klicken für das System',
+      gapTitle: 'Vermutete Lücke', gapAt: (period) => 'Umlaufzeit etwa ' + period, gapNote: 'nach der Titius-Bode-Regel, kein Fund',
+      tb: {
+        title: 'Regelmäßige Abstände (Titius-Bode-Regel)',
+        few: 'Ob die Umlaufzeiten einer festen Regel folgen, lässt sich erst ab vier bekannten Planeten prüfen.',
+        fit: (factor, r2) => 'Von Planet zu Planet wächst die Umlaufzeit im Mittel auf das ' + factor + '-Fache (Güte der Anpassung: R² = ' + r2 + ').',
+        full: 'Die Reihe geht ohne Lücke auf: Zwischen den bekannten Planeten fehlt nach dieser Regel keiner.',
+        gaps: (n, list) => (n === 1 ? 'Damit die Reihe aufgeht, bleibt ein Platz frei' : 'Damit die Reihe aufgeht, bleiben ' + n + ' Plätze frei') +
+          ' (Umlaufzeit etwa ' + list + '). Dort könnte ein noch unentdeckter Planet oder ein Asteroidengürtel kreisen. Das ist eine Vermutung, kein Fund.',
+        solar: 'Im Sonnensystem liegt dort, zwischen Mars und Jupiter, der Asteroidengürtel mit dem Zwergplaneten Ceres (Umlaufzeit 4,6 Jahre).',
+        none: 'Die Umlaufzeiten folgen keiner solchen Reihe, auch nicht mit bis zu vier freien Plätzen.',
+        source: 'Verfahren: ', sourceAfter: ', hier auf den aktuellen Katalog angewandt. Die Arbeit nennt eine Trefferquote von 78 %; die Regel ist umstritten, weil eine physikalische Begründung fehlt.',
+        and: ' und ',
+        dev: (name, pct) => 'Am weitesten neben der Reihe liegt ' + name + ' (' + pct + ').',
+        chartTop: 'Umlaufzeit in Tagen', chartBottom: 'Abweichung von der Reihe', chartX: 'Platz',
+        chartLabel: 'Diagramm: Umlaufzeiten der Planeten und die Titius-Bode-Reihe',
+        chartNote: 'Oben die Reihe als Gerade, unten der Abstand jedes Planeten von ihr. Im grauen Band läge auch ein Planet an beliebiger Stelle (bis zum halben Weg zum Nachbarplatz): Je näher die Punkte an der Nulllinie, desto besser trägt die Reihe.',
+        pointTitle: (name, period, pct) => name + ': ' + period + ', ' + pct + ' neben der Reihe',
+      },
       density: { water: 'Wasser', earth: 'Erde' },
       colorBy: 'Farbe', colors: { type: 'Typ', method: 'Methode', star: 'Stern' },
       typeGroup: 'Planetentyp', methodGroup: 'Entdeckungsmethode', hzGroup: 'Habitable Zone',
@@ -241,10 +355,12 @@
       solarOf: (i, n) => 'Planet ' + i + ' von ' + n + ' unseres Sonnensystems', sunDistance: 'Abstand zur Sonne',
       moons: 'Bekannte Monde', noMoons: 'keine', asOf: (when) => 'Stand: ' + when,
       timeline: 'Entdeckt bis', play: 'Zeitraffer', pause: 'Anhalten', stories: 'Berichte',
+      timeToggle: 'Zeitleiste', timeShow: 'Zeitleiste und Zeitraffer einblenden', timeHide: 'Zeitleiste ausblenden',
       guideTitle: 'Tausende Welten auf einen Blick',
       guideAxes: { mp: 'Nach rechts werden die Planeten schwerer, nach oben dauert ein Umlauf länger.',
         rs: 'Nach rechts bekommen die Planeten weniger Licht von ihrem Stern, nach oben werden sie größer.',
-        mr: 'Nach rechts werden die Planeten schwerer, nach oben größer. Die gestrichelten Linien verbinden Planeten gleicher Dichte; gezeigt sind nur Planeten, bei denen Masse und Größe gemessen sind.' },
+        mr: 'Nach rechts werden die Planeten schwerer, nach oben größer. Die gestrichelten Linien verbinden Planeten gleicher Dichte; gezeigt sind nur Planeten, bei denen Masse und Größe gemessen sind.',
+        sys: 'Jede Zeile ist ein Stern mit seinen bekannten Planeten: links die inneren, rechts die äußeren. Das grüne Band ist die habitable Zone, gestrichelte Ringe sind vermutete Lücken.' },
       guide: 'Jeder Punkt ist ein Planet bei einem fremden Stern.',
       facts: { type: 'Typ', mass: 'Masse', radius: 'Radius', period: 'Umlaufzeit', axis: 'Abstand zum Stern',
         flux: 'Licht vom Stern', hz: 'Habitable Zone', esi: 'Erdähnlichkeit', star: 'Stern', dist: 'Entfernung',
@@ -273,7 +389,6 @@
       hidden: 'Dieser Planet ist mit den aktuellen Filtern ausgeblendet.',
       showAll: 'Filter zurücksetzen', resetView: 'Zoom zurücksetzen: ganzes Diagramm zeigen (Doppelklick)',
       noData: 'Keine Daten gefunden: data.js fehlt. Bitte "node update-data.js" ausführen.',
-      sysSiblings: 'Weitere Planeten dieses Sterns',
     },
     en: {
       locale: 'en-US', title: 'Atlas of Exoplanets',
@@ -290,9 +405,42 @@
       search: 'Search planet …', noMatch: 'No planet found',
       fullscreen: 'Full screen (F11)', exitFullscreen: 'Exit full screen (Esc)', language: 'Language',
       fullscreenBlocked: 'Full screen cannot be turned on here. Open the page directly in a browser window or press F11.',
-      view: 'View', views: { mp: 'Mass · Orbital period', rs: 'Size · Starlight', mr: 'Mass · Size' },
+      view: 'View', views: { mp: 'Mass · Orbital period', rs: 'Size · Starlight', mr: 'Mass · Size', sys: 'Planetary systems' },
       viewHints: { mp: 'How heavy the planets are and how long one orbit takes', rs: 'How large the planets are and how much light they receive (habitable zone)',
-        mr: 'What the planets are made of: mass, size and density' },
+        mr: 'What the planets are made of: mass, size and density',
+        sys: 'Stars with many planets: one system per row, from the inside out' },
+      sysGroup: 'Planets per system', sysMin: { 4: '4+', 5: '5+', 6: '6+' },
+      gaps: 'Show suspected gaps',
+      gapsHint: 'Dashed rings: places where, by the Titius-Bode relation, an undiscovered body could be orbiting',
+      multiOnly: 'Only stars with several planets',
+      solarSystem: 'Solar System', systemTitle: 'Planetary system', systemOf: (i, n) => 'System ' + i + ' of ' + n,
+      sysPlanets: (n) => n + ' known planets',
+      sysLink: (name, n) => name + ' system: ' + n + ' known planets',
+      sysStrip: (name) => name + ', from the inside out', sysStar: 'Star: show the whole system',
+      sysLegend: { star: 'star', hz: 'habitable zone', gap: 'suspected gap' },
+      sysFacts: { starMass: 'Mass of the star', starRadius: 'Radius of the star', hzRange: 'Habitable zone', inHz: 'Planets in the zone', none: 'none' },
+      hzRangeNote: 'Distance from the star, generous limits',
+      sunMasses: ' solar masses', sunRadii: ' solar radii', range: (a, b) => a + ' to ' + b,
+      sysList: 'Planets from the inside out', sysSearch: (n) => 'System, ' + n + ' planets',
+      clickSystem: 'Click for the system',
+      gapTitle: 'Suspected gap', gapAt: (period) => 'orbital period about ' + period, gapNote: 'from the Titius-Bode relation, not a discovery',
+      tb: {
+        title: 'Regular spacing (Titius-Bode relation)',
+        few: 'Whether the orbital periods follow a fixed rule can only be tested with at least four known planets.',
+        fit: (factor, r2) => 'From one planet to the next, the orbital period grows by a factor of ' + factor + ' on average (goodness of fit: R² = ' + r2 + ').',
+        full: 'The sequence works without a gap: by this rule, no planet is missing between the known ones.',
+        gaps: (n, list) => (n === 1 ? 'For the sequence to work, one place stays empty' : 'For the sequence to work, ' + n + ' places stay empty') +
+          ' (orbital period about ' + list + '). An undiscovered planet or an asteroid belt could be orbiting there. This is a conjecture, not a discovery.',
+        solar: 'In the Solar System, the asteroid belt with the dwarf planet Ceres (orbital period 4.6 years) lies there, between Mars and Jupiter.',
+        none: 'The orbital periods do not follow such a sequence, not even with up to four empty places.',
+        source: 'Method: ', sourceAfter: ', applied here to the current catalog. The paper reports a success rate of 78%; the relation is disputed because it has no physical explanation.',
+        and: ' and ',
+        dev: (name, pct) => 'Farthest from the sequence: ' + name + ' (' + pct + ').',
+        chartTop: 'Orbital period in days', chartBottom: 'Deviation from the sequence', chartX: 'Place',
+        chartLabel: 'Chart: orbital periods of the planets and the Titius-Bode sequence',
+        chartNote: 'Top: the sequence as a straight line. Bottom: how far each planet lies from it. A planet at an arbitrary position would also fall inside the gray band (up to halfway to the neighboring place): the closer the dots are to the zero line, the better the sequence holds.',
+        pointTitle: (name, period, pct) => name + ': ' + period + ', ' + pct + ' off the sequence',
+      },
       density: { water: 'water', earth: 'Earth' },
       colorBy: 'Color', colors: { type: 'Type', method: 'Method', star: 'Star' },
       typeGroup: 'Planet type', methodGroup: 'Detection method', hzGroup: 'Habitable zone',
@@ -322,10 +470,12 @@
       solarOf: (i, n) => 'Planet ' + i + ' of ' + n + ' of our Solar System', sunDistance: 'Distance from the Sun',
       moons: 'Known moons', noMoons: 'none', asOf: (when) => 'As of: ' + when,
       timeline: 'Discovered by', play: 'Time lapse', pause: 'Pause', stories: 'Stories',
+      timeToggle: 'Timeline', timeShow: 'Show timeline and time lapse', timeHide: 'Hide timeline',
       guideTitle: 'Thousands of worlds at a glance',
       guideAxes: { mp: 'Planets get heavier to the right; higher up, one orbit takes longer.',
         rs: 'To the right, planets receive less light from their star; higher up, they are larger.',
-        mr: 'Planets get heavier to the right and larger toward the top. The dashed lines connect planets of equal density; only planets with a measured mass and size are shown.' },
+        mr: 'Planets get heavier to the right and larger toward the top. The dashed lines connect planets of equal density; only planets with a measured mass and size are shown.',
+        sys: 'Each row is a star with its known planets: inner ones on the left, outer ones on the right. The green band is the habitable zone; dashed rings are suspected gaps.' },
       guide: 'Every dot is a planet around another star.',
       facts: { type: 'Type', mass: 'Mass', radius: 'Radius', period: 'Orbital period', axis: 'Distance from star',
         flux: 'Starlight', hz: 'Habitable zone', esi: 'Earth similarity', star: 'Star', dist: 'Distance',
@@ -354,7 +504,6 @@
       hidden: 'This planet is hidden by the current filters.',
       showAll: 'Reset filters', resetView: 'Reset zoom: show the whole chart (double click)',
       noData: 'No data found: data.js is missing. Please run "node update-data.js".',
-      sysSiblings: 'Other planets of this star',
     },
   };
 
@@ -394,10 +543,13 @@
     estMass: true,        // Planeten mit geschätzter Masse zeigen
     estPeriod: true,      // Planeten mit berechneter Umlaufzeit zeigen
     storiesOnly: false,
+    multiOnly: false,     // nur Sterne mit mindestens zwei bekannten Planeten
     tags: null,           // nur Berichte mit einem dieser Schlagwörter (oder null)
     yearMax: 0,
     colorBy: 'type',      // type | method | star
-    view: 'mp',           // mp: Masse/Umlaufzeit, rs: Einstrahlung/Radius
+    view: 'mp',           // mp: Masse/Umlaufzeit, rs: Einstrahlung/Radius, mr: Masse/Radius, sys: Planetensysteme
+    sysMin: 5,            // Ansicht "Planetensysteme": Systeme ab so vielen Planeten
+    gaps: true,           // vermutete Lücken (Titius-Bode) zeigen
     preset: 'all',
   };
   const PRESETS = {
@@ -410,6 +562,8 @@
 
   let points = [];          // alle Planeten
   let stories = [];         // Berichte, nach Datum sortiert
+  let multiSystems = [];    // Systeme mit mindestens zwei Planeten, die größten zuerst
+  let sysRows = [SUN];      // Zeilen der Ansicht "Planetensysteme", oben das Sonnensystem
   let byName = new Map();
   let minYear = 1988, maxYear = 2026;
   let counts = { total: 0, est: 0, comp: 0 };
@@ -422,6 +576,9 @@
     if (e >= 9) return num(v / 1e9) + (lang === 'de' ? ' Mrd.' : ' billion');
     if (e >= 6) return num(v / 1e6) + (lang === 'de' ? ' Mio.' : ' million');
     return num(v, 1);
+  }
+  function periodShort(days) {   // ohne den Zusatz in Tagen
+    return days < 1000 ? periodText(days) : num(days / DAYS_PER_YEAR) + tx.years;
   }
   function periodText(days) {
     if (days < 1) return num(days * 24) + tx.hours;
@@ -443,6 +600,10 @@
 
   // ================================================================= Daten
   function starName(name) { return name.replace(/\s?[b-z]$/, ''); }
+  // Namen für Planeten (Exoplanet oder Planet der Sonne) und Systeme.
+  function bodyName(q) { return q.isSolar ? tx.planets[q.key] : q.name; }
+  function shortName(q) { return q.isSolar ? '' : (q.name.slice(q.star.length).trim() || q.name); }
+  function sysName(sys) { return sys.solar ? tx.solarSystem : sys.name; }
   function normName(name) { return name.toLowerCase().replace(/[\s'’()]/g, ''); }
 
   function buildPoints() {
@@ -473,6 +634,7 @@
           name: row[0], massE: massE, period: row[2], method: row[3], mi: classifyMethod(row[3]),
           year: typeof row[4] === 'number' ? row[4] : null, sp: row[5] || '', teff: row[6] || null,
           axis: row[9] || null, ecc: row[10] || null, distLy: row[11] ? row[11] * LY_PER_PC : null,
+          starR: row[7] || null, starM: row[8] || null,
           radiusE: radiusE, plotRadius: plotRadius, estMass: kind === 2, estPeriod: kind === 1, estRadius: estRadius,
           flux: flux, hz: hzClass(flux, row[6]), esi: esi(plotRadius, flux),
           star: starName(row[0]), stories: [], a: 0, vis: false,
@@ -484,6 +646,7 @@
           // Masse gegen Größe: nur wo beides gemessen ist (Schätzwerte lägen
           // alle auf der Schätzkurve und würden eine Regel vortäuschen).
           mr: (kind !== 2 && radiusE !== null) ? [log10(massE), log10(radiusE)] : null,
+          sys: null,   // Zeile in der Ansicht "Planetensysteme", siehe layoutSystems
         };
         list.push(p);
       }
@@ -500,7 +663,19 @@
     // Geschwister: Planeten desselben Sterns.
     const systems = new Map();
     for (const p of list) (systems.get(p.star) || systems.set(p.star, []).get(p.star)).push(p);
-    for (const p of list) p.system = systems.get(p.star);
+    multiSystems = [];
+    for (const entry of systems) {
+      const members = entry[1];
+      const planets = members.slice().sort((a, b) => a.period - b.period);
+      const first = (key) => { const q = planets.find((x) => x[key]); return q ? q[key] : null; };
+      const sys = { name: entry[0], solar: false, planets: planets, teff: first('teff'), starR: first('starR'), starM: first('starM'),
+        sp: first('sp') || '', distLy: first('distLy'), row: -1 };
+      sys.hz = systemHz(sys.teff, sys.starR, sys.starM);
+      sys.fit = planets.length >= TB_MIN_PLANETS ? tbFit(planets.map((q) => q.period)) : undefined;
+      for (const p of members) { p.system = members; p.sys = sys; }
+      if (planets.length > 1) multiSystems.push(sys);
+    }
+    multiSystems.sort((a, b) => b.planets.length - a.planets.length || a.name.localeCompare(b.name, 'en', { numeric: true }));
     return list;
   }
 
@@ -537,8 +712,8 @@
   let W = 0, H = 0, dpr = 1;
   const M = { l: 70, r: 64, t: 40, b: 50 };   // Ränder der Zeichenfläche
   let plot = { l: 0, t: 0, w: 1, h: 1, r: 1, b: 1 };
-  const home = { mp: null, rs: null, mr: null };     // Startausschnitt je Ansicht
-  const limits = { mp: null, rs: null, mr: null };   // weiter hinaus lässt sich nicht zoomen
+  const home = { mp: null, rs: null, mr: null, sys: null };     // Startausschnitt je Ansicht
+  const limits = { mp: null, rs: null, mr: null, sys: null };   // weiter hinaus lässt sich nicht zoomen
   let view = null;                            // aktueller Ausschnitt {x0,x1,y0,y1}
   let morph = null;                           // Übergang zwischen zwei Ansichten
   let viewTween = null, alphaTween = false;
@@ -549,6 +724,7 @@
   let hlStory = null;      // Bericht, dessen Planeten hervorgehoben sind
   let playTimer = 0;
   let moreOpen = false;    // "Weitere Filter" aufgeklappt
+  let timeOpen = false;    // Zeitleiste unter dem Diagramm aufgeklappt
   const sprites = {};      // Leuchtpunkte je Farbe
 
   function sprite(color) {
@@ -585,8 +761,9 @@
     if (!teffPalette[i]) teffPalette[i] = teffColor(Math.pow(10, lo + (i + 0.5) / TEFF_BUCKETS * (hi - lo)));
     return teffPalette[i];
   }
-  // Beruht die Lage des Punktes in der aktuellen Ansicht auf einer Schätzung?
-  function isEstimate(p) { return state.view === 'rs' ? p.estRadius : state.view === 'mr' ? false : p.estMass; }
+  // Beruht die Lage des Punktes in der Ansicht auf einer Schätzung?
+  function estimateIn(p, name) { return name === 'rs' ? p.estRadius : name === 'mr' ? false : p.estMass; }
+  function isEstimate(p) { return estimateIn(p, state.view); }
   function pointColors(p) {   // [Kern, Leuchten]
     if (state.colorBy === 'method') return [METHODS[p.mi].glow, METHODS[p.mi].color];
     if (state.colorBy === 'star') { const c = teffBucketColor(p.teff); return [c, c]; }
@@ -624,6 +801,52 @@
     limits.mr = { x0: qx[0], x1: qx[1], y0: qy[0], y1: qy[1] };
   }
 
+  // ---- Ansicht "Planetensysteme": je Zeile ein Stern, waagrecht die
+  // Umlaufzeit. Die Namen stehen in einer festen Spalte am linken Rand, die
+  // ein Stück in die Zeichenfläche ragt (sysBand: ihr rechter Rand).
+  const SYS_MIN_ROWS = 12;   // so viele Zeilen hoch ist der Ausschnitt mindestens
+  let sysKey = '';
+  function sysBand() { return Math.max(plot.l, 134); }
+  function rowHeight(v) { return plot.h / (v.y1 - v.y0); }
+  // Legt fest, welche Systeme eine Zeile bekommen: alle mit mindestens
+  // state.sysMin Planeten, von denen wenigstens einer zu den Filtern passt
+  // (das Entdeckungsjahr zählt nicht, damit die Zeilen im Zeitraffer stehen
+  // bleiben). Liefert true, wenn sich die Zeilen geändert haben.
+  function layoutSystems(force) {
+    const key = [state.types, state.methods, state.hz, state.maxDist, state.estMass, state.estPeriod, state.storiesOnly,
+      state.multiOnly, state.tags, state.sysMin].join('|');
+    const changed = key !== sysKey;
+    if (changed) {
+      sysKey = key;
+      for (const s of sysRows) if (!s.solar) { s.row = -1; for (const q of s.planets) q.pos.sys = null; }
+      sysRows = [SUN].concat(multiSystems.filter((s) => s.planets.length >= state.sysMin && s.planets.some((q) => filterOk(q, 'sys', true))));
+      sysRows.forEach((s, i) => { s.row = i; if (!s.solar) for (const q of s.planets) q.pos.sys = [log10(q.period), -i]; });
+    }
+    if (changed || force) {
+      let lo = Infinity, hi = -Infinity;
+      for (const s of sysRows) for (const q of s.planets) { const lx = log10(q.period); if (lx < lo) lo = lx; if (lx > hi) hi = lx; }
+      // Der innerste Planet steht knapp rechts der Namensspalte.
+      const inner = sysBand() + 18 - plot.l, usable = Math.max(80, plot.w - 18 - inner);
+      const span = (hi - lo) * plot.w / usable, x0 = lo - inner / plot.w * span;
+      const box = { x0: x0, x1: x0 + span, y0: -Math.max(sysRows.length - 1, SYS_MIN_ROWS - 1) - 0.75, y1: 0.75 };
+      home.sys = box; limits.sys = Object.assign({}, box);
+    }
+    return changed;
+  }
+  // Kleinster Ausschnitt beim Hineinzoomen (waagrecht bzw. senkrecht).
+  function minSpan(axis) {
+    if (state.view !== 'sys' || axis === 'x') return 0.08;
+    return Math.min(6, limits.sys.y1 - limits.sys.y0);
+  }
+  // Größter Punktradius: in der Ansicht "Planetensysteme" durch die Zeilenhöhe begrenzt.
+  function sizeCap() {
+    const of = (name, v) => (name === 'sys' ? Math.max(1.3, rowHeight(v) * 0.44) : 60);
+    if (!morph) return of(state.view, view);
+    const a = of(morph.from, morph.fromView), b = of(morph.to, morph.toView);
+    return a + (b - a) * morph.e;
+  }
+  function baseR(p) { return Math.min(TYPES[p.ti].size * zoomScale(), sizeCap()); }
+
   function resize() {
     const box = dom.chart.getBoundingClientRect();
     W = Math.max(320, Math.round(box.width)); H = Math.max(240, Math.round(box.height));
@@ -634,7 +857,14 @@
     }
     const narrow = W < 620;
     M.l = narrow ? 48 : 70; M.r = narrow ? 14 : 96;
+    const wasHome = state.view === 'sys' && view && home.sys && isHomeView();
     plot = { l: M.l, t: M.t, w: W - M.l - M.r, h: H - M.t - M.b, r: W - M.r, b: H - M.b };
+    // Der Ausschnitt der Systemansicht hängt von der Breite ab (Namensspalte).
+    if (points.length) {
+      layoutSystems(true);
+      if (morph && morph.to === 'sys') morph.toView = Object.assign({}, home.sys);
+      else if (wasHome) view = Object.assign({}, home.sys);
+    }
     staticDirty = overlayDirty = true;
     schedule();
   }
@@ -665,9 +895,17 @@
 
   let sparse = 1;          // größer zeichnen, wenn nur wenige Planeten zu sehen sind
   let visibleCount = 0;
-  function zoomScale() {   // 1 bei ganzer Ansicht, größer beim Hineinzoomen
-    const h = home[state.view];
-    return clamp(Math.pow((h.x1 - h.x0) / (view.x1 - view.x0), 0.35), 1, 3.2) * sparse;
+  // Maßstab der Punkte: 1 bei ganzer Ansicht, größer beim Hineinzoomen. In der
+  // Ansicht "Planetensysteme" richtet er sich nach der Zeilenhöhe.
+  function scaleOf(name, v) {
+    if (name === 'sys') return clamp(rowHeight(v) / 7, 0.95, 3.4);
+    const h = home[name];
+    return clamp(Math.pow((h.x1 - h.x0) / (v.x1 - v.x0), 0.35), 1, 3.2) * sparse;
+  }
+  function zoomScale() {
+    if (!morph) return scaleOf(state.view, view);
+    const a = scaleOf(morph.from, morph.fromView), b = scaleOf(morph.to, morph.toView);
+    return a + (b - a) * morph.e;
   }
 
   // --------------------------------------------------------------- Achsen
@@ -684,6 +922,11 @@
       xTitle: () => tx.axisMass, yTitle: () => tx.axisRadius,
       xLabel: (e) => pow10Label(e), yLabel: (e) => pow10Label(e),
     },
+    // Planetensysteme: senkrecht stehen die Zeilen, keine Skala.
+    sys: {
+      xTitle: () => tx.axisPeriod, yTitle: () => '',
+      xLabel: (e) => pow10Label(e), yLabel: () => '',
+    },
   };
   // Linien gleicher mittlerer Dichte in der Ansicht Masse/Größe (g/cm³). Auf
   // einer Linie gilt Masse / Radius³ = Dichte / Erddichte.
@@ -696,12 +939,14 @@
     g.save();
     g.globalAlpha = alpha;
     g.lineWidth = 1;
-    const fineX = (v.x1 - v.x0) < 2.4, fineY = (v.y1 - v.y0) < 2.4;
+    const isSys = name === 'sys';
+    const fineX = (v.x1 - v.x0) < 2.4, fineY = !isSys && (v.y1 - v.y0) < 2.4;
+    const xMin = isSys ? sysBand() + 12 : -Infinity;   // unter der Namensspalte keine Beschriftung
     // Gitter an jeder Dekade, beim Hineinzoomen zusätzlich bei 2 und 5.
     g.beginPath();
     const xs = [], ys = [];
     for (let e = Math.ceil(v.x0); e <= Math.floor(v.x1); e++) xs.push(e);
-    for (let e = Math.ceil(v.y0); e <= Math.floor(v.y1); e++) ys.push(e);
+    if (!isSys) for (let e = Math.ceil(v.y0); e <= Math.floor(v.y1); e++) ys.push(e);
     for (const e of xs) { const x = Math.round(sxOf(v, e)) + 0.5; g.moveTo(x, plot.t); g.lineTo(x, plot.b); }
     for (const e of ys) { const y = Math.round(syOf(v, e)) + 0.5; g.moveTo(plot.l, y); g.lineTo(plot.r, y); }
     g.strokeStyle = 'rgba(150,170,255,0.13)';
@@ -727,7 +972,7 @@
     g.textAlign = 'center'; g.textBaseline = 'top';
     // Platz für den Knopf "Alles zeigen" unten rechts, solange er zu sehen ist.
     const reserved = dom.homeBtn.hidden ? 0 : dom.homeBtn.offsetWidth + 22;
-    const clearOfButton = (x) => x < W - reserved - 18 || (M.r >= 40 && reserved < M.r);
+    const clearOfButton = (x) => x > xMin && (x < W - reserved - 18 || (M.r >= 40 && reserved < M.r));
     for (const e of xs) if (clearOfButton(sxOf(v, e))) g.fillText(ax.xLabel(e), sxOf(v, e), plot.b + 8);
     g.textAlign = 'right'; g.textBaseline = 'middle';
     for (const e of ys) g.fillText(ax.yLabel(e), plot.l - 9, syOf(v, e));
@@ -742,10 +987,12 @@
     g.font = '600 13px ' + FONT_UI;
     g.textAlign = 'center'; g.textBaseline = 'alphabetic';
     g.fillText(ax.xTitle(), plot.l + plot.w / 2, H - 9);
-    g.save();
-    g.translate(15, plot.t + plot.h / 2); g.rotate(-Math.PI / 2);
-    g.fillText(ax.yTitle(), 0, 0);
-    g.restore();
+    if (!isSys) {
+      g.save();
+      g.translate(15, plot.t + plot.h / 2); g.rotate(-Math.PI / 2);
+      g.fillText(ax.yTitle(), 0, 0);
+      g.restore();
+    }
 
     g.font = '11.5px ' + FONT_UI;
     g.fillStyle = '#7f88ad';
@@ -788,6 +1035,15 @@
         g.restore();
       }
       g.restore();
+    } else if (isSys) {
+      // Zweite Skala oben: Jahre.
+      g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+      for (let e = -1; e <= 6; e++) {
+        const x = sxOf(v, e + log10(DAYS_PER_YEAR));
+        if (x < xMin + 20 || x > plot.r - 8) continue;
+        g.fillRect(Math.round(x), plot.t - 4, 1, 4);
+        g.fillText(pow10Label(e) + (e === 0 ? tx.year : tx.years), x, plot.t - 8);
+      }
     } else if (name === 'mp') {
       // Zweite Skala rechts: Jahre.
       g.textAlign = 'left';
@@ -818,6 +1074,83 @@
     g.restore();
   }
 
+  // ---- Ansicht "Planetensysteme": Zeilen. layer 'under' liegt unter den
+  // Punkten (Leitlinien, habitable Zone, vermutete Lücken), 'over' darüber
+  // (die feste Namensspalte am linken Rand mit dem Stern jeder Zeile).
+  function fitText(g, text, width) {
+    if (g.measureText(text).width <= width) return text;
+    let t = text;
+    while (t.length > 3 && g.measureText(t + '…').width > width) t = t.slice(0, -1);
+    return t + '…';
+  }
+  function drawSystems(g, v, alpha, layer) {
+    if (alpha <= 0.01) return;
+    const rowH = rowHeight(v), band = sysBand();
+    const live = !morph;
+    g.save();
+    g.globalAlpha = alpha;
+    if (layer === 'under') {
+      const showGaps = state.gaps && state.yearMax >= maxYear;
+      const hzH = clamp(rowH * 0.62, 2.5, 18), gapR = clamp(rowH * 0.3, 2.2, 5.5);
+      g.lineWidth = 1;
+      g.strokeStyle = 'rgba(150,170,255,0.08)';
+      g.beginPath();
+      for (const s of sysRows) {
+        s.sy = syOf(v, -s.row);
+        s.on = s.sy > plot.t - rowH && s.sy < plot.b + rowH;
+        if (s.on && rowH >= 5) { const y = Math.round(s.sy) + 0.5; g.moveTo(band, y); g.lineTo(plot.r, y); }
+      }
+      g.stroke();
+      for (const s of sysRows) {
+        if (s.fit) for (const gap of s.fit.gaps) gap.sx = NaN;
+        if (!s.on) continue;
+        if (s.hz) {
+          // Habitable Zone: außen die großzügigen, innen die vorsichtigen Grenzen.
+          const xa = sxOf(v, log10(s.hz.o0.p)), xb = sxOf(v, log10(s.hz.o1.p));
+          const xc = sxOf(v, log10(s.hz.c0.p)), xd = sxOf(v, log10(s.hz.c1.p));
+          g.fillStyle = 'rgba(63,224,166,0.15)'; g.fillRect(xa, s.sy - hzH / 2, xb - xa, hzH);
+          g.fillStyle = 'rgba(63,224,166,0.18)'; g.fillRect(xc, s.sy - hzH / 2, xd - xc, hzH);
+        }
+        if (showGaps && s.fit) {
+          g.strokeStyle = 'rgba(232,236,255,0.9)'; g.lineWidth = 1.1;
+          g.setLineDash([2.2, 2.2]);
+          for (const gap of s.fit.gaps) {
+            const x = sxOf(v, log10(gap.period));
+            g.beginPath(); g.arc(x, s.sy, gapR, 0, 6.2832); g.stroke();
+            if (live) { gap.sx = x; gap.sy = s.sy; }
+          }
+          g.setLineDash([]);
+        }
+      }
+    } else {
+      // Namensspalte: verdeckt, was unter sie geschoben wird.
+      g.fillStyle = 'rgba(9,14,36,0.95)';
+      g.fillRect(plot.l, plot.t, band - plot.l, plot.h);
+      g.fillStyle = 'rgba(150,170,255,0.22)';
+      g.fillRect(Math.round(band), plot.t, 1, plot.h);
+      g.beginPath(); g.rect(0, plot.t, band, plot.h); g.clip();
+      const size = rowH >= 15 ? 12 : rowH >= 11.5 ? 11 : 0;
+      g.textAlign = 'right'; g.textBaseline = 'middle';
+      const starX = band - 13;
+      for (const s of sysRows) {
+        if (!s.on) continue;
+        const col = s.solar ? '#ffd76a' : teffColor(s.teff);
+        const r = clamp(rowH * 0.3, 1.5, 5) * (s.starR ? clamp(0.62 + 0.4 * Math.sqrt(s.starR), 0.7, 1.45) : 1);
+        g.globalAlpha = alpha * 0.55;
+        g.drawImage(sprite(col), starX - r * 2.6, s.sy - r * 2.6, r * 5.2, r * 5.2);
+        g.globalAlpha = alpha;
+        g.fillStyle = col;
+        g.beginPath(); g.arc(starX, s.sy, r, 0, 6.2832); g.fill();
+        if (size) {
+          g.font = (s.solar ? '600 ' : '') + size + 'px ' + FONT_UI;
+          g.fillStyle = s.solar ? '#f4f1e4' : '#c3c9e6';
+          g.fillText(fitText(g, sysName(s), band - 34), band - 26, s.sy);
+        }
+      }
+    }
+    g.restore();
+  }
+
   // Benannte Regionen. x, y: Ort des Namens; box: Ausschnitt, in den ein Klick
   // auf den Namen zoomt (x0, x1, y0, y1 in den Einheiten der Achsen, log10).
   const REGIONS = {
@@ -836,6 +1169,7 @@
       { key: 'gasGiants', x: log10(2600), y: log10(5.6), box: [log10(40), log10(9000), log10(5), log10(26)] },
       { key: 'puffy', x: log10(28), y: log10(17), box: [log10(4), log10(400), log10(6), log10(26)] },
     ],
+    sys: [],
   };
   function drawRegions(g, name, v, alpha) {
     for (const r of REGIONS[name]) r.rect = null;
@@ -882,13 +1216,14 @@
     g.globalAlpha = 1;
   }
 
-  SOLAR.forEach((s) => { s.pos = { mp: [log10(s.m), log10(s.p)], rs: [-log10(s.s), log10(s.r)], mr: [log10(s.m), log10(s.r)] }; });
+  SOLAR.forEach((s) => { s.pos = { mp: [log10(s.m), log10(s.p)], rs: [-log10(s.s), log10(s.r)], mr: [log10(s.m), log10(s.r)],
+    sys: [log10(s.p), 0] }; });   // das Sonnensystem ist immer die oberste Zeile
   function solarPos(s, name, v) { return [sxOf(v, s.pos[name][0]), syOf(v, s.pos[name][1])]; }
   // Zoomt auf alle sichtbaren Planeten; Erde, Venus und Mars bleiben als
   // Vergleich im Bild.
   function focusVisible(ms) {
     const list = points.filter((p) => p.vis && p.pos[state.view]);
-    if (!list.length) { flyTo(home[state.view], ms); return; }
+    if (!list.length || state.view === 'sys') { flyTo(home[state.view], ms); return; }
     flyToPoints(list.concat(SOLAR.filter((s) => s.key === 'earth' || s.key === 'venus' || s.key === 'mars')), ms, 0.22);
   }
 
@@ -909,8 +1244,16 @@
     }
     g.save();
     g.beginPath(); g.rect(plot.l, plot.t, plot.w, plot.h); g.clip();
+    // Zeilen der Systemansicht; während eines Wechsels blenden sie um.
+    const sysLayer = (layer) => {
+      if (morph) {
+        if (morph.from === 'sys') drawSystems(g, morph.fromView, 1 - morph.e, layer);
+        if (morph.to === 'sys') drawSystems(g, morph.toView, morph.e, layer);
+      } else if (state.view === 'sys') drawSystems(g, view, 1, layer);
+    };
+    sysLayer('under');
 
-    const zs = zoomScale();
+    const zs = zoomScale(), cap = sizeCap();
     const dense = points.length > 5000 ? 0.8 : 1;
     // 1. Leuchten (additiv): dichte Gebiete werden zu hellen Wolken.
     g.globalCompositeOperation = 'lighter';
@@ -919,7 +1262,7 @@
       const a = p.a * p.fade;
       if (a <= 0.01 || p.sx < plot.l - 20 || p.sx > plot.r + 20 || p.sy < plot.t - 20 || p.sy > plot.b + 20) continue;
       const big = p.stories.length ? 1.5 : 1;
-      const s = TYPES[p.ti].size * zs * 7.5 * big;
+      const s = Math.min(TYPES[p.ti].size * zs * 7.5 * big, cap * 6.5);
       g.globalAlpha = a * (isEstimate(p) ? 0.10 : 0.20) * dense * (p.stories.length ? 1.8 : 1);
       g.drawImage(sprite(pointColors(p)[1]), p.sx - s / 2, p.sy - s / 2, s, s);
     }
@@ -928,7 +1271,7 @@
     for (const p of points) {
       const a = p.a * p.fade;
       if (a <= 0.01 || p.sx < plot.l - 6 || p.sx > plot.r + 6 || p.sy < plot.t - 6 || p.sy > plot.b + 6) continue;
-      const r = TYPES[p.ti].size * zs * (p.stories.length ? 1.35 : 1);
+      const r = Math.min(TYPES[p.ti].size * zs * (p.stories.length ? 1.35 : 1), cap);
       const col = pointColors(p)[0];
       const est = isEstimate(p);
       g.globalAlpha = a * (est ? 0.6 : 0.95);
@@ -947,13 +1290,16 @@
       if (al <= 0.01) return;
       g.font = '500 12.5px ' + FONT_UI;
       g.textBaseline = 'middle';
+      // In der Systemansicht kleiner (Zeilenhöhe) und ohne Namen: die Zeile heißt "Sonnensystem".
+      const inRow = name === 'sys', k = inRow ? clamp(rowHeight(v) * 0.36 / 4.2, 0.5, 1) : 1;
       for (const s of SOLAR) {
         const q = solarPos(s, name, v);
         s.sx = q[0]; s.sy = q[1];
         g.globalAlpha = al;
-        g.fillStyle = '#060917'; g.beginPath(); g.arc(q[0], q[1], 5.2, 0, 6.2832); g.fill();
-        g.strokeStyle = '#f4f1e4'; g.lineWidth = 1.6; g.beginPath(); g.arc(q[0], q[1], 4.2, 0, 6.2832); g.stroke();
-        if (s.key === 'earth') { g.fillStyle = '#f4f1e4'; g.beginPath(); g.arc(q[0], q[1], 1.8, 0, 6.2832); g.fill(); }
+        g.fillStyle = '#060917'; g.beginPath(); g.arc(q[0], q[1], 5.2 * k, 0, 6.2832); g.fill();
+        g.strokeStyle = '#f4f1e4'; g.lineWidth = 1.6 * Math.sqrt(k); g.beginPath(); g.arc(q[0], q[1], 4.2 * k, 0, 6.2832); g.stroke();
+        if (s.key === 'earth') { g.fillStyle = '#f4f1e4'; g.beginPath(); g.arc(q[0], q[1], 1.8 * k, 0, 6.2832); g.fill(); }
+        if (inRow) { s.label = null; continue; }
         const left = s.key === 'venus' || s.key === 'uranus' || s.key === 'saturn';
         g.textAlign = left ? 'right' : 'left';
         g.lineWidth = 3.5; g.strokeStyle = 'rgba(6,9,23,0.85)'; g.lineJoin = 'round';
@@ -977,6 +1323,7 @@
       drawRegions(g, morph.to, morph.toView, morph.e);
     } else drawRegions(g, state.view, view, 1);
     g.restore();
+    sysLayer('over');
 
     g.strokeStyle = 'rgba(150,170,255,0.28)';
     g.lineWidth = 1;
@@ -1004,10 +1351,27 @@
     const target = pinned && pinned.kind === 'planet' ? pinned.p : null;
     const hp = hover && hover.kind === 'planet' ? hover.p : null;
     if (hlStory) hlStory.points.forEach((p) => focus.add(p));
+    const inSys = state.view === 'sys' && !morph;
+    const selSys = pinned && pinned.kind === 'system' ? pinned.sys : null;
+    const hovSys = hover && (hover.kind === 'system' || hover.kind === 'gap') ? hover.sys : null;
+    if (selSys && !selSys.solar) selSys.planets.forEach((p) => focus.add(p));
+    if (inSys) {
+      // Gewählte Zeile bzw. Zeile unter dem Mauszeiger.
+      const rowH = rowHeight(view);
+      for (const s of new Set([selSys, hovSys])) {
+        if (!s || s.row < 0) continue;
+        g.fillStyle = s === selSys ? 'rgba(255,255,255,0.09)' : 'rgba(255,255,255,0.05)';
+        g.fillRect(plot.l, s.sy - rowH / 2, plot.w, rowH);
+      }
+      if (hover && hover.kind === 'gap' && isFinite(hover.gap.sx)) {
+        g.strokeStyle = '#ffffff'; g.lineWidth = 1.6;
+        g.beginPath(); g.arc(hover.gap.sx, hover.gap.sy, clamp(rowH * 0.3, 2.2, 5.5) + 3.5, 0, 6.2832); g.stroke();
+      }
+    }
 
     // Ringe um Planeten mit Bericht; sie pulsieren langsam.
     for (const p of rp) {
-      const base = TYPES[p.ti].size * zoomScale() * 1.35 + 3.5;
+      const base = Math.min(TYPES[p.ti].size * zoomScale() * 1.35, sizeCap()) + 3.5;
       const col = pointColors(p)[0];
       g.lineWidth = 1.3;
       g.strokeStyle = col;
@@ -1028,34 +1392,42 @@
       g.lineWidth = 1;
       for (const q of sysOf.system) {
         if (q === sysOf || q.a * q.fade < 0.3) continue;
-        g.beginPath(); g.arc(q.sx, q.sy, TYPES[q.ti].size * zoomScale() + 5, 0, 6.2832); g.stroke();
+        g.beginPath(); g.arc(q.sx, q.sy, baseR(q) + 5, 0, 6.2832); g.stroke();
       }
     }
     // Hervorgehobener Bericht: kräftige Ringe.
     for (const p of focus) {
       if (p.fade < 0.3) continue;
       g.strokeStyle = '#ffffff'; g.lineWidth = 2;
-      g.beginPath(); g.arc(p.sx, p.sy, TYPES[p.ti].size * zoomScale() + 8, 0, 6.2832); g.stroke();
+      g.beginPath(); g.arc(p.sx, p.sy, baseR(p) + (inSys ? 5 : 8), 0, 6.2832); g.stroke();
     }
     // Auswahl und Mauszeiger.
     for (const p of [target, hp]) {
       if (!p || p.fade < 0.3) continue;
-      const r = TYPES[p.ti].size * zoomScale() + 7;
+      const r = baseR(p) + 7;
       g.strokeStyle = '#ffffff'; g.lineWidth = p === target ? 2.2 : 1.6;
       g.beginPath(); g.arc(p.sx, p.sy, r, 0, 6.2832); g.stroke();
-      // Hilfslinien zu den Achsen.
+      // Hilfslinien zu den Achsen (in der Systemansicht nur zur Umlaufzeit).
       g.setLineDash([3, 4]);
       g.strokeStyle = 'rgba(255,255,255,0.28)'; g.lineWidth = 1;
-      g.beginPath(); g.moveTo(p.sx, p.sy + r); g.lineTo(p.sx, plot.b); g.moveTo(p.sx - r, p.sy); g.lineTo(plot.l, p.sy); g.stroke();
+      g.beginPath(); g.moveTo(p.sx, p.sy + r); g.lineTo(p.sx, plot.b);
+      if (state.view !== 'sys') { g.moveTo(p.sx - r, p.sy); g.lineTo(plot.l, p.sy); }
+      g.stroke();
       g.setLineDash([]);
     }
 
+    const solarR = inSys ? clamp(rowHeight(view) * 0.36, 2.1, 4.2) + 5 : 10;
     for (const target0 of [pinned, hover]) {
       if (!target0 || target0.kind !== 'solar' || morph) continue;
       const b0 = target0.s;
       if (b0.sx < plot.l || b0.sx > plot.r || b0.sy < plot.t || b0.sy > plot.b) continue;
       g.strokeStyle = '#f4f1e4'; g.lineWidth = target0 === pinned ? 2.2 : 1.6;
-      g.beginPath(); g.arc(b0.sx, b0.sy, 10, 0, 6.2832); g.stroke();
+      g.beginPath(); g.arc(b0.sx, b0.sy, solarR, 0, 6.2832); g.stroke();
+    }
+    // Das Sonnensystem als Ganzes gewählt: alle acht Marken.
+    if (selSys && selSys.solar && !morph) {
+      g.strokeStyle = '#f4f1e4'; g.lineWidth = 1.6;
+      for (const b0 of SOLAR) { g.beginPath(); g.arc(b0.sx, b0.sy, solarR, 0, 6.2832); g.stroke(); }
     }
     // Namen: ausgewählte zuerst, dann Planeten mit Bericht, solange Platz ist.
     const placed = [];
@@ -1064,10 +1436,15 @@
     const labeled = new Set();
     function label(p, strong) {
       if (!p || labeled.has(p)) return;
+      // Systemansicht: Buchstaben an allen Planeten nur, wenn die Zeilen hoch genug sind.
+      if (inSys && p !== target && p !== hp && rowHeight(view) < 26) return;
       labeled.add(p);
       if (p.a * p.fade < 0.3 || p.sx < plot.l || p.sx > plot.r || p.sy < plot.t || p.sy > plot.b) return;
-      const text = p.name, w = g.measureText(text).width, off = TYPES[p.ti].size * zoomScale() + 11;
-      const options = [[p.sx + off, p.sy, 'left'], [p.sx - off, p.sy, 'right'], [p.sx, p.sy - off - 6, 'center'], [p.sx, p.sy + off + 6, 'center']];
+      // In der Systemansicht nennt die Zeile den Stern; am Punkt steht nur der Buchstabe.
+      const text = inSys ? shortName(p) : p.name, w = g.measureText(text).width, off = baseR(p) + (inSys ? 7 : 11);
+      const options = inSys
+        ? [[p.sx, p.sy - off - 6, 'center'], [p.sx, p.sy + off + 6, 'center']]
+        : [[p.sx + off, p.sy, 'left'], [p.sx - off, p.sy, 'right'], [p.sx, p.sy - off - 6, 'center'], [p.sx, p.sy + off + 6, 'center']];
       for (const o of options) {
         const x0 = o[2] === 'left' ? o[0] : o[2] === 'right' ? o[0] - w : o[0] - w / 2;
         const rect = [x0 - 3, o[1] - 9, w + 6, 18];
@@ -1086,19 +1463,40 @@
     for (const p of focus) label(p, true);
     if (sysOf && sysOf.system.length > 1 && sysOf.system.length <= 9) for (const q of sysOf.system) label(q, false);
     g.font = '500 12px ' + FONT_UI;
-    if (rp.length <= 70) {
+    if (rp.length <= 70 && !inSys) {
       // Neuere Berichte zuerst.
       rp.slice().sort((a, b) => b.stories[b.stories.length - 1].t - a.stories[a.stories.length - 1].t)
         .forEach((p) => label(p, false));
     }
     // Sind nur wenige Planeten zu sehen, bekommen alle einen Namen.
-    if (visibleCount <= 60) {
+    if (visibleCount <= 60 && !inSys) {
       g.fillStyle = 'rgba(232,236,255,0.8)';
       points.filter((p) => p.vis).sort((a, b) => (b.esi || 0) - (a.esi || 0)).forEach((p) => label(p, false));
     }
     g.restore();
+    if (inSys) {
+      // Name der gewählten Zeile bzw. der Zeile unter dem Mauszeiger, auch
+      // wenn die Zeilen für Namen zu niedrig sind.
+      const band = sysBand();
+      g.save();
+      g.beginPath(); g.rect(0, plot.t, band, plot.h); g.clip();
+      g.font = '600 12px ' + FONT_UI;
+      g.textAlign = 'right'; g.textBaseline = 'middle';
+      for (const s of new Set([selSys, hovSys])) {
+        if (!s || s.row < 0 || !s.on) continue;
+        const text = fitText(g, sysName(s), band - 34), w = g.measureText(text).width;
+        g.fillStyle = 'rgba(9,14,36,0.96)';
+        g.fillRect(band - 30 - w, s.sy - 9, w + 8, 18);
+        g.fillStyle = '#ffffff';
+        g.fillText(text, band - 26, s.sy);
+      }
+      g.restore();
+    }
   }
 
+  // Systemansicht: Planeten einer gezeigten Zeile, die nicht zu den Filtern
+  // passen, bleiben blass sichtbar (und anklickbar).
+  const GHOST_ALPHA = 0.34;
   function schedule() {
     if (!rafId) rafId = requestAnimationFrame(frame);
   }
@@ -1124,7 +1522,7 @@
     if (alphaTween) {
       let moving = false;
       for (const p of points) {
-        const target = p.vis ? 1 : 0;
+        const target = p.vis ? 1 : p.ghost ? GHOST_ALPHA : 0;
         if (p.a === target) continue;
         p.a += (target - p.a) * (reducedMotion ? 1 : 0.22);
         if (Math.abs(target - p.a) < 0.02) p.a = target; else moving = true;
@@ -1145,12 +1543,12 @@
     const h = limits[state.view];
     const t = Object.assign({}, target);
     // Nicht weiter hinaus als die ganze Ansicht, nicht tiefer als 1/12 Dekade.
-    const fit = (lo, hi, a, b) => {
-      let span = clamp(b - a, 0.08, (hi - lo));
+    const fit = (lo, hi, a, b, least) => {
+      let span = clamp(b - a, least, (hi - lo));
       let c = clamp((a + b) / 2, lo + span / 2, hi - span / 2);
       return [c - span / 2, c + span / 2];
     };
-    const xr = fit(h.x0, h.x1, t.x0, t.x1), yr = fit(h.y0, h.y1, t.y0, t.y1);
+    const xr = fit(h.x0, h.x1, t.x0, t.x1, minSpan('x')), yr = fit(h.y0, h.y1, t.y0, t.y1, minSpan('y'));
     const to = { x0: xr[0], x1: xr[1], y0: yr[0], y1: yr[1] };
     if (reducedMotion || !ms) { view = to; viewTween = null; staticDirty = true; }
     else viewTween = { from: Object.assign({}, view), to: to, start: performance.now(), ms: ms };
@@ -1171,9 +1569,10 @@
     // Läuft noch ein Wechsel, wird er sofort abgeschlossen.
     if (morph) { view = Object.assign({}, morph.toView); morph = null; }
     const from = state.view;
+    state.view = name;
+    layoutSystems(false);   // die Zeilen der Systemansicht müssen vor dem Wechsel feststehen
     morph = { from: from, to: name, fromView: Object.assign({}, view), toView: Object.assign({}, home[name]),
       start: performance.now(), ms: reducedMotion ? 1 : 1100, e: 0, then: then || null };
-    state.view = name;
     viewTween = null;
     applyFilters();
     syncControls();
@@ -1181,11 +1580,14 @@
   }
 
   // ================================================================= Filter
-  function passes(p) {
+  // Passt der Planet zu den Filtern? name: Ansicht; anyYear: das
+  // Entdeckungsjahr nicht prüfen.
+  function filterOk(p, name, anyYear) {
     if (!state.types[p.ti] || !state.methods[p.mi]) return false;
-    if (!state.estMass && isEstimate(p)) return false;
-    if (p.estPeriod && !state.estPeriod && state.view === 'mp') return false;
-    if (p.year !== null && p.year > state.yearMax) return false;
+    if (!state.estMass && estimateIn(p, name)) return false;
+    if (p.estPeriod && !state.estPeriod && (name === 'mp' || name === 'sys')) return false;
+    if (!anyYear && p.year !== null && p.year > state.yearMax) return false;
+    if (state.multiOnly && p.system.length < 2) return false;
     if (state.hz === 'opt' && !(p.hz === 'inner' || p.hz === 'yes' || p.hz === 'outer')) return false;
     if (state.hz === 'con' && p.hz !== 'yes') return false;
     if (state.maxDist !== null && !(p.distLy !== null && p.distLy <= state.maxDist)) return false;
@@ -1195,7 +1597,13 @@
     }
     return true;
   }
+  function passes(p) { return filterOk(p, state.view, false); }
   function applyFilters() {
+    // Systemansicht: ändern sich die Zeilen, beginnt sie wieder beim ganzen Bild.
+    if (layoutSystems(false) && state.view === 'sys') {
+      if (morph && morph.to === 'sys') morph.toView = Object.assign({}, home.sys);
+      else if (!morph) { view = Object.assign({}, home.sys); viewTween = null; }
+    }
     let n = 0;
     const tCount = TYPES.map(() => 0), mCount = METHODS.map(() => 0);
     const perYear = new Array(maxYear - minYear + 1).fill(0);
@@ -1209,6 +1617,7 @@
       if (okM) mCount[p.mi]++;
       if (okY && p.year !== null) perYear[p.year - minYear]++;
       p.vis = passes(p);
+      p.ghost = state.view === 'sys' && !p.vis && !!p.pos.sys && (p.year === null || p.year <= state.yearMax);
       if (p.vis && p.pos[state.view]) n++;
     }
     alphaTween = true;
@@ -1236,9 +1645,9 @@
 
   function matchesPreset(name) {
     const base = { types: TYPES.map(() => true), methods: METHODS.map(() => true), hz: 'all', maxDist: null,
-      storiesOnly: false, tags: null };
+      storiesOnly: false, multiOnly: false, tags: null };
     const want = Object.assign(base, PRESETS[name]);
-    return ['hz', 'maxDist', 'storiesOnly'].every((k) => state[k] === want[k]) &&
+    return ['hz', 'maxDist', 'storiesOnly', 'multiOnly'].every((k) => state[k] === want[k]) &&
       String(state.types) === String(want.types) && String(state.methods) === String(want.methods) &&
       String(state.tags) === String(want.tags);
   }
@@ -1246,11 +1655,15 @@
   function filtersAtDefault() {
     return matchesPreset('all') && state.estMass && state.estPeriod && state.yearMax >= maxYear;
   }
-  function resetFilters() {
+  // Alle Filter in den Ausgangszustand (ohne neu zu zeichnen).
+  function openFilters() {
     state.types = TYPES.map(() => true); state.methods = METHODS.map(() => true);
-    state.hz = 'all'; state.maxDist = null; state.storiesOnly = false; state.tags = null;
+    state.hz = 'all'; state.maxDist = null; state.storiesOnly = false; state.multiOnly = false; state.tags = null;
     state.estMass = state.estPeriod = true;
     stopPlay(); state.yearMax = maxYear;
+  }
+  function resetFilters() {
+    openFilters();
     applyFilters(); syncControls();
     flyTo(home[state.view], 700);
   }
@@ -1261,6 +1674,7 @@
     state.hz = preset.hz || 'all';
     state.maxDist = preset.maxDist || null;
     state.storiesOnly = !!preset.storiesOnly;
+    state.multiOnly = !!preset.multiOnly;
     state.tags = preset.tags || null;
     stopPlay();
     state.yearMax = maxYear;
@@ -1299,7 +1713,10 @@
     // ---- Kopfzeile
     const head = el('header', 'atlas-head');
     const brand = el('div', 'atlas-brand');
-    dom.title = el('h1', 'atlas-title', tx.title);
+    dom.title = el('h1', 'atlas-title');
+    dom.titleText = el('span', '', tx.title);
+    dom.version = el('span', 'atlas-version', VERSION);
+    dom.title.append(dom.titleText, ' ', dom.version);
     dom.count = el('p', 'atlas-count');
     dom.count.setAttribute('aria-live', 'polite');
     dom.resetBtn = button('atlas-link atlas-reset', '', resetFilters);
@@ -1372,9 +1789,27 @@
     dom.syncers = [];
 
     const gView = group('view');
-    dom.viewButtons = segmented(gView, [{ value: 'mp', tx: 'views.mp' }, { value: 'rs', tx: 'views.rs' }, { value: 'mr', tx: 'views.mr' }],
-      () => state.view, (v) => setView(v));
+    dom.viewButtons = segmented(gView, [{ value: 'mp', tx: 'views.mp' }, { value: 'rs', tx: 'views.rs' }, { value: 'mr', tx: 'views.mr' },
+      { value: 'sys', tx: 'views.sys' }], () => state.view, (v) => setView(v));
     gView.querySelector('.atlas-seg').classList.add('atlas-seg-stack');
+
+    // Nur in der Ansicht "Planetensysteme": wie viele Planeten ein System
+    // mindestens haben muss, und ob die vermuteten Lücken zu sehen sind.
+    dom.sysGroup = group('sysGroup');
+    segmented(dom.sysGroup, [{ value: 4, tx: 'sysMin.4' }, { value: 5, tx: 'sysMin.5' }, { value: 6, tx: 'sysMin.6' }],
+      () => state.sysMin, (v) => { state.sysMin = v; applyFilters(); syncControls(); if (shown) renderPanel(); });
+    {
+      const b = button('atlas-check atlas-check-small atlas-switch atlas-gaps', '', () => {
+        state.gaps = !state.gaps; staticDirty = true; syncControls(); schedule(); if (shown) renderPanel();
+      });
+      b.setAttribute('role', 'checkbox');
+      const name = el('span', 'atlas-check-name');
+      name.dataset.tx = 'gaps';
+      b.append(el('i', 'atlas-box'), name, el('i', 'atlas-ring is-dashed'));
+      b.dataset.txTitle = 'gapsHint';
+      dom.sysGroup.appendChild(b);
+      dom.syncers.push(() => b.setAttribute('aria-checked', String(state.gaps)));
+    }
 
     const gType = group('typeGroup');
     dom.typeCounts = [];
@@ -1446,6 +1881,7 @@
     toggle('estMass', 'estMass');
     toggle('estPeriod', 'estPeriod');
     toggle('storiesOnly', 'storiesOnly');
+    toggle('multiOnly', 'multiOnly');
 
     // Die Farbe ist keine Filterung, sondern eine Darstellungsfrage: Sie steht
     // deshalb offen, unter der Entfernung und über "Weitere Filter".
@@ -1475,9 +1911,19 @@
     dom.chart.append(dom.base, dom.overlay, dom.tip, dom.homeBtn, dom.toast);
 
     // ---- Zeitleiste
+    // Anfangs eingeklappt: nur der Knopf "Zeitleiste" und das Jahr.
     const time = el('div', 'atlas-time');
+    dom.time = time;
+    dom.timeBtn = button('atlas-time-toggle', '', () => { timeOpen = !timeOpen; syncControls(); });
+    dom.timeLabel = el('span');
+    dom.timeBtn.append(dom.timeLabel, el('i', 'atlas-more-chevron'));
+    dom.timeBtn.setAttribute('aria-controls', 'atlas-track');
     dom.playBtn = button('atlas-play', '', togglePlay);
+    const timeLeft = el('div', 'atlas-time-left');
+    timeLeft.append(dom.timeBtn, dom.playBtn);
     const track = el('div', 'atlas-track');
+    track.id = 'atlas-track';
+    dom.track = track;
     dom.markerLayer = el('div', 'atlas-markers');
     const bars = el('div', 'atlas-bars');
     bars.setAttribute('aria-hidden', 'true');
@@ -1499,7 +1945,7 @@
     }
     track.append(dom.markerLayer, bars, dom.yearInput, ticks);
     dom.yearLabel = el('div', 'atlas-year-label');
-    time.append(dom.playBtn, track, dom.yearLabel);
+    time.append(timeLeft, track, dom.yearLabel);
     main.append(dom.chart, time);
 
     // ---- Infofeld rechts
@@ -1585,7 +2031,9 @@
   function syncControls() {
     document.documentElement.lang = lang;
     if (config.setTitle !== false) document.title = tx.title;
-    dom.title.textContent = tx.title;
+    dom.titleText.textContent = tx.title;
+    dom.version.title = 'Version ' + VERSION;
+    dom.sysGroup.hidden = state.view !== 'sys';
     dom.root.querySelectorAll('[data-tx]').forEach((n) => { n.textContent = tx[n.dataset.tx]; });
     dom.root.querySelectorAll('[data-tx-path]').forEach((n) => { n.textContent = txPath(n.dataset.txPath); });
     dom.presetButtons.forEach((b) => {
@@ -1618,7 +2066,7 @@
     });
     dom.starLegend.hidden = state.colorBy !== 'star';
     // "Weitere Filter": Zustand und Hinweis, wenn darin etwas vom Standard abweicht.
-    const moreChanged = !state.methods.every(Boolean) || !state.estMass || !state.estPeriod || state.storiesOnly;
+    const moreChanged = !state.methods.every(Boolean) || !state.estMass || !state.estPeriod || state.storiesOnly || state.multiOnly;
     dom.more.hidden = !moreOpen;
     dom.moreBtn.setAttribute('aria-expanded', String(moreOpen));
     dom.moreLabel.textContent = tx.moreGroup;
@@ -1631,6 +2079,11 @@
     dom.yearInput.setAttribute('aria-label', tx.timeline);
     dom.yearLabel.textContent = tx.timeline + ' ' + state.yearMax;
     dom.playBtn.textContent = (playTimer ? '❚❚ ' + tx.pause : '▶ ' + tx.play);
+    dom.time.classList.toggle('is-collapsed', !timeOpen);
+    dom.playBtn.hidden = dom.track.hidden = !timeOpen;
+    dom.timeLabel.textContent = tx.timeToggle;
+    dom.timeBtn.title = timeOpen ? tx.timeHide : tx.timeShow;
+    dom.timeBtn.setAttribute('aria-expanded', String(timeOpen));
     dom.homeBtn.title = tx.resetView;
     dom.homeBtn.setAttribute('aria-label', tx.resetView);
     dom.homeBtn.querySelector('span').textContent = tx.resetShort;
@@ -1711,12 +2164,19 @@
     for (const body0 of SOLAR) {
       if (normName(tx.planets[body0.key]).startsWith(n)) starts.push({ solar: body0 });
     }
+    // Systeme: das Sonnensystem und Sterne mit mehreren Planeten (höchstens zwei Treffer).
+    const sysHits = [];
+    if (normName(tx.solarSystem).startsWith(n)) sysHits.push({ isSystem: true, sys: SUN });
+    for (const sys of multiSystems) {
+      if (sysHits.length >= 2) break;
+      if (normName(sys.name).startsWith(n)) sysHits.push({ isSystem: true, sys: sys });
+    }
     for (const p of points) {
       const k = normName(p.name);
       if (k.startsWith(n)) starts.push(p); else if (k.indexOf(n) >= 0) contains.push(p);
       if (starts.length >= 8) break;
     }
-    return starts.concat(contains).slice(0, 8);
+    return sysHits.concat(starts, contains).slice(0, 8);
   }
   function renderSearch() {
     const list = searchMatches(dom.search.value);
@@ -1726,11 +2186,15 @@
     list.forEach((p, i) => {
       const done = () => { dom.search.value = ''; dom.searchList.hidden = true; };
       const b = button('atlas-search-item' + (i === 0 ? ' is-first' : ''), '', () => {
-        if (p.solar) selectSolar(p.solar, true); else selectPlanet(p, true);
+        if (p.isSystem) selectSystem(p.sys, true); else if (p.solar) selectSolar(p.solar, true); else selectPlanet(p, true);
         done();
       });
       const dot = el('i', 'atlas-dot');
-      if (p.solar) {
+      if (p.isSystem) {
+        dot.classList.add('atlas-dot-star');
+        dot.style.background = p.sys.solar ? '#ffd76a' : teffColor(p.sys.teff);
+        b.append(dot, el('span', '', sysName(p.sys)), el('span', 'atlas-search-type', tx.sysSearch(p.sys.planets.length)));
+      } else if (p.solar) {
         dot.classList.add('atlas-dot-solar');
         b.append(dot, el('span', '', tx.planets[p.solar.key]), el('span', 'atlas-search-type', tx.solarGroup));
       } else {
@@ -1743,14 +2207,23 @@
   }
 
   // ---------------------------------------------------------------- Auswahl
+  // Systemansicht: hat das System nur wegen der Mindestzahl keine Zeile, wird
+  // die Mindestzahl gesenkt.
+  function ensureRow(sys) {
+    const n = sys.planets.length;
+    if (state.view !== 'sys' || sys.solar || sys.row >= 0 || n < 4 || n >= state.sysMin) return;
+    state.sysMin = n;
+    applyFilters();
+    syncControls();
+  }
   function selectPlanet(p, fly) {
-    if (!p.vis || !p.pos[state.view]) {
+    ensureRow(p.sys);
+    if ((!p.vis && !p.ghost) || !p.pos[state.view]) {
       // Ausgeblendete Planeten: Filter öffnen, damit die Auswahl sichtbar wird.
-      state.types = TYPES.map(() => true); state.methods = METHODS.map(() => true);
-      state.hz = 'all'; state.maxDist = null; state.storiesOnly = false; state.tags = null;
-      state.estMass = state.estPeriod = true; stopPlay(); state.yearMax = maxYear;
+      openFilters();
+      applyFilters();
       if (!p.pos[state.view]) setView('mp');
-      applyFilters(); syncControls();
+      syncControls();
     }
     pinned = { kind: 'planet', p: p, storyIndex: 0 };
     hlStory = null;
@@ -1769,11 +2242,12 @@
     hlStory = story;
     if (story.points.length && story.points.some((p) => !p.vis || !p.pos[state.view])) {
       state.types = TYPES.map(() => true); state.methods = METHODS.map(() => true);
-      state.hz = 'all'; state.maxDist = null; state.estMass = state.estPeriod = true;
+      state.hz = 'all'; state.maxDist = null; state.multiOnly = false; state.estMass = state.estPeriod = true;
       stopPlay(); state.yearMax = maxYear;
       if (state.tags && !story.tags.some((t) => state.tags.indexOf(t) >= 0)) { state.tags = null; }
+      applyFilters();
       if (story.points.some((p) => !p.pos[state.view])) setView('mp');
-      applyFilters(); syncControls();
+      syncControls();
     }
     show(pinned);
     revealPanel();
@@ -1793,6 +2267,17 @@
     show(pinned);
     revealPanel();
     if (fly) flyToPoints([body0], 800);
+    overlayDirty = true;
+    schedule();
+  }
+  function selectSystem(sys, fly) {
+    ensureRow(sys);
+    pinned = { kind: 'system', sys: sys };
+    hlStory = null;
+    syncControls();
+    show(pinned);
+    revealPanel();
+    if (fly && sys.planets.some((q) => q.pos[state.view])) flyToPoints(sys.planets, 900);
     overlayDirty = true;
     schedule();
   }
@@ -1881,8 +2366,7 @@
       p.massE < 100 ? num(p.massE) + tx.earthMasses : num(mj) + tx.jupiterMasses, null, p.estMass ? tx.estimated : '']);
     if (p.radiusE !== null) rows.push([f.radius, p.radiusE > 6 ? num(p.radiusE / RE_PER_RJ) + tx.jupiterRadii : num(p.radiusE) + tx.earthRadii]);
     else if (p.estRadius) rows.push([f.radius + ' (' + tx.estimatedShort + ')', num(p.plotRadius, 2) + tx.earthRadii, null, tx.estimatedRadius]);
-    rows.push([f.period + (p.estPeriod ? ' (' + tx.computedShort + ')' : ''),
-      p.period < 1000 ? periodText(p.period) : num(p.period / DAYS_PER_YEAR) + tx.years, null, p.estPeriod ? tx.computed : '']);
+    rows.push([f.period + (p.estPeriod ? ' (' + tx.computedShort + ')' : ''), periodShort(p.period), null, p.estPeriod ? tx.computed : '']);
     if (p.axis) rows.push([f.axis, num(p.axis) + tx.au]);
     if (p.flux !== null) rows.push([f.flux, num(p.flux) + tx.timesEarth, null, num(p.flux * SOLAR_CONSTANT) + ' W/m²']);
     rows.push([f.hz, tx.hzClass[p.hz]]);
@@ -2001,7 +2485,7 @@
     rows.push([f.type, tx.types[TYPES[s.ti].key], TYPES[s.ti].glow]);
     rows.push([f.mass, s.m < 100 ? qty(s.m, 'earthMasses') : qty(s.m / EARTH_PER_JUPITER, 'jupiterMasses')]);
     rows.push([f.radius, s.r > 6 ? qty(s.r / RE_PER_RJ, 'jupiterRadii') : qty(s.r, 'earthRadii')]);
-    rows.push([f.period, s.p < 1000 ? periodText(s.p) : num(s.p / DAYS_PER_YEAR) + tx.years]);
+    rows.push([f.period, periodShort(s.p)]);
     rows.push([tx.sunDistance, num(s.a) + tx.au]);
     if (s.story && s.story.moons !== null) {
       rows.push([tx.moons, s.story.moons === 0 ? tx.noMoons : int(s.story.moons), null, s.story.moonsAsOf ? tx.asOf(dateText(s.story.moonsAsOf)) : '']);
@@ -2022,6 +2506,241 @@
     return box;
   }
 
+  // Zelle für eine Wertetabelle (wie im Steckbrief).
+  function factCell(label, value, color, note) {
+    const cell = el('div', 'atlas-fact');
+    const dd = el('dd');
+    if (color) { const dot = el('i', 'atlas-dot'); dot.style.background = color; dd.appendChild(dot); }
+    dd.append(value);
+    if (note) cell.title = note;
+    cell.append(el('dt', '', label), dd);
+    return cell;
+  }
+  // Größe eines Planeten in Worten: der Radius, wo er gemessen ist, sonst die Masse.
+  function sizeText(q) {
+    const r = q.isSolar ? q.r : q.radiusE, m = q.isSolar ? q.m : q.massE;
+    if (r !== null && r !== undefined) return r > 6 ? num(r / RE_PER_RJ) + tx.jupiterRadii : num(r) + tx.earthRadii;
+    return m < 100 ? num(m) + tx.earthMasses : num(m / EARTH_PER_JUPITER) + tx.jupiterMasses;
+  }
+  function selectBody(q, fly) { if (q.isSolar) selectSolar(q, fly); else selectPlanet(q, fly); }
+  // Schematische Leiste eines Planetensystems: links der Stern, rechts davon
+  // die Planeten nach ihrer Umlaufzeit (logarithmisch), dahinter die
+  // habitable Zone, gestrichelt die vermuteten Lücken. current: der gerade
+  // gezeigte Planet (dann führt ein Klick auf den Stern zum System).
+  function systemStrip(sys, current, big) {
+    const box = el('div', 'atlas-sys-strip' + (big ? ' is-big' : ''));
+    box.setAttribute('role', 'group');
+    box.setAttribute('aria-label', tx.sysStrip(sysName(sys)));
+    const star = current ? button('atlas-sys-star', '', () => selectSystem(sys, true)) : el('i', 'atlas-sys-star');
+    star.style.setProperty('--c', sys.solar ? '#ffd76a' : teffColor(sys.teff));
+    star.style.setProperty('--d', Math.round(clamp(14 + 7 * log10(sys.starR || 1), 9, 22)) + 'px');
+    if (current) { star.title = tx.sysStar; star.setAttribute('aria-label', tx.sysStar); }
+    const track = el('div', 'atlas-sys-track');
+    let lo = log10(sys.planets[0].period), hi = log10(sys.planets[sys.planets.length - 1].period);
+    if (sys.hz) {
+      // Die habitable Zone gehört ins Bild, solange sie nicht weit abseits liegt.
+      lo = Math.min(lo, Math.max(log10(sys.hz.o0.p), lo - 1.2));
+      hi = Math.max(hi, Math.min(log10(sys.hz.o1.p), hi + 1.2));
+    }
+    const pad = Math.max(0.05, (hi - lo) * 0.04);
+    lo -= pad; hi += pad;
+    const at = (period) => clamp((log10(period) - lo) / (hi - lo) * 100, 0, 100);
+    if (sys.hz) {
+      for (const part of [['o0', 'o1', ''], ['c0', 'c1', ' is-core']]) {
+        const a = at(sys.hz[part[0]].p), b = at(sys.hz[part[1]].p);
+        if (b - a < 0.6) continue;
+        const band = el('i', 'atlas-sys-hz' + part[2]);
+        band.style.left = a + '%'; band.style.width = (b - a) + '%';
+        band.title = tx.hzGroup;
+        track.appendChild(band);
+      }
+    }
+    track.appendChild(el('i', 'atlas-sys-line'));
+    if (state.gaps && sys.fit) {
+      for (const gap of sys.fit.gaps) {
+        const mark = el('i', 'atlas-sys-gap');
+        mark.style.left = at(gap.period) + '%';
+        mark.title = tx.gapTitle + ': ' + tx.gapAt(periodShort(gap.period)) + ' (' + tx.gapNote + ')';
+        track.appendChild(mark);
+      }
+    }
+    sys.planets.forEach((q) => {
+      const b = button('atlas-sys-planet' + (q === current ? ' is-current' : ''), '', () => selectBody(q, q.isSolar));
+      b.style.left = at(q.period) + '%';
+      const d = q.plotRadius ? 5.5 + 4.2 * log10(Math.max(0.3, q.plotRadius) * 10) : 4 + TYPES[q.ti].size * 3;
+      b.style.setProperty('--d', Math.round(d * (big ? 1.2 : 1)) + 'px');
+      b.style.setProperty('--c', TYPES[q.ti].glow);
+      const text = bodyName(q) + ': ' + tx.types[TYPES[q.ti].key] + ', ' + periodShort(q.period);
+      b.title = text;
+      b.setAttribute('aria-label', text);
+      if (q === current) b.setAttribute('aria-current', 'true');
+      const letter = shortName(q);
+      if (letter && letter.length <= 2) b.appendChild(el('span', '', letter));
+      const peek = (on) => { hover = on ? (q.isSolar ? { kind: 'solar', s: q } : { kind: 'planet', p: q }) : null; overlayDirty = true; schedule(); };
+      b.addEventListener('pointerenter', () => peek(true));
+      b.addEventListener('pointerleave', () => peek(false));
+      track.appendChild(b);
+    });
+    box.append(star, track);
+    return box;
+  }
+  // Abweichung in Prozent mit Vorzeichen, z. B. "+12 %".
+  function percentText(v) {
+    const text = num(Math.abs(v), 2);
+    return (text === '0' ? '' : v > 0 ? '+' : '−') + text + (lang === 'de' ? '\u00a0%' : '%');   // geschütztes Leerzeichen: kein Umbruch vor dem Prozentzeichen
+  }
+  // Diagramm zur Titius-Bode-Reihe eines Systems. Oben: Umlaufzeit
+  // (logarithmisch) über dem Platz n; die Reihe ist dort eine Gerade.
+  // Unten: Abweichung jedes Planeten von der Reihe in Prozent. Das graue Band
+  // reicht bis zum halben Weg zum Nachbarplatz; dort läge auch ein Planet an
+  // beliebiger Stelle, es ist der Maßstab für "gut" oder "schlecht".
+  function tbChart(sys) {
+    const fit = sys.fit, NS = 'http://www.w3.org/2000/svg';
+    const node = (tag, attrs, text) => {
+      const n = document.createElementNS(NS, tag);
+      for (const k in attrs) n.setAttribute(k, attrs[k]);
+      if (text !== undefined) n.textContent = text;
+      return n;
+    };
+    const Wc = 400, L = 40, R = 8, topY = 16, topH = 92, botY = 132, botH = 54, Hc = 202;
+    const svg = node('svg', { viewBox: '0 0 ' + Wc + ' ' + Hc, class: 'atlas-tb-chart', role: 'img', 'aria-label': tx.tb.chartLabel });
+    const last = fit.ns[fit.ns.length - 1];
+    const xOf = (n) => L + (n - 0.5) / last * (Wc - L - R);
+    const model = (n) => fit.p0 * Math.exp(fit.b * n);
+    const pts = sys.planets.map((q, i) => ({ q: q, n: fit.ns[i], dev: (q.period / model(fit.ns[i]) - 1) * 100 }));
+
+    // ---- oben: Umlaufzeit je Platz
+    let lo = Math.min(log10(model(0.5)), log10(sys.planets[0].period)), hi = Math.max(log10(model(last + 0.5)), log10(sys.planets[sys.planets.length - 1].period));
+    const padY = (hi - lo) * 0.06; lo -= padY; hi += padY;
+    const yOf = (lp) => topY + topH - (lp - lo) / (hi - lo) * topH;
+    svg.appendChild(node('rect', { x: L, y: topY, width: Wc - L - R, height: topH, class: 'atlas-tb-frame' }));
+    const ticks = [];
+    for (let e = Math.ceil(lo); e <= Math.floor(hi); e++) ticks.push(e);
+    if (ticks.length < 3) for (let e = Math.floor(lo); e <= Math.floor(hi); e++) for (const k of [2, 5]) { const v = e + log10(k); if (v >= lo && v <= hi) ticks.push(v); }
+    for (const t of ticks) {
+      const y = yOf(t);
+      svg.appendChild(node('line', { x1: L, x2: Wc - R, y1: y, y2: y, class: 'atlas-tb-grid' }));
+      svg.appendChild(node('text', { x: L - 5, y: y + 3.5, 'text-anchor': 'end' }, num(Math.pow(10, t), 2)));
+    }
+    svg.appendChild(node('text', { x: L, y: topY - 5 }, tx.tb.chartTop));
+    svg.appendChild(node('line', { x1: xOf(0.5), y1: yOf(log10(model(0.5))), x2: xOf(last + 0.5), y2: yOf(log10(model(last + 0.5))), class: 'atlas-tb-line' }));
+
+    // ---- unten: Abweichung in Prozent
+    const half = [(Math.exp(-fit.b / 2) - 1) * 100, (Math.exp(fit.b / 2) - 1) * 100];   // halber Weg zum Nachbarplatz
+    const reach = Math.max(half[1], Math.max.apply(null, pts.map((p) => Math.abs(p.dev)))) * 1.12;
+    const dOf = (d) => botY + botH / 2 - d / reach * (botH / 2);
+    svg.appendChild(node('rect', { x: L, y: botY, width: Wc - L - R, height: botH, class: 'atlas-tb-frame' }));
+    svg.appendChild(node('rect', { x: L, y: dOf(half[1]), width: Wc - L - R, height: dOf(half[0]) - dOf(half[1]), class: 'atlas-tb-band' }));
+    svg.appendChild(node('line', { x1: L, x2: Wc - R, y1: dOf(0), y2: dOf(0), class: 'atlas-tb-zero' }));
+    const step = [5, 10, 20, 25, 50, 100, 200].find((v) => v >= reach * 0.55) || 500;
+    for (const d of [-step, 0, step]) {
+      if (Math.abs(d) > reach) continue;
+      svg.appendChild(node('text', { x: L - 5, y: dOf(d) + 3.5, 'text-anchor': 'end' }, percentText(d)));
+    }
+    svg.appendChild(node('text', { x: L, y: botY - 5 }, tx.tb.chartBottom));
+    // Plätze: Beschriftung unten, feine Linie durch beide Teile.
+    for (let n = 1; n <= last; n++) {
+      svg.appendChild(node('line', { x1: xOf(n), x2: xOf(n), y1: topY, y2: topY + topH, class: 'atlas-tb-grid' }));
+      svg.appendChild(node('text', { x: xOf(n), y: botY + botH + 12, 'text-anchor': 'middle' }, String(n)));
+    }
+    svg.appendChild(node('text', { x: L - 5, y: botY + botH + 12, 'text-anchor': 'end' }, tx.tb.chartX));
+    // Freie Plätze: gestrichelte Ringe auf der Reihe.
+    for (const gap of fit.gaps) {
+      const title = tx.gapTitle + ': ' + tx.gapAt(periodShort(gap.period));
+      for (const y of [yOf(log10(gap.period)), dOf(0)]) {
+        const ring = node('circle', { cx: xOf(gap.n), cy: y, r: 4, class: 'atlas-tb-gap' });
+        ring.appendChild(node('title', {}, title));
+        svg.appendChild(ring);
+      }
+    }
+    // Planeten.
+    for (const p of pts) {
+      const col = TYPES[p.q.ti].glow;
+      const title = tx.tb.pointTitle(bodyName(p.q), periodShort(p.q.period), percentText(p.dev));
+      svg.appendChild(node('line', { x1: xOf(p.n), x2: xOf(p.n), y1: dOf(0), y2: dOf(p.dev), stroke: col, class: 'atlas-tb-stem' }));
+      for (const y of [yOf(log10(p.q.period)), dOf(p.dev)]) {
+        const dot = node('circle', { cx: xOf(p.n), cy: y, r: 4, fill: col, class: 'atlas-tb-dot' });
+        dot.appendChild(node('title', {}, title));
+        svg.appendChild(dot);
+      }
+    }
+    return { svg: svg, worst: pts.reduce((a, b) => (Math.abs(b.dev) > Math.abs(a.dev) ? b : a)) };
+  }
+
+  // Infofeld eines Planetensystems.
+  function systemCard(sys) {
+    const card = el('div', 'atlas-system');
+    card.appendChild(el('h2', 'atlas-planet-name atlas-system-name', sysName(sys)));
+    card.appendChild(el('p', 'atlas-planet-sub', tx.sysPlanets(sys.planets.length)));
+    card.appendChild(systemStrip(sys, null, true));
+    const legend = el('p', 'atlas-sys-legend');
+    const key = (cls, text) => { const item = el('span'); item.append(el('i', cls), text); legend.appendChild(item); };
+    key('atlas-key-star', tx.sysLegend.star);
+    if (sys.hz) key('atlas-key-hz', tx.sysLegend.hz);
+    if (state.gaps && sys.fit && sys.fit.gaps.length) key('atlas-key-gap', tx.sysLegend.gap);
+    card.appendChild(legend);
+
+    const facts = el('dl', 'atlas-facts');
+    const starText = [sys.sp, sys.teff ? int(Math.round(sys.teff)) + tx.kelvin : ''].filter(Boolean).join(', ');
+    if (starText) facts.appendChild(factCell(tx.facts.star, starText, sys.solar ? '#ffd76a' : teffColor(sys.teff)));
+    if (!sys.solar && sys.starM) facts.appendChild(factCell(tx.sysFacts.starMass, num(sys.starM) + tx.sunMasses));
+    if (!sys.solar && sys.starR) facts.appendChild(factCell(tx.sysFacts.starRadius, num(sys.starR) + tx.sunRadii));
+    if (sys.distLy !== null) facts.appendChild(factCell(tx.facts.dist, num(sys.distLy) + tx.ly));
+    if (sys.hz) {
+      facts.appendChild(factCell(tx.sysFacts.hzRange, tx.range(num(sys.hz.o0.a, 2), num(sys.hz.o1.a, 2)) + tx.au, null, tx.hzRangeNote));
+      const inside = sys.planets.filter((q) => q.hz === 'inner' || q.hz === 'yes' || q.hz === 'outer');
+      facts.appendChild(factCell(tx.sysFacts.inHz, inside.length ? inside.map((q) => shortName(q) || bodyName(q)).join(', ') : tx.sysFacts.none));
+    }
+    card.appendChild(facts);
+
+    card.appendChild(el('h3', 'atlas-system-title', tx.sysList));
+    const list = el('div', 'atlas-sys-list');
+    sys.planets.forEach((q) => {
+      const b = button('atlas-sys-row', '', () => selectBody(q, false));
+      const name = el('span', 'atlas-sys-row-name');
+      const dot = el('i', 'atlas-dot'); dot.style.background = TYPES[q.ti].glow;
+      name.append(dot, shortName(q) || bodyName(q));
+      b.title = bodyName(q);
+      b.append(name, el('span', '', tx.types[TYPES[q.ti].key]), el('span', '', periodShort(q.period)), el('span', '', sizeText(q)));
+      const peek = (on) => { hover = on ? (q.isSolar ? { kind: 'solar', s: q } : { kind: 'planet', p: q }) : null; overlayDirty = true; schedule(); };
+      b.addEventListener('pointerenter', () => peek(true));
+      b.addEventListener('pointerleave', () => peek(false));
+      list.appendChild(b);
+    });
+    card.appendChild(list);
+
+    // Titius-Bode-Reihe: was die Anpassung ergibt, in Worten.
+    const tb = el('section', 'atlas-tb');
+    tb.appendChild(el('h3', 'atlas-system-title', tx.tb.title));
+    const fit = sys.fit;
+    if (fit === undefined) tb.appendChild(el('p', '', tx.tb.few));
+    else if (!fit) tb.appendChild(el('p', '', tx.tb.none));
+    else {
+      let text = tx.tb.fit(num(Math.exp(fit.b), 3), num(fit.r2, 3)) + ' ';
+      if (!fit.gaps.length) text += tx.tb.full;
+      else {
+        const parts = fit.gaps.map((gap) => periodShort(gap.period).trim());
+        const listText = parts.length > 1 ? parts.slice(0, -1).join(', ') + tx.tb.and + parts[parts.length - 1] : parts[0];
+        text += tx.tb.gaps(fit.gaps.length, listText);
+        if (sys.solar) text += ' ' + tx.tb.solar;
+      }
+      const chart = tbChart(sys);
+      text += ' ' + tx.tb.dev(shortName(chart.worst.q) || bodyName(chart.worst.q), percentText(chart.worst.dev));
+      tb.appendChild(el('p', '', text));
+      tb.appendChild(chart.svg);
+      tb.appendChild(el('p', 'atlas-tb-note atlas-tb-chart-note', tx.tb.chartNote));
+    }
+    if (fit !== undefined) {
+      const note = el('p', 'atlas-tb-note', tx.tb.source);
+      const link = el('a', '', 'Lara, Cordero-Tercero & Allen (2020)');
+      link.href = 'https://arxiv.org/abs/2003.05121'; link.target = '_blank'; link.rel = 'noopener';
+      note.append(link, tx.tb.sourceAfter);
+      tb.appendChild(note);
+    }
+    card.appendChild(tb);
+    return card;
+  }
+
   let lastStory = null;      // zuletzt gezeigter Bericht (für die Rückkehr zur Übersicht)
   let returnStory = null;    // Bericht, aus dem man gerade zur Übersicht zurückkehrt
   let returnFocus = false;   // Übersicht wurde per Tastatur geöffnet
@@ -2034,7 +2753,7 @@
     const bar = dom.panelHead;
     bar.replaceChildren();
     bar.hidden = !shown;
-    dom.panel.classList.toggle('is-solar', !!shown && shown.kind === 'solar');
+    dom.panel.classList.toggle('is-solar', !!shown && (shown.kind === 'solar' || (shown.kind === 'system' && shown.sys.solar)));
     if (!shown) {
       const box = el('div', 'atlas-guide');
       const active = Object.keys(PRESETS).find((name) => name !== 'all' && matchesPreset(name));
@@ -2136,6 +2855,26 @@
     const closeBtn = button('atlas-tool atlas-close', '✕', () => { unpin(); });
     closeBtn.title = tx.close;
     closeBtn.setAttribute('aria-label', tx.close);
+    if (shown.kind === 'system') {
+      // Planetensystem: Blättern durch die Zeilen der Ansicht "Planetensysteme".
+      const sys = shown.sys, i = sysRows.indexOf(sys);
+      if (i >= 0) {
+        const nav = (delta, glyph) => {
+          const other = sysRows[i + delta];
+          const b = button('atlas-tool atlas-nav', glyph, () => selectSystem(other, true));
+          b.disabled = !other;
+          if (other) { b.title = sysName(other); b.setAttribute('aria-label', sysName(other)); }
+          return b;
+        };
+        bar.append(nav(-1, '‹'), el('span', 'atlas-nav-pos', tx.systemOf(i + 1, sysRows.length)), nav(1, '›'), closeBtn);
+      } else {
+        bar.append(el('span', 'atlas-nav-pos atlas-nav-title', tx.systemTitle), closeBtn);
+      }
+      lastStory = null;
+      body.appendChild(systemCard(sys));
+      fitPanel();
+      return;
+    }
     if (shown.kind === 'solar') {
       // Planet unseres Sonnensystems: eigene Aufmachung, Blättern von innen nach außen.
       const body0 = shown.s, i = SOLAR.indexOf(body0);
@@ -2242,18 +2981,12 @@
       } else if (p.stories.length) {
         card.appendChild(button('atlas-link', tx.showStory(p.stories.length), () => { shown.factsOnly = false; renderPanel(); }));
       }
-      const covered = story && p.system.every((q) => story.points.indexOf(q) >= 0);
-      if (p.system.length > 1 && !covered) {
-        const sib = el('div', 'atlas-chips');
-        sib.appendChild(el('span', 'atlas-chips-label', tx.sysSiblings));
-        p.system.filter((q) => q !== p).slice(0, 8).forEach((q) => {
-          const b = button('atlas-chip', q.name.slice(p.star.length).trim() || q.name, () => selectPlanet(q, false));
-          b.title = q.name;
-          const dot = el('i', 'atlas-dot'); dot.style.background = TYPES[q.ti].glow;
-          b.prepend(dot);
-          sib.appendChild(b);
-        });
-        card.appendChild(sib);
+      if (p.sys.planets.length > 1) {
+        // Das System des Planeten als Leiste; ein Klick springt zum Nachbarn.
+        const sysBox = el('div', 'atlas-sys');
+        sysBox.append(button('atlas-link atlas-sys-link', tx.sysLink(p.sys.name, p.sys.planets.length), () => selectSystem(p.sys, true)),
+          systemStrip(p.sys, p, false));
+        card.appendChild(sysBox);
       }
       body.appendChild(card);
     }
@@ -2262,15 +2995,36 @@
 
   // ============================================================ Mausbedienung
   function pick(x, y) {
+    const inSys = state.view === 'sys' && !morph;
+    const band = inSys ? sysBand() : -Infinity;
+    if (inSys && x <= band && y >= plot.t && y <= plot.b) {
+      // Namensspalte: die Zeile unter dem Mauszeiger.
+      const half = Math.max(rowHeight(view) / 2, 6);
+      let hit = null, hitD = half;
+      for (const s of sysRows) { const d = Math.abs(s.sy - y); if (d <= hitD) { hitD = d; hit = s; } }
+      return hit ? { kind: 'system', sys: hit } : null;
+    }
     if (x < plot.l || x > plot.r || y < plot.t || y > plot.b) return null;
     let best = null, bestD = 13 * 13, bestStory = null, bestStoryD = 16 * 16;
     for (const p of points) {
-      if (p.a * p.fade < 0.3) continue;
+      if (p.a * p.fade < 0.3 || p.sx < band) continue;
       const dx = p.sx - x, dy = p.sy - y, d = dx * dx + dy * dy;
       if (d < bestD) { bestD = d; best = p; }
       if (p.stories.length && d < bestStoryD) { bestStoryD = d; bestStory = p; }
     }
     if (bestStory) return { kind: 'planet', p: bestStory };
+    if (inSys && state.gaps) {
+      // Vermutete Lücke, wenn kein Planet näher liegt.
+      let gapHit = null, gapD = Math.min(bestD, 9 * 9);
+      for (const s of sysRows) {
+        if (!s.fit || !s.on) continue;
+        for (const gap of s.fit.gaps) {
+          const dx = gap.sx - x, dy = gap.sy - y, d = dx * dx + dy * dy;
+          if (d < gapD) { gapD = d; gapHit = { kind: 'gap', sys: s, gap: gap }; }
+        }
+      }
+      if (gapHit) return gapHit;
+    }
     // Planeten des Sonnensystems: die Marke selbst oder ihr Name daneben.
     for (const s of SOLAR) {
       const d = Math.hypot(s.sx - x, s.sy - y);
@@ -2289,12 +3043,20 @@
     dom.tip.replaceChildren();
     if (target.kind === 'region') {
       dom.tip.append(el('strong', '', tx.regions[target.r.key]), el('small', '', tx.regionHint));
+    } else if (target.kind === 'system') {
+      dom.tip.append(el('strong', '', sysName(target.sys)), el('span', '', tx.sysPlanets(target.sys.planets.length)),
+        el('small', '', tx.clickSystem));
+    } else if (target.kind === 'gap') {
+      dom.tip.append(el('strong', '', tx.gapTitle), el('span', '', sysName(target.sys) + ': ' + tx.gapAt(periodShort(target.gap.period))),
+        el('small', '', tx.gapNote));
     } else if (target.kind === 'solar') {
       dom.tip.append(el('strong', '', tx.planets[target.s.key]), el('span', '', tx.solarNote),
         el('small', '', target.s.story ? tx.clickStory : tx.clickFacts));
     } else {
       const p = target.p;
-      dom.tip.append(el('strong', '', p.name), el('span', '', tx.types[TYPES[p.ti].key] + ', ' + (p.massE < 100 ? num(p.massE) + tx.earthMasses : num(p.massE / EARTH_PER_JUPITER) + tx.jupiterMasses)));
+      // In der Systemansicht zählt die Umlaufzeit, sonst die Masse.
+      dom.tip.append(el('strong', '', p.name), el('span', '', tx.types[TYPES[p.ti].key] + ', ' + (state.view === 'sys' ? periodShort(p.period)
+        : p.massE < 100 ? num(p.massE) + tx.earthMasses : num(p.massE / EARTH_PER_JUPITER) + tx.jupiterMasses)));
       if (p.stories.length) {
         const s = p.stories[p.stories.length - 1];
         dom.tip.appendChild(el('em', '', s.title[lang] || s.title.de));
@@ -2332,7 +3094,8 @@
         return;
       }
       const target = morph ? null : pick(q[0], q[1]);
-      const same = (target && hover && target.kind === hover.kind && target.p === hover.p && target.s === hover.s && target.r === hover.r) || (!target && !hover);
+      const same = (target && hover && target.kind === hover.kind && target.p === hover.p && target.s === hover.s && target.r === hover.r &&
+        target.sys === hover.sys && target.gap === hover.gap) || (!target && !hover);
       hover = target;
       c.style.cursor = target ? 'pointer' : 'grab';
       showTip(target, q[0], q[1]);
@@ -2356,6 +3119,7 @@
       // Klick auf einen Planeten wählt ihn aus, Klick ins Freie hebt die Auswahl auf.
       if (target && target.kind === 'planet') selectPlanet(target.p, false);
       else if (target && target.kind === 'solar') selectSolar(target.s, false);
+      else if (target && (target.kind === 'system' || target.kind === 'gap')) selectSystem(target.sys, false);
       else if (target && target.kind === 'region') {
         const b = target.r.box;
         flyTo({ x0: b[0], x1: b[1], y0: b[2], y1: b[3] }, 800);
@@ -2371,7 +3135,7 @@
       const fx = clamp((q[0] - plot.l) / plot.w, 0, 1), fy = clamp((plot.b - q[1]) / plot.h, 0, 1);
       const cx = view.x0 + fx * (view.x1 - view.x0), cy = view.y0 + fy * (view.y1 - view.y0);
       const h = limits[state.view];
-      const sx = clamp((view.x1 - view.x0) * k, 0.08, h.x1 - h.x0), sy = clamp((view.y1 - view.y0) * k, 0.08, h.y1 - h.y0);
+      const sx = clamp((view.x1 - view.x0) * k, minSpan('x'), h.x1 - h.x0), sy = clamp((view.y1 - view.y0) * k, minSpan('y'), h.y1 - h.y0);
       const x0 = clamp(cx - fx * sx, h.x0, h.x1 - sx), y0 = clamp(cy - fy * sy, h.y0, h.y1 - sy);
       view = { x0: x0, x1: x0 + sx, y0: y0, y1: y0 + sy };
       viewTween = null; staticDirty = true; dom.tip.hidden = true; schedule();
@@ -2417,6 +3181,7 @@
     // Zeichenreihenfolge: Planeten mit Bericht zuletzt (liegen oben).
     points.sort((a, b) => (a.stories.length ? 1 : 0) - (b.stories.length ? 1 : 0) || (a.estMass ? 0 : 1) - (b.estMass ? 0 : 1));
     computeHome();
+    layoutSystems(true);
     view = Object.assign({}, home.mp);
     buildUi(root);
     bindPointer();
@@ -2456,6 +3221,13 @@
     window.ExoAtlas = { version: VERSION, state: state, points: points, stories: stories,
       selectPlanet: (name) => { const p = byName.get(name) || byName.get(normName(name)); if (p) selectPlanet(p, true); return !!p; },
       selectStory: (id) => { const s = stories.find((x) => x.id === id); if (s) selectStory(s, true); return !!s; },
+      // Planetensystem über den Namen des Sterns (z. B. "TRAPPIST-1"; "Sun" für das Sonnensystem).
+      selectSystem: (name) => {
+        const sys = /^(sun|sonne)$/i.test(name) ? SUN : multiSystems.find((x) => normName(x.name) === normName(name));
+        if (sys) selectSystem(sys, true);
+        return !!sys;
+      },
+      systems: () => [SUN].concat(multiSystems), rows: () => sysRows,
       applyPreset: applyPreset, setLang: setLang, setView: setView };
   }
 
