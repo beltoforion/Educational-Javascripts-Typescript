@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+	<title>Magnetisches Pendel (Original)</title>
+	<link rel="stylesheet" href="../../shared/demo/applet.css"/>
+	<script src="../../third-party/phaser/phaser.min.js"></script>
+	<script src="../../shared/debug.js"></script>
+	<script src="./IModel.js"></script>
+	<script src="./IIntegrator.js"></script>
+	<script src="./IntegratorRK4.js"></script>
+	<script src="./IntegratorRK5.js"></script>
+	<script src="./IntegratorADB5.js"></script>
+	<script src="./ModelMagPend.js"></script>
+	<script src="./MagPend.js"></script>
+</head>
+<body>
+<div class="page">
+
+	<nav class="appnav">
+		<a href="../../index.html">← Alle Applets</a>
+		<a href="https://beltoforion.de/de/magnetisches-pendel">Artikel auf beltoforion.de</a>
+	</nav>
+
+	<h1>Magnetisches Pendel (Original)</h1>
+	<p>Ein Pendel schwingt über drei Magneten. Für jeden Punkt eines Rasters aus 100&nbsp;×&nbsp;100
+	   Startpositionen wird die Bahn des Pendels berechnet. Die Farbe des Punktes gibt an,
+	   über welchem Magneten das Pendel zur Ruhe kommt, die Helligkeit, wie lang der Weg
+	   dorthin war (kürzer ist heller). Das Bild baut sich zeilenweise auf.</p>
+	<p>Dies ist die frühere, von Hand geschriebene TypeScript-Fassung. Die aktuelle Version
+	   liegt in <a href="../../applets/magnetic-pendulum/index.html">applets/magnetic-pendulum</a>.</p>
+	<p class="hint">Der Mauszeiger legt einen Startpunkt fest; die gelbe Linie zeigt die Bahn des Pendels von dort aus. Der Schieberegler ändert die Reibung, danach wird das Bild neu berechnet.</p>
+
+	<div class="applet-stage">
+		<div class="applet-view"><div id="cv"></div></div>
+		<div class="applet-panel">
+			<fieldset>
+				<legend>Reibung</legend>
+				<label>gering
+					<input id="sliderFriction" type="range" min="0" max="100" value="33" onchange="updateFrictionSlider(this.value)"/>
+					hoch</label>
+				<span class="note">Reibungskoeffizient: <span id="frictionValue">–</span></span>
+			</fieldset>
+		</div>
+	</div>
+
+	<script>
+	var magpend = new MagPend({ assetpath : "",
+	                            cvid      : 'cv',
+	                            font      : "24px Arial",
+	                            width     : 600,
+	                            height    : 600 });
+
+	let sliderDiv = document.getElementById("frictionValue");
+	sliderDiv.innerHTML = magpend.model.friction.toPrecision(2);
+
+	function updateFrictionSlider(v) {
+		let friction = Math.pow(10, -3.5 + (v/100) * 1.5);
+		magpend.setFriction(friction);
+
+		let sliderDiv = document.getElementById("frictionValue");
+		sliderDiv.innerHTML = friction.toPrecision(2);
+	}
+
+	function updateStrengthSlider(v) {
+		let friction = Math.pow(10, -6 + (v/100) * 1.5);
+		magpend.setStrength(friction);
+
+		let sliderDiv = document.getElementById("strengthValue");
+		sliderDiv.innerHTML = friction.toPrecision(2);
+	}
+	</script>
+
+</div>
+</body>
+</html>

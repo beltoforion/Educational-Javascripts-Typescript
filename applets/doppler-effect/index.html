@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+	<title>Doppler-Effekt</title>
+	<link rel="stylesheet" href="../../shared/demo/applet.css"/>
+	<script src="../../third-party/phaser/phaser.js"></script>
+	<script src="./doppler_ring.js"></script>
+	<script src="./doppler_effect.js"></script>
+</head>
+<body>
+<div class="page">
+
+	<nav class="appnav">
+		<a href="../../index.html">← Alle Applets</a>
+		<a href="https://beltoforion.de/de/exoplaneten/radialgeschwindigkeitsmethode.php">Artikel auf beltoforion.de</a>
+	</nav>
+
+	<h1>Doppler-Effekt</h1>
+	<p>Ein Stern sendet in gleichen Zeitabständen kreisförmige Wellenfronten aus und bewegt
+	   sich dabei gegenüber dem Sternhintergrund nach links. In Bewegungsrichtung liegen die
+	   Wellenfronten dichter beieinander, in der Gegenrichtung weiter auseinander. Die
+	   Einfärbung des Hintergrunds von Blau nach Rot deutet die zugehörige Verschiebung der
+	   Wellenlänge an.</p>
+
+	<div class="applet-stage">
+		<div class="applet-view"><div id='cv'></div></div>
+	</div>
+
+	<script>
+	var game = new DopplerEffect({ assetpath : '',
+	                               cvid      : 'cv',
+	                               sizeStar  : 50,
+	                               font      : "30px Arial",
+	                               width     : 800,
+	                               height    : 800 });
+	</script>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,98 @@
+// Übersetzen der TypeScript-Applets. Vorher einmal "npm install" im Hauptordner
+// (und in applets/tides) ausführen. Die reinen JavaScript-Applets brauchen keinen Build.
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build: alle TypeScript-Applets",
+            "type": "npm",
+            "script": "build",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$tsc"
+            ]
+        },
+        {
+            "label": "build: doppler-effect",
+            "type": "npm",
+            "script": "build:doppler-effect",
+            "group": "build",
+            "problemMatcher": [
+                "$tsc"
+            ]
+        },
+        {
+            "label": "build: exoplanet-radial-velocity",
+            "type": "npm",
+            "script": "build:exoplanet-radial-velocity",
+            "group": "build",
+            "problemMatcher": [
+                "$tsc"
+            ]
+        },
+        {
+            "label": "build: exoplanet-pulsar-timing",
+            "type": "npm",
+            "script": "build:exoplanet-pulsar-timing",
+            "group": "build",
+            "problemMatcher": [
+                "$tsc"
+            ]
+        },
+        {
+            "label": "build: exoplanet-transit",
+            "type": "npm",
+            "script": "build:exoplanet-transit",
+            "group": "build",
+            "problemMatcher": [
+                "$tsc"
+            ]
+        },
+        {
+            "label": "build: game-of-life",
+            "type": "npm",
+            "script": "build:game-of-life",
+            "group": "build",
+            "problemMatcher": [
+                "$tsc"
+            ]
+        },
+        {
+            "label": "build: harmonic-oscillator",
+            "type": "npm",
+            "script": "build:harmonic-oscillator",
+            "group": "build",
+            "problemMatcher": [
+                "$tsc"
+            ]
+        },
+        {
+            "label": "build: original-magnetic-pendulum",
+            "type": "npm",
+            "script": "build:original-magnetic-pendulum",
+            "group": "build",
+            "problemMatcher": [
+                "$tsc"
+            ]
+        },
+        {
+            "label": "build: original-simulated-evolution",
+            "type": "npm",
+            "script": "build:original-simulated-evolution",
+            "group": "build",
+            "problemMatcher": [
+                "$tsc"
+            ]
+        },
+        {
+            "label": "build: tides (webpack)",
+            "type": "npm",
+            "script": "build:tides",
+            "group": "build",
+            "problemMatcher": []
+        }
+    ]
+}

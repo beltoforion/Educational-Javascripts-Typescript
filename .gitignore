@@ -1,5 +1,10 @@
+node_modules/
 *.js.map
 *.sqlite
-*/node_modules/*
+applets/tides/dist.zip
+# Beim Übersetzen entstehen die Hilfsdateien aus shared/ neu; eingecheckt ist
+# nur debug.js, das die Demo-Seite des Pendel-Originals lädt.
 shared/*.js
-tides/dist.zip
+!shared/debug.js
+# Arbeitsdateien der Browser-Automatisierung
+.playwright-mcp/

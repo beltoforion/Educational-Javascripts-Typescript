@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+	<title>Gezeiten</title>
+	<link rel="stylesheet" href="../../shared/demo/applet.css"/>
+</head>
+<body>
+<div class="page">
+
+	<nav class="appnav">
+		<a href="../../index.html">← Alle Applets</a>
+		<a href="https://beltoforion.de/de/gezeiten">Artikel auf beltoforion.de</a>
+		<a href="./index.html">Fassung mit Bedienfeld</a>
+	</nav>
+
+	<h1>Gezeiten</h1>
+	<p>Erde und Mond umlaufen ihren gemeinsamen Schwerpunkt, die gelben Pfeile geben die Richtung
+	   des Sonnenlichts an. An 30 Punkten des Erdumfangs zeichnet das Applet die
+	   Gezeitenbeschleunigung durch den Mond (weiße Pfeile) und durch die Sonne (orange Pfeile);
+	   die blaue Fläche fasst beide zusammen und deutet die Flutberge an. Erde und Mond sind
+	   gegenüber ihrem Abstand stark vergrößert gezeichnet.</p>
+	<p>Diese Fassung zeigt die Animation mit Sternenhintergrund und ohne Bedienfeld.</p>
+
+	<div class="applet-stage">
+		<div class="applet-view">
+			<canvas id="cvTides2" width="800" height="800"></canvas>
+		</div>
+	</div>
+
+	<script src="./dist/tides-bundle.js"></script>
+	<script>
+	var tidalModel = window.TidalSimulationLibrary.createTidalSimulation({
+		cvid                : 'cvTides2',
+		path                : './dist/',
+		timestep            : 86400/10,
+		lookAtTarget        : 'CenterOfMass',
+		autoMove            : true,
+		setup               : 1,
+		isRunning           : true,
+		showSun             : true,
+		scaleForceToModel   : false,
+		showMoon            : true,
+		showMoonOrbit       : true,
+		showEarthOrbit      : true,
+		showSurfacePoints   : false,
+		showGravAcc         : false,
+		showCentAcc         : false,
+		showTidalAcc        : true,
+		showTidalAccSun     : true,
+		showAccSum          : true,
+		enableRotation      : true,
+		showBackgroundImage : true
+	});
+	</script>
+
+</div>
+</body>
+</html>

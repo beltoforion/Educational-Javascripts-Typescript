@@ -1,0 +1,118 @@
+// Je Applet ein Starteintrag: in der Startliste auswählen und F5 drücken.
+// Die Seiten laufen direkt von der Festplatte, ein Webserver ist nicht nötig.
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Übersicht",
+            "type": "chrome",
+            "request": "launch",
+            "file": "${workspaceFolder}/index.html"
+        },
+        {
+            "name": "doppler-effect",
+            "type": "chrome",
+            "request": "launch",
+            "file": "${workspaceFolder}/applets/doppler-effect/index.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "name": "exoplanet-atlas",
+            "type": "chrome",
+            "request": "launch",
+            "file": "${workspaceFolder}/applets/exoplanet-atlas/atlas.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "name": "exoplanet-pulsar-timing",
+            "type": "chrome",
+            "request": "launch",
+            "file": "${workspaceFolder}/applets/exoplanet-pulsar-timing/index.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "name": "exoplanet-radial-velocity",
+            "type": "chrome",
+            "request": "launch",
+            "file": "${workspaceFolder}/applets/exoplanet-radial-velocity/index.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "name": "exoplanet-transit",
+            "type": "chrome",
+            "request": "launch",
+            "file": "${workspaceFolder}/applets/exoplanet-transit/index.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "name": "game-of-life",
+            "type": "chrome",
+            "request": "launch",
+            "file": "${workspaceFolder}/applets/game-of-life/index.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "name": "harmonic-oscillator",
+            "type": "chrome",
+            "request": "launch",
+            "file": "${workspaceFolder}/applets/harmonic-oscillator/index.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "name": "magnetic-pendulum",
+            "type": "chrome",
+            "request": "launch",
+            "file": "${workspaceFolder}/applets/magnetic-pendulum/index.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "name": "planetary-disk",
+            "type": "chrome",
+            "request": "launch",
+            "file": "${workspaceFolder}/applets/planetary-disk/index.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "name": "simulated-evolution",
+            "type": "chrome",
+            "request": "launch",
+            "file": "${workspaceFolder}/applets/simulated-evolution/index.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "name": "tides",
+            "type": "chrome",
+            "request": "launch",
+            "file": "${workspaceFolder}/applets/tides/index.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "name": "wator",
+            "type": "chrome",
+            "request": "launch",
+            "file": "${workspaceFolder}/applets/wator/index.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "name": "exoplanet-atlas (Diagramm)",
+            "type": "chrome",
+            "request": "launch",
+            "file": "${workspaceFolder}/applets/exoplanet-atlas/index.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "name": "original: magnetic-pendulum",
+            "type": "chrome",
+            "request": "launch",
+            "file": "${workspaceFolder}/originals/magnetic-pendulum/index.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "name": "original: simulated-evolution",
+            "type": "chrome",
+            "request": "launch",
+            "file": "${workspaceFolder}/originals/simulated-evolution/index.html",
+            "webRoot": "${workspaceFolder}"
+        }
+    ]
+}

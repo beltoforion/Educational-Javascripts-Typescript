@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+	<title>Simulierte Evolution (Original)</title>
+	<link rel="stylesheet" href="../../shared/demo/applet.css"/>
+	<script src="./simulated_evolution.js"></script>
+</head>
+<body>
+<div class="page">
+
+	<nav class="appnav">
+		<a href="../../index.html">← Alle Applets</a>
+		<a href="https://beltoforion.de/de/simulierte-evolution">Artikel auf beltoforion.de</a>
+	</nav>
+
+	<h1>Simulierte Evolution (Original)</h1>
+	<p>Blaue Mikroben bewegen sich über ein Feld mit grünem Futter. Acht Gene legen für jede
+	   Mikrobe fest, mit welcher Wahrscheinlichkeit sie ihre Richtung um welchen Betrag ändert.
+	   Fressen bringt Energie, jeder Schritt und jede Richtungsänderung kosten Energie. Eine
+	   Mikrobe mit genügend Energie teilt sich und gibt ihre Gene mit einer zufälligen Mutation
+	   weiter, eine Mikrobe ohne Energie stirbt.</p>
+	<p>Dies ist die frühere, von Hand geschriebene TypeScript-Fassung. Die aktuelle Fassung liegt
+	   unter <a href="../../applets/simulated-evolution/index.html">applets/simulated-evolution</a>.</p>
+	<p class="hint">Die drei Knöpfe legen fest, wo neues Futter entsteht: gleichmäßig verteilt, überwiegend entlang von Linien oder überwiegend in einem Rechteck in der Mitte.</p>
+
+	<div class="applet-stage">
+		<div class="applet-view">
+			<canvas id="cvMain" width="800" height="800"></canvas>
+		</div>
+		<div class="applet-panel">
+			<fieldset>
+				<legend>Futterverteilung</legend>
+				<button id="btnAgeOfUneventfullness" type="button" onclick="SimulatedEvolution.SPAWN_STRATEGY=0;">Gleichmäßig verteilt</button>
+				<button id="btnAgeOfLines" type="button" onclick="SimulatedEvolution.SPAWN_STRATEGY=1;">Entlang von Linien</button>
+				<button id="btnAgeOfRectangle" type="button" onclick="SimulatedEvolution.SPAWN_STRATEGY=2;">In einem Rechteck</button>
+			</fieldset>
+		</div>
+	</div>
+
+	<script>
+	var sim = new SimulatedEvolution({ cvid                : 'cvMain',
+	                                   cellsize            : 2,
+	                                   food_spawn_per_tick : 2,
+	                                   energy_per_food     : 40,
+	                                   energy_max          : 1500,
+	                                   energy_to_reproduce : 1000,
+	                                   initial_microbe_num : 200 });
+	</script>
+
+</div>
+</body>
+</html>

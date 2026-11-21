@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+	<title>Exoplaneten: Transitmethode</title>
+	<link rel="stylesheet" href="../../shared/demo/applet.css"/>
+	<script src="../../third-party/phaser/phaser.js"></script>
+	<script src="./exoplanet_transit.js"></script>
+	<script src="./chart.js"></script>
+</head>
+<body>
+<div class="page">
+
+	<nav class="appnav">
+		<a href="../../index.html">← Alle Applets</a>
+		<a href="https://beltoforion.de/de/exoplaneten/transitmethode.php">Artikel auf beltoforion.de</a>
+	</nav>
+
+	<h1>Exoplaneten: Transitmethode</h1>
+	<p>Ein Planet zieht vor seinem Stern vorbei. Das Diagramm darunter zeichnet die
+	   Helligkeit des Sterns über der Zeit auf: Solange der Planet einen Teil der
+	   Sternscheibe verdeckt, sinkt sie ab. Der Kurve ist ein leichtes Rauschen überlagert;
+	   nach jedem Durchlauf beginnt die Aufzeichnung von vorn.</p>
+
+	<div class="applet-stage">
+		<div class="applet-view"><div id='cv'></div></div>
+	</div>
+
+	<script>
+	var game = new TransitSimulator({ assetpath  : '',
+	                                  cvid       : 'cv',
+	                                  font       : "26px Arial",
+	                                  sizeSun    : 220,
+	                                  sizePlanet : 30,
+	                                  width      : 600,
+	                                  height     : 600 });
+	</script>
+
+</div>
+</body>
+</html>

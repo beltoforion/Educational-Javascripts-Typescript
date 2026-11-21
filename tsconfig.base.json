@@ -1,0 +1,15 @@
+{
+    // Gemeinsame Einstellungen aller TypeScript-Applets. Jedes Applet hat ein
+    // eigenes tsconfig.json, das diese Datei erweitert und nur seine
+    // Abweichungen nennt. Übersetzt wird mit TypeScript 4.9 (siehe package.json):
+    // die Applets zielen auf ES5, das neuere Compiler nicht mehr erzeugen.
+    "compilerOptions": {
+        "target": "es5",
+        "module": "commonjs",
+        "sourceMap": true,
+        "noImplicitAny": true,
+        // Die Typdateien von Phaser 2 passen nicht mehr zu den aktuellen
+        // DOM-Typen (MSPointerEvent); sie werden deshalb nicht geprüft.
+        "skipLibCheck": true
+    }
+}

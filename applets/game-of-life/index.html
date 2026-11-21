@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+	<title>Conways Spiel des Lebens</title>
+	<link rel="stylesheet" href="../../shared/demo/applet.css"/>
+	<script type="text/javascript" src="./game_of_life.js"></script>
+</head>
+<body>
+<div class="page">
+
+	<nav class="appnav">
+		<a href="../../index.html">← Alle Applets</a>
+		<a href="https://beltoforion.de/de/game_of_life">Artikel auf beltoforion.de</a>
+	</nav>
+
+	<h1>Conways Spiel des Lebens</h1>
+	<p>Zellulärer Automat nach John Conway auf einem Gitter aus 200 × 150 Zellen. Eine lebende
+	   Zelle bleibt am Leben, wenn zwei oder drei ihrer acht Nachbarn leben; eine tote Zelle wird
+	   lebendig, wenn genau drei Nachbarn leben. Beim Laden der Seite startet das Muster Twogun.</p>
+	<p class="hint">Die Knöpfe unter „Startmuster“ ersetzen den Inhalt des Gitters. „Einzelschritt“ hält die Simulation an und rechnet genau eine Generation weiter, „Start / Weiter“ lässt sie wieder laufen.</p>
+
+	<div class="applet-stage">
+		<div class="applet-view">
+			<canvas id="cvMain" width="800" height="600"></canvas>
+		</div>
+		<div class="applet-panel">
+			<fieldset>
+				<legend>Ablauf</legend>
+				<div class="applet-buttons">
+					<button type="button" onclick="GameOfLife.CMD='clear';">Leeren</button>
+					<button type="button" onclick="GameOfLife.CMD='run';">Start / Weiter</button>
+					<button type="button" onclick="GameOfLife.CMD='single';">Einzelschritt</button>
+				</div>
+				<label><input id="cbToroidal" type="checkbox" checked="true" onclick="GameOfLife.CMD='update';"/>Torus-Welt (gegenüberliegende Ränder verbunden)</label>
+			</fieldset>
+			<fieldset>
+				<legend>Startmuster</legend>
+				<button type="button" onclick="GameOfLife.CMD='random';">Zufällige Belegung</button>
+				<button type="button" onclick="GameOfLife.CMD='pat1';">R-Pentomino (ein Methusalem)</button>
+				<button type="button" onclick="GameOfLife.CMD='pat2';">Glider</button>
+				<button type="button" onclick="GameOfLife.CMD='pat3';">Spaceship</button>
+				<button type="button" onclick="GameOfLife.CMD='pat4';">Trans Queen Bee Shuttle</button>
+				<button type="button" onclick="GameOfLife.CMD='pat5';">Queen Bee Loop</button>
+				<button type="button" onclick="GameOfLife.CMD='pat6';">Partial Queen Bee Loop</button>
+				<button type="button" onclick="GameOfLife.CMD='pat7';">Tagalong for two LWSS</button>
+				<button type="button" onclick="GameOfLife.CMD='pat8';">Glider Duplicator</button>
+				<button type="button" onclick="GameOfLife.CMD='pat9';">Twogun</button>
+				<button type="button" onclick="GameOfLife.CMD='pat10';">Newgun</button>
+				<button type="button" onclick="GameOfLife.CMD='pat11';">Block-laying switch engine</button>
+				<button type="button" onclick="GameOfLife.CMD='pat12';">40514M (ein Methusalem)</button>
+				<p class="note">Die Muster stammen aus dem <a href="https://conwaylife.com/wiki/Main_Page">LifeWiki</a>.</p>
+			</fieldset>
+		</div>
+	</div>
+
+	<script>
+	var gol = new GameOfLife({ cvid        : 'cvMain',
+	                           is_running  : true,
+	                           is_torodial : true,
+	                           delay       : 20,
+	                           cells_x     : 200,
+	                           cells_y     : 200 * 0.75 },
+	                           null);
+	</script>
+
+</div>
+</body>
+</html>

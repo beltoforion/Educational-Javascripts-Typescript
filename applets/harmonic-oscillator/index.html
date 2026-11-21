@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+	<title>Gedämpfter harmonischer Oszillator</title>
+	<link rel="stylesheet" href="../../shared/demo/applet.css"/>
+	<script src="../../third-party/flotr2/flotr2.min.js"></script>
+	<script type="text/javascript" src="./damped_harmonic_oscillator.js"></script>
+	<style>
+		/* Flotr2 setzt die Achsenbeschriftung als HTML-Elemente, die rechts rund 47px
+		   über das Diagramm hinausragen; ohne den Rand entstünde ein Rollbalken. */
+		.applet-view.light { padding: 12px 48px 12px 12px; }
+		.applet-panel label { justify-content: space-between; }
+	</style>
+</head>
+<body>
+<div class="page">
+
+	<nav class="appnav">
+		<a href="../../index.html">← Alle Applets</a>
+		<a href="https://beltoforion.de/de/harmonischer_oszillator">Artikel auf beltoforion.de</a>
+	</nav>
+
+	<h1>Gedämpfter harmonischer Oszillator</h1>
+	<p>Das Diagramm zeigt die analytische Lösung x(t) des gedämpften harmonischen Oszillators für
+	   t = 0 bis 10. Je nach Verhältnis von Eigenkreisfrequenz ω₀ und Abklingkonstante δ ergibt
+	   sich der Schwingfall (δ &lt; ω₀, gezeichnet mit den beiden Hüllkurven), der aperiodische
+	   Grenzfall (δ = ω₀) oder der Kriechfall (δ &gt; ω₀, gezeichnet mit den beiden Teillösungen,
+	   deren Summe die Lösung ist).</p>
+	<p class="hint">Das Diagramm wird neu gezeichnet, sobald einer der vier Werte geändert wird.</p>
+
+	<div class="applet-stage">
+		<div class="applet-view light">
+			<div id="diagram" style="width:600px;height:500px;"></div>
+		</div>
+		<div class="applet-panel">
+			<fieldset>
+				<legend>Anfangsbedingungen</legend>
+				<label>Startposition x₀
+					<input type="number" id="StartPos" value="2" step="1" onchange="dho.updateFromControls('StartPos', 'StartVel', 'Omega0', 'Delta');"/></label>
+				<label>Startgeschwindigkeit v₀
+					<input type="number" id="StartVel" value="0" step="1" onchange="dho.updateFromControls('StartPos', 'StartVel', 'Omega0', 'Delta');"/></label>
+			</fieldset>
+			<fieldset>
+				<legend>Eigenschaften des Systems</legend>
+				<label>Eigenkreisfrequenz ω₀
+					<input type="number" id="Omega0" value="1.5" step="0.1" onchange="dho.updateFromControls('StartPos', 'StartVel', 'Omega0', 'Delta');"/></label>
+				<label>Abklingkonstante δ
+					<input type="number" id="Delta" value="0.3" step="0.1" onchange="dho.updateFromControls('StartPos', 'StartVel', 'Omega0', 'Delta');"/></label>
+			</fieldset>
+		</div>
+	</div>
+
+	<script>
+	var dho;
+	window.onload = function() {
+		dho = new DampedHarmonicOscillator("diagram");
+		dho.updateFromControls('StartPos', 'StartVel', 'Omega0', 'Delta');
+	}
+	</script>
+
+</div>
+</body>
+</html>

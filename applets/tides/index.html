@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+	<title>Gezeiten</title>
+	<link rel="stylesheet" href="../../shared/demo/applet.css"/>
+</head>
+<body>
+<div class="page">
+
+	<nav class="appnav">
+		<a href="../../index.html">← Alle Applets</a>
+		<a href="https://beltoforion.de/de/gezeiten">Artikel auf beltoforion.de</a>
+		<a href="./simple.html">Einfache Fassung</a>
+	</nav>
+
+	<h1>Gezeiten</h1>
+	<p>Erde und Mond umlaufen ihren gemeinsamen Schwerpunkt, die gelben Pfeile geben die Richtung
+	   des Sonnenlichts an. An 30 Punkten des Erdumfangs zeichnet das Applet die
+	   Gezeitenbeschleunigung durch den Mond (weiße Pfeile) und durch die Sonne (orange Pfeile);
+	   die blaue Fläche fasst beide zusammen und deutet die Flutberge an. Erde und Mond sind
+	   gegenüber ihrem Abstand stark vergrößert gezeichnet.</p>
+	<p class="hint">„Nipptide“ und „Springtide“ halten die Animation an und bringen Sonne und Mond in die jeweilige Stellung. Die Kästchen blenden einzelne Bildteile und Beschleunigungen ein oder aus.</p>
+
+	<div class="applet-stage">
+		<div class="applet-view">
+			<canvas id="cvTides2" width="800" height="800"></canvas>
+		</div>
+		<div class="applet-panel">
+			<fieldset>
+				<legend>Animation</legend>
+				<div class="applet-buttons">
+					<button type="button" id="btnRun" onclick="onClickRunStop()">Start</button>
+					<button type="button" id="btnNeapTide" onclick="onClickNeapTide()">Nipptide</button>
+					<button type="button" id="btnSpringTide" onclick="onClickSpringTide()">Springtide</button>
+				</div>
+			</fieldset>
+
+			<fieldset>
+				<legend>Blickpunkt</legend>
+				<select id="cbViewPoint" name="viewpoint" onchange="onChangeViewPoint()">
+					<option value="Earth">Erde</option>
+					<option value="CenterOfMass">Schwerpunkt Erde–Mond</option>
+				</select>
+			</fieldset>
+
+			<fieldset>
+				<legend>Darstellung</legend>
+				<label><input type="checkbox" id="cbShowOrbits" onchange="onShowOrbits()"/>Umlaufbahnen</label>
+				<label><input type="checkbox" id="cbShowMoon" onchange="onShowMoon()"/>Mond</label>
+				<label><input type="checkbox" id="cbShowSun" onchange="onShowSun()"/>Sonne</label>
+			</fieldset>
+
+			<fieldset>
+				<legend>Beschleunigungen</legend>
+				<label><input type="checkbox" id="cbShowTidalAcc" onchange="onShowTidalAcc()"/>Gezeitenbeschleunigung (Mond)</label>
+				<label><input type="checkbox" id="cbShowTidalAccSun" onchange="onShowTidalAccSun()"/>Gezeitenbeschleunigung (Sonne)</label>
+				<label><input type="checkbox" id="cbShowOcean" onchange="onShowOcean()"/>Ozean</label>
+				<label><input type="checkbox" id="cbShowGravAcc" onchange="onShowGravAcc()"/>Gravitationsbeschleunigung (Mond)</label>
+				<label><input type="checkbox" id="cbShowCentAcc" onchange="onShowCentAcc()"/>Zentrifugalbeschleunigung</label>
+				<label><input type="checkbox" id="cbShowSurfacePoints" onchange="onShowSurfacePoints()"/>Bezugspunkte der Zentrifugalbeschleunigung</label>
+				<label><input type="checkbox" id="cbScaleForceToModel" onchange="onScaleForceToModel()"/>Vektorrichtungen an den Modellmaßstab anpassen</label>
+			</fieldset>
+
+			<fieldset>
+				<legend>Sonstiges</legend>
+				<label><input type="checkbox" id="cbEnableRotation" onchange="onEnableRotation()"/>Rotation von Erde und Mond</label>
+				<label><input type="checkbox" id="cbShowBackgoundImage" onchange="onShowBackgroundImage()"/>Hintergrundbild</label>
+			</fieldset>
+		</div>
+	</div>
+
+	<script src="./dist/tides-bundle.js"></script>
+	<script>
+	var tidalModel = window.TidalSimulationLibrary.createTidalSimulation({
+		cvid                : 'cvTides2',
+		path                : './dist/',
+		timestep            : 86400/10,
+		lookAtTarget        : 'CenterOfMass',
+		autoMove            : true,
+		setup               : 1,
+		isRunning           : true,
+		showSun             : true,
+		scaleForceToModel   : false,
+		showMoon            : true,
+		showMoonOrbit       : true,
+		showEarthOrbit      : true,
+		showSurfacePoints   : false,
+		showGravAcc         : false,
+		showCentAcc         : false,
+		showTidalAcc        : true,
+		showTidalAccSun     : true,
+		showAccSum          : true,
+		enableRotation      : true,
+		showBackgroundImage : false
+	});
+
+	updateControls()
+
+	function updateControls() {
+		// Set up formular controls
+		document.getElementById("cbViewPoint").value             = tidalModel.config.lookAtTarget;
+		document.getElementById("cbShowOrbits").checked          = tidalModel.config.showEarthOrbit || tidalModel.config.showMoonOrbit;
+		document.getElementById("cbShowSurfacePoints").checked   = tidalModel.config.showSurfacePoints;
+		document.getElementById("cbShowTidalAcc").checked        = tidalModel.config.showTidalAcc;
+		document.getElementById("cbShowTidalAccSun").checked     = tidalModel.config.showTidalAccSun;
+		document.getElementById("cbShowOcean").checked           = tidalModel.config.showAccSum;
+		document.getElementById("cbShowGravAcc").checked         = tidalModel.config.showGravAcc;
+		document.getElementById("cbShowCentAcc").checked         = tidalModel.config.showCentAcc;
+		document.getElementById("cbShowMoon").checked            = tidalModel.config.showMoon;
+		document.getElementById("cbShowSun").checked             = tidalModel.config.showSun;
+		document.getElementById("cbScaleForceToModel").checked   = tidalModel.config.scaleForceToModel;
+		document.getElementById("cbEnableRotation").checked      = tidalModel.config.enableRotation;
+		document.getElementById("cbShowBackgoundImage").checked  = tidalModel.config.showBackgroundImage;
+
+		if (tidalModel.config.autoMove) {
+			document.getElementById("btnRun").innerHTML  = "Stopp";
+		} else {
+			document.getElementById("btnRun").innerHTML  = "Start";
+		}
+	}
+
+	function onChangeViewPoint() {
+		tidalModel.config.lookAtTarget = document.getElementById("cbViewPoint").value;
+	}
+
+	function onShowBackgroundImage() {
+		var check = document.getElementById("cbShowBackgoundImage").checked;
+		tidalModel.config.showBackgroundImage = check;
+	}
+
+	function onShowOrbits() {
+		var check = document.getElementById("cbShowOrbits").checked;
+		tidalModel.config.showEarthOrbit = check;
+		tidalModel.config.showMoonOrbit = check;
+	}
+
+	function onShowSurfacePoints() {
+		tidalModel.config.showSurfacePoints = document.getElementById("cbShowSurfacePoints").checked;
+	}
+
+	function onShowTidalAcc() {
+		tidalModel.config.showTidalAcc = document.getElementById("cbShowTidalAcc").checked;
+	}
+
+	function onShowTidalAccSun() {
+		tidalModel.config.showTidalAccSun = document.getElementById("cbShowTidalAccSun").checked;
+	}
+
+	function onShowOcean() {
+		tidalModel.config.showAccSum = document.getElementById("cbShowOcean").checked;
+	}
+
+	function onShowGravAcc() {
+		tidalModel.config.showGravAcc = document.getElementById("cbShowGravAcc").checked;
+	}
+
+	function onShowCentAcc() {
+		tidalModel.config.showCentAcc = document.getElementById("cbShowCentAcc").checked;
+	}
+
+	function onShowSun() {
+		tidalModel.config.showSun = document.getElementById("cbShowSun").checked;
+	}
+
+	function onShowMoon() {
+		tidalModel.config.showMoon = document.getElementById("cbShowMoon").checked;
+	}
+
+	function onScaleForceToModel() {
+		tidalModel.setScaleForceToModel(document.getElementById("cbScaleForceToModel").checked);
+	}
+
+	function onEnableRotation() {
+		tidalModel.config.enableRotation = document.getElementById("cbEnableRotation").checked;
+	}
+
+	function onClickRunStop() {
+		if (tidalModel.config.autoMove == false) {
+			tidalModel.config.autoMove = true
+		} else {
+			tidalModel.config.autoMove = false
+		}
+		updateControls()
+	}
+
+	function onClickNeapTide() {
+		tidalModel.config.autoMove = false
+		tidalModel.setPositions(Math.PI, Math.PI*1.5)
+		tidalModel.update()
+		tidalModel.render()
+		updateControls()
+	}
+
+	function onClickSpringTide() {
+		tidalModel.config.autoMove = false
+		tidalModel.setPositions(Math.PI*.5, Math.PI*1.5)
+		tidalModel.update()
+		tidalModel.render()
+		updateControls()
+	}
+	</script>
+
+</div>
+</body>
+</html>

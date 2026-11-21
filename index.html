@@ -1,45 +1,282 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
-  <meta charset="utf-8"/>
-  <link rel="stylesheet" type="text/css" href="./styles/index.css"/>
-  <link rel="stylesheet" type="text/css" href="./styles/article.css"/>
-  <title>Educational Javascripts</title>
-  <style type="text/css">
-   canvas { border: 1px solid black; }
-  </style>
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+	<title>Applets von beltoforion.de</title>
+	<link rel="stylesheet" href="./shared/demo/applet.css"/>
+	<style>
+	/* Übersicht aller Applets. Die Grundfarben kommen aus applet.css, damit
+	   Übersicht und Demo-Seiten gleich aussehen. */
+	.top {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 16px;
+		margin: 14px 0 26px;
+	}
+	.top h1 { font-size: 2rem; line-height: 1.2; margin: 0 0 .3em; }
+	.top p  { margin: 0; font-size: 1.05rem; }
+	.lang {
+		flex: none;
+		background: #23262c;
+		color: var(--page-fg);
+		border: 1px solid var(--ctl-line);
+		border-radius: 999px;
+		padding: 5px 14px;
+		font: inherit;
+		font-size: .9rem;
+		cursor: pointer;
+	}
+	.lang:hover { border-color: #7fb7ff; }
+
+	.page .cards {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+		gap: 18px;
+		margin: 0;
+		padding: 0;
+		max-width: none;
+		list-style: none;
+	}
+	.card {
+		display: flex;
+		flex-direction: column;
+		background: #1a1d22;
+		border: 1px solid var(--ctl-line);
+		border-radius: 10px;
+		overflow: hidden;
+	}
+	.card:hover, .card:focus-within { border-color: #7fb7ff; }
+	.card-shot {
+		display: block;
+		aspect-ratio: 16 / 10;
+		background: #000 linear-gradient(135deg, #1b2030, #0c0e13);
+		overflow: hidden;
+	}
+	.card-shot img { display: block; width: 100%; height: 100%; object-fit: cover; }
+	.card-body { display: flex; flex-direction: column; flex: 1; gap: 8px; padding: 12px 14px 14px; }
+	.card h3 { font-size: 1.08rem; line-height: 1.3; margin: 0; }
+	.card h3 a { color: var(--page-fg); text-decoration: none; }
+	.card h3 a:hover { color: #7fb7ff; }
+	.card p { margin: 0; font-size: .92rem; line-height: 1.45; color: #cfd4db; }
+	.card-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 6px; font-size: .9rem; }
+	.card-links a {
+		padding: 4px 12px;
+		border: 1px solid var(--ctl-line);
+		border-radius: 999px;
+		text-decoration: none;
+		color: var(--page-dim);
+	}
+	.card-links a:hover { color: var(--page-fg); border-color: #7fb7ff; }
+	.card-links a.go { color: #0d0f12; background: #7fb7ff; border-color: #7fb7ff; font-weight: 600; }
+	.card-links a.go:hover { background: #a3ccff; border-color: #a3ccff; color: #0d0f12; }
+
+	.page h2.section { font-size: 1.25rem; margin: 2.4em 0 .2em; }
+	.section-note { margin: 0 0 1em; color: var(--page-dim); }
+	.page .cards.small { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
+
+	.page .foot {
+		margin-top: 3em;
+		padding-top: 1em;
+		border-top: 1px solid var(--ctl-line);
+		font-size: .88rem;
+		color: var(--page-dim);
+		max-width: none;
+	}
+	</style>
 </head>
+<body>
+<div class="page">
 
-<body class="article">
-  <div id="article_title_bar">
-    <div id="article_title_box">
-      <div id="article_title">beltoforion.github.io</div>
-      <div id="article_sub_title">Educational Javascripts - Sample Page</div>
-    </div>
-  </div> <!-- article_title_bar -->
+	<header class="top">
+		<div>
+			<h1 id="title"></h1>
+			<p id="lead"></p>
+		</div>
+		<button class="lang" id="lang" type="button"></button>
+	</header>
 
+	<ul class="cards" id="applets"></ul>
 
-  <div id="article_client_area">
-    <h1 class="article_caption">So what is this?</h1>
-    <p>
-    The educational javascript repository is a collection of javascript applets created for my web 
-    page <a href="http://beltoforion.de">beltoforion.de</a>. They are open source and distributed under
-    the GPL 3 license.
-    </p>
+	<h2 class="section" id="originals-title"></h2>
+	<p class="section-note" id="originals-note"></p>
+	<ul class="cards small" id="originals"></ul>
 
-    <a class="huge_linkbox" href="https://github.com/beltoforion/Educational-Javascripts">
-	<div class="huge_linkbox_caption">Source Code</div>
-	<p class="huge_linkbox_subtitle">Fork Project at GitHub.</p>
-    </a>
-   
-    <div class="clear"/>
+	<p class="foot" id="foot"></p>
 
-    <h1 class="article_caption">List of Applets</h1>
-    <iframe src="./simulated_evolution/simulated_evolution.html" width="100%" height="1000" class="noborder"></iframe> 
-    <iframe src="./game_of_life/game_of_life.html" width="100%" height="850" class="noborder"></iframe> 
-    <iframe src="./tides/tides.html" width="100%" height="1000" class="noborder"></iframe>
-    <iframe src="./damped_harmonic_oscillator_analytic_solution/damped_harmonic_oscillator.html" width="100%" height="650" class="noborder"></iframe>
-    <iframe src="./exoplanet_transit/exoplanet_transit.html" width="100%" height="650" class="noborder"></iframe>    
-  </div>
+	<noscript><p>Diese Seite braucht JavaScript. Die Demo-Seiten liegen in den Ordnern unter <code>applets/</code>.</p></noscript>
+</div>
+
+<script>
+// Übersicht: ein Eintrag je Demo-Seite. Ein neues Applet bekommt hier einen
+// Eintrag und ein Vorschaubild shared/previews/<id>.jpg.
+//   page     Demo-Seite, relativ zu dieser Datei
+//   article  Artikel auf beltoforion.de je Sprache (fehlt, wenn es keinen gibt)
+(function () {
+	'use strict';
+
+	var SITE = 'https://beltoforion.de/';
+	var APPLETS = [
+		{ id: 'doppler-effect', page: 'applets/doppler-effect/index.html',
+			title: { de: 'Doppler-Effekt', en: 'Doppler Effect' },
+			text: { de: 'Ein Stern sendet in gleichen Abständen Wellenfronten aus und bewegt sich dabei. In Bewegungsrichtung liegen sie dichter beieinander, in der Gegenrichtung weiter auseinander.',
+				en: 'A star emits wave fronts at regular intervals while it moves. Ahead of the star they lie closer together, behind it farther apart.' },
+			article: { de: 'de/exoplaneten/radialgeschwindigkeitsmethode.php', en: 'en/exoplanets/radial-velocity-method.php' } },
+		{ id: 'exoplanet-atlas', page: 'applets/exoplanet-atlas/atlas.html',
+			title: { de: 'Atlas der Exoplaneten', en: 'Atlas of Exoplanets' },
+			text: { de: 'Alle bekannten Exoplaneten in vier Ansichten, mit Filtern nach Planetentyp, Sterntyp und habitabler Zone und mit Berichten zu einzelnen Entdeckungen.',
+				en: 'All known exoplanets in four views, with filters for planet type, star type and habitable zone, and with stories about individual discoveries.' },
+			article: { de: 'de/exoplaneten/atlas/', en: 'en/exoplanets/atlas/' } },
+		{ id: 'exoplanet-diagram', page: 'applets/exoplanet-atlas/index.html',
+			title: { de: 'Exoplaneten: Masse und Umlaufzeit', en: 'Exoplanets: Mass and Orbital Period' },
+			text: { de: 'Diagramm der bekannten Exoplaneten nach Masse und Umlaufzeit. Konturen zeigen, welche Planeten jedes Entdeckungsverfahren findet.',
+				en: 'Chart of the known exoplanets by mass and orbital period. Contours show which planets each detection method finds.' },
+			article: { de: 'de/exoplaneten/geschichte.php', en: 'en/exoplanets/history.php' } },
+		{ id: 'exoplanet-pulsar-timing', page: 'applets/exoplanet-pulsar-timing/index.html',
+			title: { de: 'Exoplaneten: Pulsar-Timing', en: 'Exoplanets: Pulsar Timing' },
+			text: { de: 'Zwei Pulsare im Vergleich, einer mit Planet und einer ohne. Der Planet zieht seinen Pulsar um den gemeinsamen Schwerpunkt, dessen Pulse treffen dadurch leicht verschoben ein.',
+				en: 'Two pulsars side by side, one with a planet and one without. The planet pulls its pulsar around their common center of mass, so its pulses arrive slightly shifted.' },
+			article: { de: 'de/exoplaneten/pulsar_timing.php', en: 'en/exoplanets/pulsar-timing.php' } },
+		{ id: 'exoplanet-radial-velocity', page: 'applets/exoplanet-radial-velocity/index.html',
+			title: { de: 'Exoplaneten: Radialgeschwindigkeit', en: 'Exoplanets: Radial Velocity' },
+			text: { de: 'Stern und Planet kreisen um den gemeinsamen Schwerpunkt. Die Bewegung des Sterns verschiebt die Linien in seinem Spektrum.',
+				en: 'Star and planet orbit their common center of mass. The motion of the star shifts the lines in its spectrum.' },
+			article: { de: 'de/exoplaneten/radialgeschwindigkeitsmethode.php', en: 'en/exoplanets/radial-velocity-method.php' } },
+		{ id: 'exoplanet-transit', page: 'applets/exoplanet-transit/index.html',
+			title: { de: 'Exoplaneten: Transitmethode', en: 'Exoplanets: Transit Method' },
+			text: { de: 'Ein Planet zieht vor seinem Stern vorbei und verdeckt einen Teil der Scheibe. Die Lichtkurve zeigt den Helligkeitsabfall.',
+				en: 'A planet passes in front of its star and covers part of the disk. The light curve shows the drop in brightness.' },
+			article: { de: 'de/exoplaneten/transitmethode.php', en: 'en/exoplanets/transit-method.php' } },
+		{ id: 'game-of-life', page: 'applets/game-of-life/index.html',
+			title: { de: 'Conways Spiel des Lebens', en: "Conway's Game of Life" },
+			text: { de: 'Der zelluläre Automat von John Conway mit einer Auswahl bekannter Muster, von Gleitern bis zu Gleiterkanonen.',
+				en: 'John Conway’s cellular automaton with a selection of well-known patterns, from gliders to glider guns.' },
+			article: { de: 'de/game_of_life', en: 'en/game_of_life' } },
+		{ id: 'harmonic-oscillator', page: 'applets/harmonic-oscillator/index.html',
+			title: { de: 'Gedämpfter harmonischer Oszillator', en: 'Damped Harmonic Oscillator' },
+			text: { de: 'Die analytische Lösung der Schwingungsgleichung für wählbare Anfangswerte, Eigenfrequenz und Dämpfung.',
+				en: 'The analytic solution of the oscillator equation for a choice of initial values, natural frequency and damping.' },
+			article: { de: 'de/harmonischer_oszillator', en: 'en/harmonic_oscillator' } },
+		{ id: 'magnetic-pendulum', page: 'applets/magnetic-pendulum/index.html',
+			title: { de: 'Magnetisches Pendel', en: 'Magnetic Pendulum' },
+			text: { de: 'Jeder Bildpunkt ist ein eigenes Pendel. Die Farbe zeigt, über welchem Magneten es zur Ruhe kommt; es entsteht das Fraktal der Einzugsgebiete.',
+				en: 'Every pixel is a pendulum of its own. The color shows over which magnet it comes to rest, which yields the fractal of the basins of attraction.' },
+			article: { de: 'de/magnetisches-pendel', en: 'en/magnetic-pendulum' } },
+		{ id: 'planetary-disk', page: 'applets/planetary-disk/index.html',
+			title: { de: 'Planetenscheibe', en: 'Planetary Disk' },
+			text: { de: 'Eine Staubscheibe um die Sonne, gestört durch Erde und Jupiter. Im mitrotierenden Bild werden die Lagrange-Punkte L4 und L5 mit ihren Trojanern sichtbar.',
+				en: 'A dust disk around the Sun, disturbed by Earth and Jupiter. In the co-rotating frame the Lagrange points L4 and L5 with their Trojans become visible.' } },
+		{ id: 'simulated-evolution', page: 'applets/simulated-evolution/index.html',
+			title: { de: 'Simulierte Evolution', en: 'Simulated Evolution' },
+			text: { de: 'Mikroben suchen Nahrung und vererben ihre Bewegungsmuster mit kleinen Änderungen. Über viele Generationen passen sie sich an die Verteilung der Nahrung an.',
+				en: 'Microbes search for food and pass on their movement patterns with small changes. Over many generations they adapt to the way the food is distributed.' },
+			article: { de: 'de/simulierte-evolution', en: 'en/simulated-evolution' } },
+		{ id: 'tides', page: 'applets/tides/index.html',
+			title: { de: 'Gezeiten', en: 'Tides' },
+			text: { de: 'Die Gezeitenkräfte von Mond und Sonne auf die Erde, bei Springtide und Nipptide.',
+				en: 'The tidal forces of Moon and Sun on Earth, at spring tide and neap tide.' },
+			article: { de: 'de/gezeiten', en: 'en/tides' } },
+		{ id: 'wator', page: 'applets/wator/index.html',
+			title: { de: 'Wa-Tor', en: 'Wa-Tor' },
+			text: { de: 'Räuber-Beute-Simulation auf einer toroidalen Wasserwelt: Fische vermehren sich, Haie müssen fressen. Die Bestände schwingen gegeneinander.',
+				en: 'Predator-prey simulation on a toroidal water world: fish multiply, sharks have to eat. The two populations oscillate against each other.' },
+			article: { de: 'de/wator', en: 'en/wator' } }
+	];
+	// Abgelöste, von Hand geschriebene Fassungen.
+	var ORIGINALS = [
+		{ id: 'original-magnetic-pendulum', page: 'originals/magnetic-pendulum/index.html', current: 'applets/magnetic-pendulum/index.html',
+			title: { de: 'Magnetisches Pendel (Original)', en: 'Magnetic Pendulum (original)' },
+			text: { de: 'Ein Pendel über drei Magneten. Für ein Raster von Startpunkten wird berechnet, über welchem Magneten es zur Ruhe kommt.',
+				en: 'A pendulum above three magnets. For a grid of starting points the applet computes over which magnet it comes to rest.' } },
+		{ id: 'original-simulated-evolution', page: 'originals/simulated-evolution/index.html', current: 'applets/simulated-evolution/index.html',
+			title: { de: 'Simulierte Evolution (Original)', en: 'Simulated Evolution (original)' },
+			text: { de: 'Die erste Fassung in TypeScript mit drei Arten, die Nahrung zu verteilen.',
+				en: 'The first version in TypeScript with three ways of distributing the food.' } }
+	];
+	var TEXT = {
+		de: { title: 'Applets von beltoforion.de',
+			lead: function (n) { return n + ' interaktive Applets zu Physik, Astronomie und Simulation. Jedes läuft direkt im Browser.'; },
+			demo: 'Demo starten', article: 'Artikel', current: 'Aktuelle Fassung', other: 'English',
+			originals: 'Originale',
+			originalsNote: 'Frühere, von Hand geschriebene Fassungen von Applets, die inzwischen neu gebaut wurden.',
+			source: 'Quelltext auf GitHub', license: 'MIT-Lizenz' },
+		en: { title: 'Applets from beltoforion.de',
+			lead: function (n) { return n + ' interactive applets on physics, astronomy and simulation. Each one runs right in the browser.'; },
+			demo: 'Start demo', article: 'Article', current: 'Current version', other: 'Deutsch',
+			originals: 'Originals',
+			originalsNote: 'Earlier hand-written versions of applets that have since been rebuilt.',
+			source: 'Source code on GitHub', license: 'MIT license' }
+	};
+
+	function el(tag, cls, text) {
+		var n = document.createElement(tag);
+		if (cls) n.className = cls;
+		if (text !== undefined) n.textContent = text;
+		return n;
+	}
+	function link(cls, href, text, external) {
+		var a = el('a', cls, text);
+		a.href = href;
+		if (external) { a.target = '_blank'; a.rel = 'noopener'; }
+		return a;
+	}
+	function card(item, lang, tx) {
+		var li = el('li', 'card');
+		if (!item.current) {
+			var shot = link('card-shot', item.page);
+			shot.tabIndex = -1;
+			shot.setAttribute('aria-hidden', 'true');
+			var img = el('img');
+			img.loading = 'lazy';
+			img.alt = '';
+			img.onerror = function () { img.remove(); };   // ohne Bild bleibt der dunkle Grund
+			img.src = 'shared/previews/' + item.id + '.jpg';
+			shot.appendChild(img);
+			li.appendChild(shot);
+		}
+		var body = el('div', 'card-body');
+		var h = el('h3');
+		h.appendChild(link('', item.page, item.title[lang]));
+		var links = el('div', 'card-links');
+		links.appendChild(link('go', item.page, tx.demo));
+		if (item.article) links.appendChild(link('', SITE + item.article[lang], tx.article, true));
+		if (item.current) links.appendChild(link('', item.current, tx.current));
+		body.append(h, el('p', '', item.text[lang]), links);
+		li.appendChild(body);
+		return li;
+	}
+	function render(lang) {
+		var tx = TEXT[lang];
+		document.documentElement.lang = lang;
+		document.title = tx.title;
+		document.getElementById('title').textContent = tx.title;
+		document.getElementById('lead').textContent = tx.lead(APPLETS.length);
+		document.getElementById('lang').textContent = tx.other;
+		document.getElementById('originals-title').textContent = tx.originals;
+		document.getElementById('originals-note').textContent = tx.originalsNote;
+		document.getElementById('applets').replaceChildren.apply(document.getElementById('applets'),
+			APPLETS.map(function (a) { return card(a, lang, tx); }));
+		document.getElementById('originals').replaceChildren.apply(document.getElementById('originals'),
+			ORIGINALS.map(function (a) { return card(a, lang, tx); }));
+		var foot = document.getElementById('foot');
+		foot.replaceChildren(
+			link('', 'https://github.com/beltoforion/Educational-Javascripts-Typescript', tx.source, true), ' · ',
+			link('', 'LICENSE', tx.license), ' · ',
+			link('', SITE + lang + '/', 'beltoforion.de', true));
+	}
+
+	var lang = new URLSearchParams(location.search).get('lang');
+	try { lang = lang || localStorage.getItem('applets-lang'); } catch (e) { /* ohne Speicher geht es auch */ }
+	lang = lang || (navigator.language || 'de');
+	lang = String(lang).toLowerCase().slice(0, 2) === 'de' ? 'de' : 'en';
+	document.getElementById('lang').addEventListener('click', function () {
+		lang = lang === 'de' ? 'en' : 'de';
+		try { localStorage.setItem('applets-lang', lang); } catch (e) { /* ohne Speicher geht es auch */ }
+		render(lang);
+	});
+	render(lang);
+})();
+</script>
 </body>
 </html>
