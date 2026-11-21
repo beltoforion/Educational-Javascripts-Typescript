@@ -60,6 +60,14 @@
 //                      Gegenprüfung von Huang & Bakos (2014).
 //   1.6.4  2026-11-21  Übersicht: Link "als Liste" zur Seite mit allen Berichten
 //                      (discoveries/<sprache>/index.html, für Suchmaschinen).
+//   1.6.5  2026-11-21  Ansichtswechsel läuft in drei Schritten statt gleichzeitig:
+//                      altes Diagramm blendet aus, die Punkte wandern, dann
+//                      blendet das neue Diagramm ein. Punkte, die es nur in
+//                      der neuen Ansicht gibt, erscheinen erst danach. Die
+//                      Punktgröße springt beim Wechsel nicht mehr.
+//   1.7.0  2026-11-21  Filter "Sterntyp": Spektralklassen M, K, G, F, A/B und
+//                      "andere" (mehrere wählbar), zugeordnet nach dem
+//                      Spektraltyp des Katalogs, ersatzweise nach der Temperatur.
 //   1.1.0  2026-11-20  Einbetten in eine Website: Logo und Links (site),
 //                      Sprachschalter mit Zieladressen (langUrls), Basispfad
 //                      (base); Berichte werden über http(s) direkt geladen
@@ -68,7 +76,7 @@
 (function () {
   'use strict';
 
-  const VERSION = '1.6.4';
+  const VERSION = '1.7.0';
 
   // ============================================================ Konstanten
   const EARTH_PER_JUPITER = 317.83;   // Erdmassen je Jupitermasse
@@ -109,6 +117,40 @@
     [9000, [170, 196, 255]], [12000, [140, 170, 255]],
   ];
   const TEFF_BUCKETS = 14;
+  // Sternklassen des Filters "Sterntyp". max: obere Grenze der Klasse in
+  // Kelvin (für Sterne ohne Spektraltyp im Katalog), teff: Temperatur der
+  // Farbmarke. Die letzte Klasse sammelt alles Übrige: Weiße Zwerge, Pulsare,
+  // Braune Zwerge und Sterne ohne jede Angabe.
+  const STARS = [
+    { key: 'm', max: 3900, teff: 3200 }, { key: 'k', max: 5300, teff: 4600 }, { key: 'g', max: 6000, teff: 5700 },
+    { key: 'f', max: 7300, teff: 6600 }, { key: 'hot', max: Infinity, teff: 9500 }, { key: 'other', teff: null },
+  ];
+  const STAR_OTHER = STARS.length - 1, STAR_HOT = STAR_OTHER - 1;
+  const STAR_MIN_TEFF = 2300;   // darunter: Brauner Zwerg, kein Stern
+  const NO_STARS = STARS.map(() => false);
+  function starClassByTeff(teff) {
+    if (!teff || teff < STAR_MIN_TEFF) return STAR_OTHER;
+    return STARS.findIndex((c) => teff < c.max);
+  }
+  function starClass(sp, teff) {
+    let t = String(sp || '').trim();
+    if (!t) return starClassByTeff(teff);
+    if (/^AM Her/i.test(t)) return STAR_OTHER;   // kataklysmischer Veränderlicher, kein A-Stern
+    // Vorsilben: "dM4" ist ein Zwerg, "sdK7" ein Unterzwerg. Heiße Unterzwerge
+    // (sdB, sdO) sind freigelegte Sternkerne und zählen zu "andere".
+    const pre = /^(e?[sS]d|d)(?=[OBAFGKM])/.exec(t);
+    if (pre) {
+      t = t.slice(pre[0].length);
+      if (pre[0].length > 1 && /^[OB]/.test(t)) return STAR_OTHER;
+    }
+    const i = 'MKGF'.indexOf(t[0]);
+    if (i >= 0) return i;
+    if ('OBA'.indexOf(t[0]) < 0) return STAR_OTHER;   // DA, WD, PSR, L, T ...
+    // O- und B-Sterne sind heißer als 10 000 K. Nennt der Katalog eine
+    // Temperatur unterhalb der Klasse A, gilt die Temperatur.
+    if (t[0] !== 'A' && teff && teff < STARS[STAR_HOT - 1].max) return starClassByTeff(teff);
+    return STAR_HOT;
+  }
   const UNKNOWN_COLOR = '#6c7391';
 
   // Habitable Zone nach Kopparapu et al. 2014 (ApJL 787, L29): Grenzen als
@@ -338,6 +380,17 @@
       colorBy: 'Farbe', colors: { type: 'Typ', method: 'Methode', star: 'Stern' },
       typeGroup: 'Planetentyp', methodGroup: 'Entdeckungsmethode', hzGroup: 'Habitable Zone',
       distGroup: 'Entfernung', dataGroup: 'Anzeige', moreGroup: 'Weitere Filter', moreActive: 'geändert',
+      starGroup: 'Sterntyp', stars: { all: 'Alle', m: 'M', k: 'K', g: 'G', f: 'F', hot: 'A/B', other: 'andere' },
+      starHints: {
+        all: 'Planeten bei Sternen aller Klassen zeigen. Die Klasse folgt dem Spektraltyp im Katalog, ersatzweise der Temperatur des Sterns.',
+        m: (lo, hi) => 'Klasse M: kühle, rote Sterne unter etwa ' + hi + ', meist Rote Zwerge',
+        k: (lo, hi) => 'Klasse K: orangefarbene Sterne, etwa ' + lo + ' bis ' + hi,
+        g: (lo, hi) => 'Klasse G: gelbe Sterne wie die Sonne, etwa ' + lo + ' bis ' + hi,
+        f: (lo, hi) => 'Klasse F: gelbweiße Sterne, etwa ' + lo + ' bis ' + hi,
+        hot: (lo) => 'Klassen A, B und O: heiße, weiße bis bläuliche Sterne über etwa ' + lo,
+        other: () => 'Weiße Zwerge, Pulsare, Braune Zwerge und andere Objekte, dazu Sterne ohne Angabe im Katalog',
+      },
+      planetCount: (n, text) => text + (n === 1 ? ' Planet' : ' Planeten'),
       types: { rocky: 'Gesteinsplanet', mini: 'Mini-Neptun', neptune: 'Neptunartig', giant: 'Gasriese', bd: 'Brauner Zwerg' },
       typeHint: { rocky: 'Radius unter 1,6 Erdradien', mini: '1,6 bis 3,5 Erdradien', neptune: '12 bis 60 Erdmassen',
         giant: '60 Erdmassen bis 13 Jupitermassen', bd: 'über 13 Jupitermassen' },
@@ -454,6 +507,17 @@
       colorBy: 'Color', colors: { type: 'Type', method: 'Method', star: 'Star' },
       typeGroup: 'Planet type', methodGroup: 'Detection method', hzGroup: 'Habitable zone',
       distGroup: 'Distance', dataGroup: 'Display', moreGroup: 'More filters', moreActive: 'changed',
+      starGroup: 'Star type', stars: { all: 'All', m: 'M', k: 'K', g: 'G', f: 'F', hot: 'A/B', other: 'other' },
+      starHints: {
+        all: 'Show planets around stars of every class. The class follows the spectral type in the catalog, or the temperature of the star where none is given.',
+        m: (lo, hi) => 'Class M: cool, red stars below about ' + hi + ', mostly red dwarfs',
+        k: (lo, hi) => 'Class K: orange stars, about ' + lo + ' to ' + hi,
+        g: (lo, hi) => 'Class G: yellow stars like the Sun, about ' + lo + ' to ' + hi,
+        f: (lo, hi) => 'Class F: yellow-white stars, about ' + lo + ' to ' + hi,
+        hot: (lo) => 'Classes A, B and O: hot, white to bluish stars above about ' + lo,
+        other: () => 'White dwarfs, pulsars, brown dwarfs and other objects, plus stars with no entry in the catalog',
+      },
+      planetCount: (n, text) => text + (n === 1 ? ' planet' : ' planets'),
       types: { rocky: 'Rocky planet', mini: 'Mini-Neptune', neptune: 'Neptune-like', giant: 'Gas giant', bd: 'Brown dwarf' },
       typeHint: { rocky: 'radius below 1.6 Earth radii', mini: '1.6 to 3.5 Earth radii', neptune: '12 to 60 Earth masses',
         giant: '60 Earth masses to 13 Jupiter masses', bd: 'above 13 Jupiter masses' },
@@ -549,6 +613,7 @@
     methods: METHODS.map(() => true),
     hz: 'all',            // all | opt | con
     maxDist: null,        // Lichtjahre oder null
+    stars: NO_STARS.slice(),   // gewählte Sternklassen (STARS); keine gewählt = alle
     estMass: true,        // Planeten mit geschätzter Masse zeigen
     estPeriod: true,      // Planeten mit berechneter Umlaufzeit zeigen
     storiesOnly: false,
@@ -646,7 +711,7 @@
           starR: row[7] || null, starM: row[8] || null,
           radiusE: radiusE, plotRadius: plotRadius, estMass: kind === 2, estPeriod: kind === 1, estRadius: estRadius,
           flux: flux, hz: hzClass(flux, row[6]), esi: esi(plotRadius, flux),
-          star: starName(row[0]), stories: [], a: 0, vis: false,
+          star: starName(row[0]), stories: [], a: 0, vis: false, si: starClass(row[5], row[6]),
         };
         p.ti = classifyType(massE, radiusE, kind !== 2);
         p.pos = {
@@ -822,7 +887,7 @@
   // (das Entdeckungsjahr zählt nicht, damit die Zeilen im Zeitraffer stehen
   // bleiben). Liefert true, wenn sich die Zeilen geändert haben.
   function layoutSystems(force) {
-    const key = [state.types, state.methods, state.hz, state.maxDist, state.estMass, state.estPeriod, state.storiesOnly,
+    const key = [state.types, state.methods, state.hz, state.maxDist, state.stars, state.estMass, state.estPeriod, state.storiesOnly,
       state.multiOnly, state.tags, state.sysMin].join('|');
     const changed = key !== sysKey;
     if (changed) {
@@ -882,7 +947,9 @@
   const syOf = (v, ly) => plot.b - (ly - v.y0) / (v.y1 - v.y0) * plot.h;
 
   // Bildschirmposition eines Punktes; während eines Ansichtswechsels gleitet
-  // er von der alten zur neuen Position. fade: Sichtbarkeit 0..1.
+  // er von der alten zur neuen Position. fade: Sichtbarkeit 0..1. Punkte, die
+  // es nur in einer der beiden Ansichten gibt, blenden mit deren Diagramm
+  // aus bzw. ein (siehe MORPH_OUT, MORPH_IN).
   function place(p) {
     if (!morph) {
       const q = p.pos[state.view];
@@ -896,9 +963,9 @@
       const bx = sxOf(morph.toView, b[0]), by = syOf(morph.toView, b[1]);
       p.sx = ax + (bx - ax) * e; p.sy = ay + (by - ay) * e; p.fade = 1;
     } else if (a) {
-      p.sx = sxOf(morph.fromView, a[0]); p.sy = syOf(morph.fromView, a[1]); p.fade = Math.max(0, 1 - e * 2.5);
+      p.sx = sxOf(morph.fromView, a[0]); p.sy = syOf(morph.fromView, a[1]); p.fade = morph.out;
     } else if (b) {
-      p.sx = sxOf(morph.toView, b[0]); p.sy = syOf(morph.toView, b[1]); p.fade = Math.max(0, e * 2.5 - 1.5);
+      p.sx = sxOf(morph.toView, b[0]); p.sy = syOf(morph.toView, b[1]); p.fade = morph.in;
     } else { p.fade = 0; }
   }
 
@@ -906,14 +973,16 @@
   let visibleCount = 0;
   // Maßstab der Punkte: 1 bei ganzer Ansicht, größer beim Hineinzoomen. In der
   // Ansicht "Planetensysteme" richtet er sich nach der Zeilenhöhe.
-  function scaleOf(name, v) {
+  function scaleOf(name, v, few) {
     if (name === 'sys') return clamp(rowHeight(v) / 7, 0.95, 3.4);
     const h = home[name];
-    return clamp(Math.pow((h.x1 - h.x0) / (v.x1 - v.x0), 0.35), 1, 3.2) * sparse;
+    return clamp(Math.pow((h.x1 - h.x0) / (v.x1 - v.x0), 0.35), 1, 3.2) * few;
   }
   function zoomScale() {
-    if (!morph) return scaleOf(state.view, view);
-    const a = scaleOf(morph.from, morph.fromView), b = scaleOf(morph.to, morph.toView);
+    if (!morph) return scaleOf(state.view, view, sparse);
+    // Die alte Ansicht behält ihren Maßstab (fromSparse), sonst sprängen die
+    // Punkte im ersten Bild des Wechsels auf die Größe der neuen Ansicht.
+    const a = scaleOf(morph.from, morph.fromView, morph.fromSparse), b = scaleOf(morph.to, morph.toView, sparse);
     return a + (b - a) * morph.e;
   }
 
@@ -1246,18 +1315,18 @@
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     drawBackground(g);
     if (morph) {
-      drawAxes(g, morph.from, morph.fromView, 1 - morph.e);
-      drawAxes(g, morph.to, morph.toView, morph.e);
+      drawAxes(g, morph.from, morph.fromView, morph.out);
+      drawAxes(g, morph.to, morph.toView, morph.in);
     } else {
       drawAxes(g, state.view, view, 1);
     }
     g.save();
     g.beginPath(); g.rect(plot.l, plot.t, plot.w, plot.h); g.clip();
-    // Zeilen der Systemansicht; während eines Wechsels blenden sie um.
+    // Zeilen der Systemansicht; bei einem Wechsel blenden sie mit ihrem Diagramm aus bzw. ein.
     const sysLayer = (layer) => {
       if (morph) {
-        if (morph.from === 'sys') drawSystems(g, morph.fromView, 1 - morph.e, layer);
-        if (morph.to === 'sys') drawSystems(g, morph.toView, morph.e, layer);
+        if (morph.from === 'sys') drawSystems(g, morph.fromView, morph.out, layer);
+        if (morph.to === 'sys') drawSystems(g, morph.toView, morph.in, layer);
       } else if (state.view === 'sys') drawSystems(g, view, 1, layer);
     };
     sysLayer('under');
@@ -1322,14 +1391,14 @@
       g.globalAlpha = 1;
     };
     if (morph) {
-      // Die Marken gleiten nicht mit; sie blenden um.
-      if (morph.e < 0.5) sAlpha(morph.from, morph.fromView, 1 - morph.e * 2);
-      else sAlpha(morph.to, morph.toView, morph.e * 2 - 1);
+      // Die Marken gleiten nicht mit; sie blenden mit ihrem Diagramm aus und ein.
+      if (morph.out > 0.01) sAlpha(morph.from, morph.fromView, morph.out);
+      else sAlpha(morph.to, morph.toView, morph.in);
     } else sAlpha(state.view, view, 1);
     // Namen der Regionen liegen über den Punkten.
     if (morph) {
-      drawRegions(g, morph.from, morph.fromView, 1 - morph.e);
-      drawRegions(g, morph.to, morph.toView, morph.e);
+      drawRegions(g, morph.from, morph.fromView, morph.out);
+      drawRegions(g, morph.to, morph.toView, morph.in);
     } else drawRegions(g, state.view, view, 1);
     g.restore();
     sysLayer('over');
@@ -1520,7 +1589,9 @@
     }
     if (morph) {
       const k = clamp((time - morph.start) / morph.ms, 0, 1);
-      morph.e = ease(k);
+      morph.out = 1 - smooth(k / MORPH_OUT);
+      morph.e = ease((k - MORPH_MOVE[0]) / (MORPH_MOVE[1] - MORPH_MOVE[0]));
+      morph.in = smooth((k - MORPH_IN) / (1 - MORPH_IN));
       if (k >= 1) {
         const then = morph.then;
         view = Object.assign({}, morph.toView); morph = null;
@@ -1545,7 +1616,14 @@
     if (overlayDirty || pulsing) { renderOverlay(time); overlayDirty = false; }
     if (busy || pulsing) schedule();
   }
-  const ease = (k) => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
+  const ease = (k) => { k = clamp(k, 0, 1); return k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; };
+  const smooth = (k) => { k = clamp(k, 0, 1); return k * k * (3 - 2 * k); };
+  // Ablauf eines Ansichtswechsels (Anteile der Dauer MORPH_MS), nacheinander
+  // statt gleichzeitig: erst blendet das alte Diagramm aus (Achsen, Regionen,
+  // Zeilen, Sonnensystem und alle Punkte, die es in der neuen Ansicht nicht
+  // gibt), dann wandern die gemeinsamen Punkte, zuletzt blendet das neue
+  // Diagramm ein. Die Schritte überlappen nur dort, wo die Punkte fast stehen.
+  const MORPH_MS = 1400, MORPH_OUT = 0.2, MORPH_MOVE = [0.1, 0.76], MORPH_IN = 0.7;
 
   function flyTo(target, ms) {
     if (morph) return;
@@ -1581,7 +1659,7 @@
     state.view = name;
     layoutSystems(false);   // die Zeilen der Systemansicht müssen vor dem Wechsel feststehen
     morph = { from: from, to: name, fromView: Object.assign({}, view), toView: Object.assign({}, home[name]),
-      start: performance.now(), ms: reducedMotion ? 1 : 1100, e: 0, then: then || null };
+      start: performance.now(), ms: reducedMotion ? 1 : MORPH_MS, e: 0, out: 1, in: 0, fromSparse: sparse, then: then || null };
     viewTween = null;
     applyFilters();
     syncControls();
@@ -1600,6 +1678,7 @@
     if (state.hz === 'opt' && !(p.hz === 'inner' || p.hz === 'yes' || p.hz === 'outer')) return false;
     if (state.hz === 'con' && p.hz !== 'yes') return false;
     if (state.maxDist !== null && !(p.distLy !== null && p.distLy <= state.maxDist)) return false;
+    if (!state.stars[p.si] && state.stars.some(Boolean)) return false;
     if (state.storiesOnly) {
       if (!p.stories.length) return false;
       if (state.tags && !p.stories.some((s) => s.tags.some((t) => state.tags.indexOf(t) >= 0))) return false;
@@ -1615,6 +1694,7 @@
     }
     let n = 0;
     const tCount = TYPES.map(() => 0), mCount = METHODS.map(() => 0);
+    starCounts = STARS.map(() => 0);
     const perYear = new Array(maxYear - minYear + 1).fill(0);
     // Zähler je Schalter: wie viele es wären, wenn nur dieser Schalter an wäre.
     for (const p of points) {
@@ -1622,6 +1702,7 @@
       state.types[p.ti] = true; const okT = passes(p); state.types[p.ti] = saveT;
       state.methods[p.mi] = true; const okM = passes(p); state.methods[p.mi] = saveM;
       state.yearMax = maxYear; const okY = passes(p); state.yearMax = saveY;
+      const saveS = state.stars; state.stars = NO_STARS; if (passes(p)) starCounts[p.si]++; state.stars = saveS;
       if (okT) tCount[p.ti]++;
       if (okM) mCount[p.mi]++;
       if (okY && p.year !== null) perYear[p.year - minYear]++;
@@ -1639,6 +1720,7 @@
     dom.resetBtn.textContent = tx.showAll;
     dom.typeCounts.forEach((el, i) => { el.textContent = int(tCount[i]); });
     dom.methodCounts.forEach((el, i) => { el.textContent = int(mCount[i]); });
+    syncStarHints();
     const top = Math.max(1, Math.max.apply(null, perYear));
     dom.yearBars.forEach((bar, i) => {
       bar.style.height = Math.max(perYear[i] ? 3 : 0, perYear[i] / top * 100) + '%';
@@ -1652,13 +1734,25 @@
     schedule();
   }
 
+  // Hinweise an den Knöpfen der Sternklassen: Erklärung und Zahl der Planeten,
+  // die bei den übrigen Filtern zu dieser Klasse gehören.
+  let starCounts = STARS.map(() => 0);
+  function syncStarHints() {
+    const kelvin = (v) => int(v) + tx.kelvin;
+    dom.starAll.title = tx.starHints.all;
+    dom.starButtons.forEach((b, i) => {
+      const lo = i > 0 && i < STAR_OTHER ? kelvin(STARS[i - 1].max) : '', hi = isFinite(STARS[i].max) ? kelvin(STARS[i].max) : '';
+      b.title = tx.starHints[STARS[i].key](lo, hi) + ' (' + tx.planetCount(starCounts[i], int(starCounts[i])) + ')';
+    });
+  }
+
   function matchesPreset(name) {
     const base = { types: TYPES.map(() => true), methods: METHODS.map(() => true), hz: 'all', maxDist: null,
-      storiesOnly: false, multiOnly: false, tags: null };
+      stars: NO_STARS, storiesOnly: false, multiOnly: false, tags: null };
     const want = Object.assign(base, PRESETS[name]);
     return ['hz', 'maxDist', 'storiesOnly', 'multiOnly'].every((k) => state[k] === want[k]) &&
       String(state.types) === String(want.types) && String(state.methods) === String(want.methods) &&
-      String(state.tags) === String(want.tags);
+      String(state.stars) === String(want.stars) && String(state.tags) === String(want.tags);
   }
   // Sind alle Filter im Ausgangszustand? (Die Ansicht zählt nicht dazu.)
   function filtersAtDefault() {
@@ -1668,6 +1762,7 @@
   function openFilters() {
     state.types = TYPES.map(() => true); state.methods = METHODS.map(() => true);
     state.hz = 'all'; state.maxDist = null; state.storiesOnly = false; state.multiOnly = false; state.tags = null;
+    state.stars = NO_STARS.slice();
     state.estMass = state.estPeriod = true;
     stopPlay(); state.yearMax = maxYear;
   }
@@ -1682,6 +1777,7 @@
     state.methods = METHODS.map(() => true);
     state.hz = preset.hz || 'all';
     state.maxDist = preset.maxDist || null;
+    state.stars = NO_STARS.slice();
     state.storiesOnly = !!preset.storiesOnly;
     state.multiOnly = !!preset.multiOnly;
     state.tags = preset.tags || null;
@@ -1848,6 +1944,29 @@
     const gDist = group('distGroup');
     segmented(gDist, [{ value: null, tx: 'dist.all' }, { value: 100, tx: 'dist.d100' }, { value: 50, tx: 'dist.d50' }, { value: 20, tx: 'dist.d20' }],
       () => state.maxDist, (v) => { state.maxDist = v; applyFilters(); syncControls(); });
+
+    // Sterntyp: mehrere Klassen wählbar; ist keine gewählt, gilt "Alle".
+    {
+      const row = el('div', 'atlas-seg atlas-seg-multi');
+      row.setAttribute('role', 'group');
+      const add = (i) => {
+        const b = button('atlas-seg-btn', '', () => {
+          if (i < 0) state.stars = NO_STARS.slice(); else state.stars[i] = !state.stars[i];
+          applyFilters(); syncControls();
+        });
+        b.dataset.txPath = 'stars.' + (i < 0 ? 'all' : STARS[i].key);
+        if (i >= 0) b.style.setProperty('--star', teffColor(STARS[i].teff));
+        row.appendChild(b);
+        return b;
+      };
+      dom.starAll = add(-1);
+      dom.starButtons = STARS.map((c, i) => add(i));
+      group('starGroup').appendChild(row);
+      dom.syncers.push(() => {
+        dom.starAll.setAttribute('aria-pressed', String(!state.stars.some(Boolean)));
+        dom.starButtons.forEach((b, i) => b.setAttribute('aria-pressed', String(state.stars[i])));
+      });
+    }
 
     // Selten gebrauchte Einstellungen stehen eingeklappt unter "Weitere Filter".
     dom.moreBtn = button('atlas-more-toggle', '', () => { moreOpen = !moreOpen; syncControls(); });
@@ -2083,6 +2202,7 @@
     dom.root.querySelectorAll('[data-tx-title]').forEach((n) => { n.title = tx[n.dataset.txTitle]; });
     dom.hzButtons.forEach((o) => { o.b.title = tx.hzHints[o.value]; });
     dom.viewButtons.forEach((o) => { o.b.title = tx.viewHints[o.value]; });
+    syncStarHints();
     dom.syncers.forEach((f) => f());
     dom.yearInput.value = state.yearMax;
     dom.yearInput.setAttribute('aria-label', tx.timeline);
