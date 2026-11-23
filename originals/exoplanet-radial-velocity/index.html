@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+	<title>Exoplaneten: Radialgeschwindigkeitsmethode</title>
+	<link rel="stylesheet" href="../../shared/demo/applet.css"/>
+	<script src="../../third-party/phaser/phaser.js"></script>
+	<script src="./exoplanet_deltav.js"></script>
+</head>
+<body>
+<div class="page">
+
+	<nav class="appnav">
+		<a href="../../index.html">← Alle Applets</a>
+		<a href="https://beltoforion.de/de/exoplaneten/radialgeschwindigkeitsmethode.php">Artikel auf beltoforion.de</a>
+	</nav>
+
+	<h1>Exoplaneten: Radialgeschwindigkeitsmethode</h1>
+	<p>Stern und Planet umkreisen ihren gemeinsamen Schwerpunkt. Der Pfeil am linken Rand
+	   zeigt die Radialgeschwindigkeit des Sterns, also den Anteil seiner Bewegung auf die
+	   Sternwarte am unteren Bildrand zu oder von ihr weg. Im Sternspektrum darüber
+	   verschieben sich die Absorptionslinien entsprechend: zum roten Ende, wenn sich der
+	   Stern entfernt, und zum blauen Ende, wenn er sich nähert.</p>
+
+	<div class="applet-stage">
+		<div class="applet-view"><div id='cvDeltaV'></div></div>
+	</div>
+
+	<script>
+	var game = new RadialVelocitySimulator({ assetpath     : '',
+	                                         cvid          : 'cvDeltaV',
+	                                         sizeStar      : 60,
+	                                         sizePlanet    : 20,
+	                                         distStar      : 30,
+	                                         distPlanet    : 110,
+	                                         font          : "26px Arial",
+	                                         noBackground  : false,
+	                                         centerOfMassY : 250,
+	                                         width         : 600,
+	                                         height        : 600 });
+	</script>
+
+</div>
+</body>
+</html>

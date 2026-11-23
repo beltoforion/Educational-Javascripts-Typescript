@@ -8,11 +8,12 @@ main folder for an overview, or the `index.html` inside an applet's folder.
 
 | Folder | What it shows | Article | Build |
 |---|---|---|---|
-| [`applets/doppler-effect`](applets/doppler-effect) | Doppler effect of a moving light source | [Radial velocity method](https://beltoforion.de/en/exoplanets/radial-velocity-method.php) | TypeScript |
+| [`applets/doppler-effect`](applets/doppler-effect) | Doppler effect of a moving light source | [Radial velocity method](https://beltoforion.de/en/exoplanets/radial-velocity-method.php) | none |
 | [`applets/exoplanet-atlas`](applets/exoplanet-atlas) | Atlas of all known exoplanets (`atlas.html`) and the mass/period diagram (`index.html`) | [Atlas of Exoplanets](https://beltoforion.de/en/exoplanets/atlas/), [History](https://beltoforion.de/en/exoplanets/history.php) | none |
-| [`applets/exoplanet-pulsar-timing`](applets/exoplanet-pulsar-timing) | Finding planets by pulsar timing | [Pulsar Timing](https://beltoforion.de/en/exoplanets/pulsar-timing.php) | TypeScript |
-| [`applets/exoplanet-radial-velocity`](applets/exoplanet-radial-velocity) | Finding planets by the radial velocity of their star | [Radial Velocity Method](https://beltoforion.de/en/exoplanets/radial-velocity-method.php) | TypeScript |
-| [`applets/exoplanet-transit`](applets/exoplanet-transit) | Finding planets by transits | [Transit Method](https://beltoforion.de/en/exoplanets/transit-method.php) | TypeScript |
+| [`applets/exoplanet-microlensing`](applets/exoplanet-microlensing) | Finding planets by gravitational microlensing (schematic, exaggerated) | [Microlensing](https://beltoforion.de/en/exoplanets/microlensing.php) | none |
+| [`applets/exoplanet-pulsar-timing`](applets/exoplanet-pulsar-timing) | Finding planets by pulsar timing | [Pulsar Timing](https://beltoforion.de/en/exoplanets/pulsar-timing.php) | none |
+| [`applets/exoplanet-radial-velocity`](applets/exoplanet-radial-velocity) | Finding planets by the radial velocity of their star | [Radial Velocity Method](https://beltoforion.de/en/exoplanets/radial-velocity-method.php) | none |
+| [`applets/exoplanet-transit`](applets/exoplanet-transit) | Finding planets by transits | [Transit Method](https://beltoforion.de/en/exoplanets/transit-method.php) | none |
 | [`applets/game-of-life`](applets/game-of-life) | John Conway's Game of Life | [Conway's Game of Life](https://beltoforion.de/en/game_of_life) | TypeScript |
 | [`applets/harmonic-oscillator`](applets/harmonic-oscillator) | Analytic solution of the damped harmonic oscillator | [Damped Harmonic Oscillator](https://beltoforion.de/en/harmonic_oscillator) | TypeScript |
 | [`applets/magnetic-pendulum`](applets/magnetic-pendulum) | Basins of attraction of a pendulum over magnets | [The Magnetic Pendulum](https://beltoforion.de/en/magnetic-pendulum) | none |
@@ -30,6 +31,7 @@ applets/<name>/      one folder per applet, always the version in use
 originals/<name>/    earlier hand-written versions that have been replaced
 shared/              code used by several applets
   demo/              stand-in for the website's page environment (applet.js, applet.css)
+  exo-kit/           common look and controls of the exoplanet applets (canvas shell, chart, sprites)
 third-party/         libraries by others (Phaser CE 2.14.0, Flotr2)
 ```
 
@@ -42,9 +44,10 @@ Conventions:
   which the website includes them (for example `MagPendGPU.js`, `exoplanet_transit.js`).
 - Every applet folder has exactly one demo page named `index.html`. The demo pages are
   written in German.
-- `originals/` currently holds the TypeScript versions of the magnetic pendulum and of
-  the simulated evolution. The original Wa-Tor was a C++ program and lives in its own
-  repository.
+- `originals/` holds the TypeScript versions of the magnetic pendulum, the simulated
+  evolution and the four older exoplanet applets (Doppler effect, pulsar timing, radial
+  velocity, transit), which were built with Phaser. The original Wa-Tor was a C++ program
+  and lives in its own repository.
 
 ## Running
 
@@ -90,6 +93,32 @@ the result as JSON (also with `chromium --headless --dump-dom`). In the console,
 gives access for experiments (`sim.reset(seed)`, `sim.step(n)`, `sim.diagnose()`,
 `sim.checksum()`, `sim.pauseAtStep(n)`). Different browsers may give slightly different
 numbers for the same cloud; within one browser a run is repeatable.
+
+The five applets on the exoplanet detection methods (Doppler effect, microlensing, pulsar
+timing, radial velocity, transit) share one look and one way of handling. What they have
+in common lives in `shared/exo-kit`: the canvas with its control bar and frame loop
+(`shell.js`), the chart, the drawing helpers for labels and arrows, the observatory
+backdrop and the sprite images (one copy in `shared/exo-kit/assets/sprites`). Each applet
+is a set of plain scripts under its own global namespace (`Doppler`, `Microlensing`,
+`PulsarTiming`, `RadialVelocity`, `Transit`) with the same interface:
+`<Namespace>.mount(element, { lang: 'de' | 'en' })` starts it and returns
+`{ setPaused, seek, destroy }`; `embed.html?lang=en` is a bare page for an iframe. All of
+them are schematics, deliberately not to scale. `npm test` runs the checks of their models.
+
+The microlensing applet shows two scenes side by side, a lens star with and without a
+planet. The distorted images are computed from the lens equation (`js/lens-system.js`,
+`js/sky-raster.js`), and the light curve is their summed brightness
+(`js/image-brightness.js`). The drawn light rays are traced step by step through the
+gravitational field of star and planet (`js/ray-tracer.js`).
+
+Every button in the atlas title bar stands for a view. A view fills up to three panels: settings
+on the left (optional), the work area in the middle, text and information on the right (see
+"Ansichten der Titelzeile" in `applets/exoplanet-atlas/atlas/atlas.js`). The four filter sets
+are views of the chart; "Entdeckungsmethoden" (detection methods) is a view of its own that
+runs a method applet in the middle and lists the four applets as tiles on the right. It is
+registered by `applets/exoplanet-atlas/atlas/methods.js` through `window.ExoAtlasPages`.
+The applet scripts are loaded on demand from
+the applet folders; where they are is set by the atlas option `methods`.
 
 The exoplanet atlas has its own maintenance scripts (`update-data.js`,
 `atlas/update-index.js`); see the comments at the top of `applets/exoplanet-atlas/atlas.html`.

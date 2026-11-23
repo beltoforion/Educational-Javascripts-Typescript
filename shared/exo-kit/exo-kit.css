@@ -1,0 +1,36 @@
+/* Gemeinsames Aussehen der Exoplaneten-Applets: Zeichenfläche und Bedienleiste */
+.xk-root {
+  max-width: 900px;
+  color: #e6e8ec;
+  background: #101018;   /* eigene dunkle Fläche: die Bedienleiste bleibt auch auf hellen Seiten lesbar */
+  border-radius: 4px;
+  overflow: hidden;
+  font: 14px/1.4 "DejaVu Sans", "Segoe UI", system-ui, Arial, sans-serif;
+}
+.xk-canvas {
+  display: block;
+  width: 100%;
+  background: #000;
+  touch-action: pan-y;
+  user-select: none;
+}
+.xk-canvas.xk-draggable { cursor: ew-resize; }
+.xk-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 8px 12px 9px;
+}
+.xk-controls button {
+  min-width: 6.5em;
+  padding: 4px 12px;
+  font: inherit;
+  color: inherit;
+  background: #23262c;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 5px;
+  cursor: pointer;
+}
+.xk-controls button:hover { background: #2f333b; border-color: #ffab0f; }
+.xk-hint { color: #9aa2ad; font-size: 13px; }

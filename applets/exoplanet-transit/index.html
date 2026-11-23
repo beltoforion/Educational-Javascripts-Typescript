@@ -5,9 +5,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1"/>
 	<title>Exoplaneten: Transitmethode</title>
 	<link rel="stylesheet" href="../../shared/demo/applet.css"/>
-	<script src="../../third-party/phaser/phaser.js"></script>
-	<script src="./exoplanet_transit.js"></script>
-	<script src="./chart.js"></script>
+	<link rel="stylesheet" href="../../shared/exo-kit/exo-kit.css"/>
 </head>
 <body>
 <div class="page">
@@ -18,23 +16,41 @@
 	</nav>
 
 	<h1>Exoplaneten: Transitmethode</h1>
-	<p>Ein Planet zieht vor seinem Stern vorbei. Das Diagramm darunter zeichnet die
-	   Helligkeit des Sterns über der Zeit auf: Solange der Planet einen Teil der
-	   Sternscheibe verdeckt, sinkt sie ab. Der Kurve ist ein leichtes Rauschen überlagert;
-	   nach jedem Durchlauf beginnt die Aufzeichnung von vorn.</p>
+	<p>Ein Planet umkreist seinen Stern, und wir sehen fast genau auf die Kante seiner Bahn. Bei jedem Umlauf
+	   zieht er einmal vor dem Stern vorbei: der Transit. Solange er einen Teil der Sternscheibe verdeckt,
+	   sinkt die Helligkeit, die das Teleskop misst. Das Diagramm zeichnet sie über der Zeit auf, mit einem
+	   leichten Messrauschen; nach jedem Umlauf beginnt die Aufzeichnung von vorn.</p>
+	<p>Außerhalb des Transits ändert sich die Helligkeit ebenfalls, nur viel schwächer. Der Planet wirft Licht
+	   des Sterns zurück und zeigt dabei Phasen wie der Mond (Phasenkurve); verschwindet er hinter dem Stern,
+	   fehlt dieses Licht kurz ganz (sekundäre Bedeckung). Der Knopf „Feine Effekte vergrößern“ zeigt diesen
+	   Teil der Kurve vergrößert und dazu einzeln die drei Anteile: das reflektierte Licht, die ellipsoidale
+	   Variation durch den vom Planeten leicht verformten Stern und das Doppler-Beaming durch die Bewegung des
+	   Sterns.</p>
 
-	<div class="applet-stage">
-		<div class="applet-view"><div id='cv'></div></div>
-	</div>
+	<div id="applet"></div>
 
+	<p class="hint">Schema, nicht maßstäblich: Der Planet ist im Verhältnis zum Stern viel zu groß und
+	   umkreist ihn viel zu nah. Die feinen Effekte sind stark überzeichnet: In Wirklichkeit ist die sekundäre
+	   Bedeckung eines heißen Jupiters im sichtbaren Licht etwa hundertmal flacher als sein Transit, ellipsoidale
+	   Variation und Doppler-Beaming sind noch deutlich kleiner. Der Helligkeitsabfall beim Transit entspricht
+	   dem verdeckten Anteil der Sternscheibe; weil sie zum Rand hin dunkler ist, hat die Kurve einen
+	   gerundeten Boden.</p>
+
+	<script src="../../shared/exo-kit/js/kit.js"></script>
+	<script src="../../shared/exo-kit/js/frame-loop.js"></script>
+	<script src="../../shared/exo-kit/js/sprites.js"></script>
+	<script src="../../shared/exo-kit/js/scrub-input.js"></script>
+	<script src="../../shared/exo-kit/js/draw.js"></script>
+	<script src="../../shared/exo-kit/js/chart.js"></script>
+	<script src="../../shared/exo-kit/js/observatory.js"></script>
+	<script src="../../shared/exo-kit/js/shell.js"></script>
+	<script src="js/config.js"></script>
+	<script src="js/texts.js"></script>
+	<script src="js/transit-model.js"></script>
+	<script src="js/scene-view.js"></script>
+	<script src="js/app.js"></script>
 	<script>
-	var game = new TransitSimulator({ assetpath  : '',
-	                                  cvid       : 'cv',
-	                                  font       : "26px Arial",
-	                                  sizeSun    : 220,
-	                                  sizePlanet : 30,
-	                                  width      : 600,
-	                                  height     : 600 });
+	var applet = Transit.mount(document.getElementById('applet'), { lang: 'de' });
 	</script>
 
 </div>

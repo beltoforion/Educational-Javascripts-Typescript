@@ -5,8 +5,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1"/>
 	<title>Exoplaneten: Radialgeschwindigkeitsmethode</title>
 	<link rel="stylesheet" href="../../shared/demo/applet.css"/>
-	<script src="../../third-party/phaser/phaser.js"></script>
-	<script src="./exoplanet_deltav.js"></script>
+	<link rel="stylesheet" href="../../shared/exo-kit/exo-kit.css"/>
 </head>
 <body>
 <div class="page">
@@ -17,28 +16,31 @@
 	</nav>
 
 	<h1>Exoplaneten: Radialgeschwindigkeitsmethode</h1>
-	<p>Stern und Planet umkreisen ihren gemeinsamen Schwerpunkt. Der Pfeil am linken Rand
-	   zeigt die Radialgeschwindigkeit des Sterns, also den Anteil seiner Bewegung auf die
-	   Sternwarte am unteren Bildrand zu oder von ihr weg. Im Sternspektrum darüber
-	   verschieben sich die Absorptionslinien entsprechend: zum roten Ende, wenn sich der
-	   Stern entfernt, und zum blauen Ende, wenn er sich nähert.</p>
+	<p>Stern und Planet umkreisen ihren gemeinsamen Schwerpunkt. Der Pfeil am linken Rand zeigt die
+	   Radialgeschwindigkeit des Sterns, also den Anteil seiner Bewegung auf die Sternwarte am unteren Bildrand
+	   zu oder von ihr weg. Im Sternspektrum darüber verschieben sich die Absorptionslinien entsprechend: zum
+	   roten Ende, wenn sich der Stern entfernt, und zum blauen Ende, wenn er sich nähert.</p>
 
-	<div class="applet-stage">
-		<div class="applet-view"><div id='cvDeltaV'></div></div>
-	</div>
+	<div id="applet"></div>
 
+	<p class="hint">Schema, nicht maßstäblich: In Wirklichkeit bewegt sich der Stern viel weniger als hier
+	   gezeichnet, und die Linien seines Spektrums verschieben sich nur um winzige Beträge.</p>
+
+	<script src="../../shared/exo-kit/js/kit.js"></script>
+	<script src="../../shared/exo-kit/js/frame-loop.js"></script>
+	<script src="../../shared/exo-kit/js/sprites.js"></script>
+	<script src="../../shared/exo-kit/js/scrub-input.js"></script>
+	<script src="../../shared/exo-kit/js/draw.js"></script>
+	<script src="../../shared/exo-kit/js/chart.js"></script>
+	<script src="../../shared/exo-kit/js/observatory.js"></script>
+	<script src="../../shared/exo-kit/js/shell.js"></script>
+	<script src="js/config.js"></script>
+	<script src="js/texts.js"></script>
+	<script src="js/orbit-model.js"></script>
+	<script src="js/scene-view.js"></script>
+	<script src="js/app.js"></script>
 	<script>
-	var game = new RadialVelocitySimulator({ assetpath     : '',
-	                                         cvid          : 'cvDeltaV',
-	                                         sizeStar      : 60,
-	                                         sizePlanet    : 20,
-	                                         distStar      : 30,
-	                                         distPlanet    : 110,
-	                                         font          : "26px Arial",
-	                                         noBackground  : false,
-	                                         centerOfMassY : 250,
-	                                         width         : 600,
-	                                         height        : 600 });
+	var applet = RadialVelocity.mount(document.getElementById('applet'), { lang: 'de' });
 	</script>
 
 </div>

@@ -4,16 +4,17 @@
   "description": "Educational browser applets used on beltoforion.de",
   "license": "MIT",
   "scripts": {
-    "build": "npm run build:doppler-effect && npm run build:exoplanet-radial-velocity && npm run build:exoplanet-pulsar-timing && npm run build:exoplanet-transit && npm run build:game-of-life && npm run build:harmonic-oscillator && npm run build:original-simulated-evolution && npm run build:original-magnetic-pendulum",
-    "build:doppler-effect": "tsc -p applets/doppler-effect",
-    "build:exoplanet-radial-velocity": "tsc -p applets/exoplanet-radial-velocity",
-    "build:exoplanet-pulsar-timing": "tsc -p applets/exoplanet-pulsar-timing",
-    "build:exoplanet-transit": "tsc -p applets/exoplanet-transit",
+    "build": "npm run build:original-doppler-effect && npm run build:original-exoplanet-radial-velocity && npm run build:original-exoplanet-pulsar-timing && npm run build:original-exoplanet-transit && npm run build:game-of-life && npm run build:harmonic-oscillator && npm run build:original-magnetic-pendulum && npm run build:original-simulated-evolution",
+    "build:original-doppler-effect": "tsc -p originals/doppler-effect",
+    "build:original-exoplanet-radial-velocity": "tsc -p originals/exoplanet-radial-velocity",
+    "build:original-exoplanet-pulsar-timing": "tsc -p originals/exoplanet-pulsar-timing",
+    "build:original-exoplanet-transit": "tsc -p originals/exoplanet-transit",
     "build:game-of-life": "tsc -p applets/game-of-life",
     "build:harmonic-oscillator": "tsc -p applets/harmonic-oscillator",
     "build:original-magnetic-pendulum": "tsc -p originals/magnetic-pendulum",
     "build:original-simulated-evolution": "tsc -p originals/simulated-evolution",
-    "build:tides": "npm --prefix applets/tides run build"
+    "build:tides": "npm --prefix applets/tides run build",
+    "test": "node --test applets/exoplanet-microlensing/test/physics.test.js applets/exoplanet-transit/test/transit.test.js applets/exoplanet-radial-velocity/test/orbit.test.js applets/exoplanet-pulsar-timing/test/pulsar.test.js applets/doppler-effect/test/wave.test.js"
   },
   "devDependencies": {
     "typescript": "4.9.5"

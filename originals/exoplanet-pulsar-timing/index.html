@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+	<title>Exoplaneten: Pulsar-Timing</title>
+	<link rel="stylesheet" href="../../shared/demo/applet.css"/>
+	<script src="../../third-party/phaser/phaser.js"></script>
+	<script src="./exoplanet_pulsar.js"></script>
+	<script src="./chart.js"></script>
+</head>
+<body>
+<div class="page">
+
+	<nav class="appnav">
+		<a href="../../index.html">← Alle Applets</a>
+		<a href="https://beltoforion.de/de/exoplaneten/pulsar_timing.php">Artikel auf beltoforion.de</a>
+	</nav>
+
+	<h1>Exoplaneten: Pulsar-Timing</h1>
+	<p>Zwei Pulsare mit rotierendem Strahlungskegel im Vergleich: Der linke umkreist mit
+	   einem Exoplaneten den gemeinsamen Schwerpunkt, der rechte hat keinen Begleiter. Das
+	   Diagramm zeichnet für beide auf, wann der Strahl die Erde überstreicht (blau: mit
+	   Exoplanet, grün: ohne). Weil der linke Pulsar seine Position laufend ändert, sind
+	   seine Pulse gegenüber denen des Vergleichspulsars zeitlich leicht verschoben.</p>
+
+	<div class="applet-stage">
+		<div class="applet-view"><div id='cv'></div></div>
+	</div>
+
+	<script>
+	var game = new PulsarTimingSimulator({ assetpath     : "",
+	                                       cvid          : 'cv',
+	                                       sizeStar      : 20,
+	                                       sizeExoplanet : 30,
+	                                       sizeEarth     : 100,
+	                                       distStar      : 40,
+	                                       distPlanet    : 130,
+	                                       font          : "24px Arial",
+	                                       noBackground  : true,
+	                                       centerOfMassY : 180,
+	                                       width         : 800,
+	                                       height        : 800 });
+	</script>
+
+</div>
+</body>
+</html>

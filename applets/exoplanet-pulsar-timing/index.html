@@ -5,9 +5,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1"/>
 	<title>Exoplaneten: Pulsar-Timing</title>
 	<link rel="stylesheet" href="../../shared/demo/applet.css"/>
-	<script src="../../third-party/phaser/phaser.js"></script>
-	<script src="./exoplanet_pulsar.js"></script>
-	<script src="./chart.js"></script>
+	<link rel="stylesheet" href="../../shared/exo-kit/exo-kit.css"/>
 </head>
 <body>
 <div class="page">
@@ -18,29 +16,31 @@
 	</nav>
 
 	<h1>Exoplaneten: Pulsar-Timing</h1>
-	<p>Zwei Pulsare mit rotierendem Strahlungskegel im Vergleich: Der linke umkreist mit
-	   einem Exoplaneten den gemeinsamen Schwerpunkt, der rechte hat keinen Begleiter. Das
-	   Diagramm zeichnet für beide auf, wann der Strahl die Erde überstreicht (blau: mit
-	   Exoplanet, grün: ohne). Weil der linke Pulsar seine Position laufend ändert, sind
-	   seine Pulse gegenüber denen des Vergleichspulsars zeitlich leicht verschoben.</p>
+	<p>Zwei Pulsare mit rotierendem Strahl im Vergleich: Der linke umkreist mit einem Exoplaneten den
+	   gemeinsamen Schwerpunkt, der rechte hat keinen Begleiter. Das Diagramm zeichnet für beide auf, wann
+	   der Strahl die Erde überstreicht. Weil der linke Pulsar seinen Ort laufend ändert, treffen seine Pulse
+	   gegenüber denen des Vergleichspulsars zeitlich leicht verschoben ein, mal früher und mal später.</p>
 
-	<div class="applet-stage">
-		<div class="applet-view"><div id='cv'></div></div>
-	</div>
+	<div id="applet"></div>
 
+	<p class="hint">Schema, nicht maßstäblich: Die Bahn des Pulsars ist im Verhältnis zur Entfernung der Erde
+	   riesig gezeichnet, damit die Verschiebung der Pulse sichtbar wird.</p>
+
+	<script src="../../shared/exo-kit/js/kit.js"></script>
+	<script src="../../shared/exo-kit/js/frame-loop.js"></script>
+	<script src="../../shared/exo-kit/js/sprites.js"></script>
+	<script src="../../shared/exo-kit/js/scrub-input.js"></script>
+	<script src="../../shared/exo-kit/js/draw.js"></script>
+	<script src="../../shared/exo-kit/js/chart.js"></script>
+	<script src="../../shared/exo-kit/js/observatory.js"></script>
+	<script src="../../shared/exo-kit/js/shell.js"></script>
+	<script src="js/config.js"></script>
+	<script src="js/texts.js"></script>
+	<script src="js/pulsar-model.js"></script>
+	<script src="js/scene-view.js"></script>
+	<script src="js/app.js"></script>
 	<script>
-	var game = new PulsarTimingSimulator({ assetpath     : "",
-	                                       cvid          : 'cv',
-	                                       sizeStar      : 20,
-	                                       sizeExoplanet : 30,
-	                                       sizeEarth     : 100,
-	                                       distStar      : 40,
-	                                       distPlanet    : 130,
-	                                       font          : "24px Arial",
-	                                       noBackground  : true,
-	                                       centerOfMassY : 180,
-	                                       width         : 800,
-	                                       height        : 800 });
+	var applet = PulsarTiming.mount(document.getElementById('applet'), { lang: 'de' });
 	</script>
 
 </div>

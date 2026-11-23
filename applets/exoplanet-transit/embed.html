@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+	<title>Transitmethode</title>
+	<link rel="stylesheet" href="../../shared/exo-kit/exo-kit.css"/>
+	<style>
+		html, body { margin: 0; background: transparent; }
+		.xk-root { margin: 0 auto; }
+	</style>
+</head>
+<body>
+	<!-- Nackte Fassung zum Einbetten in einen Rahmen. Sprache über die Adresse: embed.html?lang=en -->
+	<div id="applet"></div>
+
+	<script src="../../shared/exo-kit/js/kit.js"></script>
+	<script src="../../shared/exo-kit/js/frame-loop.js"></script>
+	<script src="../../shared/exo-kit/js/sprites.js"></script>
+	<script src="../../shared/exo-kit/js/scrub-input.js"></script>
+	<script src="../../shared/exo-kit/js/draw.js"></script>
+	<script src="../../shared/exo-kit/js/chart.js"></script>
+	<script src="../../shared/exo-kit/js/observatory.js"></script>
+	<script src="../../shared/exo-kit/js/shell.js"></script>
+	<script src="js/config.js"></script>
+	<script src="js/texts.js"></script>
+	<script src="js/transit-model.js"></script>
+	<script src="js/scene-view.js"></script>
+	<script src="js/app.js"></script>
+	<script>
+	var lang = new URLSearchParams(location.search).get('lang') === 'en' ? 'en' : 'de';
+	document.documentElement.lang = lang;
+	var applet = Transit.mount(document.getElementById('applet'), { lang: lang });
+	</script>
+</body>
+</html>

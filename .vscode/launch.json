@@ -24,6 +24,13 @@
             "webRoot": "${workspaceFolder}"
         },
         {
+            "name": "exoplanet-microlensing",
+            "type": "chrome",
+            "request": "launch",
+            "file": "${workspaceFolder}/applets/exoplanet-microlensing/index.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
             "name": "exoplanet-pulsar-timing",
             "type": "chrome",
             "request": "launch",

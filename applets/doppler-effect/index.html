@@ -5,9 +5,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1"/>
 	<title>Doppler-Effekt</title>
 	<link rel="stylesheet" href="../../shared/demo/applet.css"/>
-	<script src="../../third-party/phaser/phaser.js"></script>
-	<script src="./doppler_ring.js"></script>
-	<script src="./doppler_effect.js"></script>
+	<link rel="stylesheet" href="../../shared/exo-kit/exo-kit.css"/>
 </head>
 <body>
 <div class="page">
@@ -18,23 +16,28 @@
 	</nav>
 
 	<h1>Doppler-Effekt</h1>
-	<p>Ein Stern sendet in gleichen Zeitabständen kreisförmige Wellenfronten aus und bewegt
-	   sich dabei gegenüber dem Sternhintergrund nach links. In Bewegungsrichtung liegen die
-	   Wellenfronten dichter beieinander, in der Gegenrichtung weiter auseinander. Die
-	   Einfärbung des Hintergrunds von Blau nach Rot deutet die zugehörige Verschiebung der
-	   Wellenlänge an.</p>
+	<p>Ein Stern sendet in gleichen Zeitabständen kreisförmige Wellenfronten aus und bewegt sich dabei
+	   gegenüber dem Sternhintergrund nach links. In Bewegungsrichtung liegen die Wellenfronten dichter
+	   beieinander, in der Gegenrichtung weiter auseinander. Die Einfärbung des Hintergrunds von Blau nach Rot
+	   deutet die zugehörige Verschiebung der Wellenlänge an.</p>
 
-	<div class="applet-stage">
-		<div class="applet-view"><div id='cv'></div></div>
-	</div>
+	<div id="applet"></div>
 
+	<script src="../../shared/exo-kit/js/kit.js"></script>
+	<script src="../../shared/exo-kit/js/frame-loop.js"></script>
+	<script src="../../shared/exo-kit/js/sprites.js"></script>
+	<script src="../../shared/exo-kit/js/scrub-input.js"></script>
+	<script src="../../shared/exo-kit/js/draw.js"></script>
+	<script src="../../shared/exo-kit/js/chart.js"></script>
+	<script src="../../shared/exo-kit/js/observatory.js"></script>
+	<script src="../../shared/exo-kit/js/shell.js"></script>
+	<script src="js/config.js"></script>
+	<script src="js/texts.js"></script>
+	<script src="js/wave-model.js"></script>
+	<script src="js/scene-view.js"></script>
+	<script src="js/app.js"></script>
 	<script>
-	var game = new DopplerEffect({ assetpath : '',
-	                               cvid      : 'cv',
-	                               sizeStar  : 50,
-	                               font      : "30px Arial",
-	                               width     : 800,
-	                               height    : 800 });
+	var applet = Doppler.mount(document.getElementById('applet'), { lang: 'de' });
 	</script>
 
 </div>
