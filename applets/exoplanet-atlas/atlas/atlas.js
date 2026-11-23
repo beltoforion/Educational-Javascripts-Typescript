@@ -19,6 +19,10 @@
 //               "links": [ { "text": "Impressum", "href": … }, … ] }
 //             erscheint unten in der linken Leiste. text und href dürfen
 //             auch { "de": …, "en": … } sein.
+//   methods   wo die Applets zu den Entdeckungsmethoden liegen (siehe Kopf von
+//             methods.js): { "kit": …, "sprites": …, "applets": { "transit": …, … } }.
+//             Fehlt das Skript methods.js auf der Seite, gibt es die Ansicht
+//             "Entdeckungsmethoden" nicht.
 //   intro     false: kein Zeitraffer beim Öffnen
 //   setTitle  false: den Seitentitel (document.title) nicht verändern
 //
@@ -68,6 +72,19 @@
 //   1.7.0  2026-11-21  Filter "Sterntyp": Spektralklassen M, K, G, F, A/B und
 //                      "andere" (mehrere wählbar), zugeordnet nach dem
 //                      Spektraltyp des Katalogs, ersatzweise nach der Temperatur.
+//   1.8.0  2026-11-23  Knopf "Entdeckungsmethoden" im Kopf: Das Infofeld zeigt die
+//                      Applets zu den Nachweisverfahren als Kacheln, ein Klick
+//                      führt das Applet im Diagrammbereich aus (methods.js).
+//                      Filtersatz "Direkt abgebildet" entfernt.
+//   1.9.0  2026-11-23  Gerüst für Ansichten: Jeder Knopf der Titelzeile steht für
+//                      eine Ansicht mit linkem Panel (Einstellungen, optional),
+//                      Mitte (Arbeitsfläche) und rechtem Panel (Text und
+//                      Informationen); siehe "Ansichten der Titelzeile". Die vier
+//                      Filtersätze sind Ansichten des Diagramms, die
+//                      Entdeckungsmethoden eine eigene ohne linkes Panel, die
+//                      gleich das erste Verfahren zeigt. Es ist immer nur ein
+//                      Knopf hervorgehoben. "Filter zurücksetzen" steht am Ende
+//                      der Filterspalte statt unter dem Titel.
 //   1.1.0  2026-11-20  Einbetten in eine Website: Logo und Links (site),
 //                      Sprachschalter mit Zieladressen (langUrls), Basispfad
 //                      (base); Berichte werden über http(s) direkt geladen
@@ -76,7 +93,7 @@
 (function () {
   'use strict';
 
-  const VERSION = '1.7.0';
+  const VERSION = '1.9.0';
 
   // ============================================================ Konstanten
   const EARTH_PER_JUPITER = 317.83;   // Erdmassen je Jupitermasse
@@ -328,13 +345,12 @@
       locale: 'de-DE', title: 'Atlas der Exoplaneten',
       subtitle: (shown, total, all) => (all ? total + ' Planeten fremder Sterne auf einen Blick' : shown + ' von ' + total + ' Planeten'),
       presets: { all: 'Alle Welten', earth: 'Erdähnliche Gesteinsplaneten', news: 'In den Nachrichten',
-        extreme: 'Extreme Welten', imaged: 'Direkt abgebildet' },
+        extreme: 'Extreme Welten' },
       presetHint: {
         all: 'Alle Planeten des Katalogs, für die Masse oder Radius und die Umlaufzeit bekannt sind.',
         earth: 'Gesteinsplaneten (Radius unter 1,6 Erdradien) in der habitablen Zone ihres Sterns.',
         news: 'Nur Planeten, zu denen es hier einen Bericht gibt.',
         extreme: 'Berichte über Metallregen, Gluthitze, verdampfende Planeten und andere Extreme.',
-        imaged: 'Planeten, die auf einem Foto zu sehen sind, mit dem Bild im Bericht.',
       },
       search: 'Planet suchen …', noMatch: 'Kein Planet gefunden',
       fullscreen: 'Vollbild (F11)', exitFullscreen: 'Vollbild beenden (Esc)', language: 'Sprache',
@@ -455,13 +471,12 @@
       locale: 'en-US', title: 'Atlas of Exoplanets',
       subtitle: (shown, total, all) => (all ? total + ' planets of other stars at a glance' : shown + ' of ' + total + ' planets'),
       presets: { all: 'All worlds', earth: 'Earth-like rocky planets', news: 'In the news',
-        extreme: 'Extreme worlds', imaged: 'Directly imaged' },
+        extreme: 'Extreme worlds' },
       presetHint: {
         all: 'All planets in the catalog with a known mass or radius and a known orbital period.',
         earth: 'Rocky planets (radius below 1.6 Earth radii) in the habitable zone of their star.',
         news: 'Only planets that have a story here.',
         extreme: 'Stories about metal rain, scorching heat, evaporating planets, and other extremes.',
-        imaged: 'Planets that can be seen in a photograph, with the picture in the story.',
       },
       search: 'Search planet …', noMatch: 'No planet found',
       fullscreen: 'Full screen (F11)', exitFullscreen: 'Exit full screen (Esc)', language: 'Language',
@@ -631,7 +646,6 @@
     earth: { types: [true, false, false, false, false], hz: 'opt', view: 'rs', focus: true },
     news: { storiesOnly: true },
     extreme: { storiesOnly: true, tags: ['metal-rain', 'ultra-hot', 'extreme', 'evaporating'] },
-    imaged: { storiesOnly: true, tags: ['direct-image'] },
   };
 
   let points = [];          // alle Planeten
@@ -795,6 +809,9 @@
   let hover = null;        // {kind:'planet'|'solar'|'story', ...}
   let pinned = null;
   let shown = null;        // was das Infofeld zeigt
+  let pages = [];          // Ansichten der Titelzeile, siehe addPage()
+  let currentPage = null;  // die sichtbare Ansicht
+  let previousPage = null; // die zuvor sichtbare: dorthin führt backPage()
   let hlStory = null;      // Bericht, dessen Planeten hervorgehoben sind
   let playTimer = 0;
   let moreOpen = false;    // "Weitere Filter" aufgeklappt
@@ -923,6 +940,7 @@
 
   function resize() {
     const box = dom.chart.getBoundingClientRect();
+    if (!box.width || !box.height) return;   // Diagramm gerade nicht sichtbar (andere Ansicht)
     W = Math.max(320, Math.round(box.width)); H = Math.max(240, Math.round(box.height));
     dpr = Math.min(2, window.devicePixelRatio || 1);
     for (const c of [dom.base, dom.overlay]) {
@@ -1716,7 +1734,7 @@
     staticDirty = true;
     const untouched = filtersAtDefault();
     dom.count.textContent = tx.subtitle(int(n), int(points.length), untouched && n === points.length);
-    dom.resetBtn.hidden = untouched;
+    dom.resetBtn.disabled = untouched;
     dom.resetBtn.textContent = tx.showAll;
     dom.typeCounts.forEach((el, i) => { el.textContent = int(tCount[i]); });
     dom.methodCounts.forEach((el, i) => { el.textContent = int(mCount[i]); });
@@ -1812,6 +1830,7 @@
 
   function buildUi(root) {
     root.replaceChildren();
+    pages = []; currentPage = previousPage = null;
     root.setAttribute('lang', lang);
     root.setAttribute('data-atlas-version', VERSION);
 
@@ -1824,20 +1843,11 @@
     dom.title.append(dom.titleText, ' ', dom.version);
     dom.count = el('p', 'atlas-count');
     dom.count.setAttribute('aria-live', 'polite');
-    dom.resetBtn = button('atlas-link atlas-reset', '', resetFilters);
-    dom.resetBtn.hidden = true;
-    const sub = el('div', 'atlas-sub');
-    sub.append(dom.count, dom.resetBtn);
-    brand.append(dom.title, sub);
+    brand.append(dom.title, dom.count);
 
+    // Je Ansicht ein Knopf; addPage() füllt die Reihe.
     dom.presets = el('div', 'atlas-presets');
     dom.presets.setAttribute('role', 'group');
-    dom.presetButtons = Object.keys(PRESETS).map((name) => {
-      const b = button('atlas-pill', '', () => applyPreset(name));
-      b.dataset.preset = name;
-      dom.presets.appendChild(b);
-      return b;
-    });
 
     const tools = el('div', 'atlas-tools');
     const searchWrap = el('div', 'atlas-search');
@@ -1976,7 +1986,10 @@
     dom.more = el('div', 'atlas-more');
     dom.more.id = 'atlas-more';
     dom.moreBtn.setAttribute('aria-controls', 'atlas-more');
-    sideScroll.append(dom.moreBtn, dom.more);
+    // Alle Filter in den Ausgangszustand: am Ende der Filterspalte, ohne Wirkung ausgegraut.
+    dom.resetBtn = button('atlas-reset', '', resetFilters);
+    dom.resetBtn.disabled = true;
+    sideScroll.append(dom.moreBtn, dom.more, dom.resetBtn);
 
     const gMethod = group('methodGroup', dom.more);
     dom.methodCounts = [];
@@ -2074,7 +2087,9 @@
     track.append(dom.markerLayer, bars, dom.yearInput, ticks);
     dom.yearLabel = el('div', 'atlas-year-label');
     time.append(timeLeft, track, dom.yearLabel);
-    main.append(dom.chart, time);
+    // Mitte der Diagramm-Ansichten: Diagramm und Zeitleiste
+    dom.diagram = el('div', 'atlas-diagram');
+    dom.diagram.append(dom.chart, time);
 
     // ---- Infofeld rechts
     dom.panel = el('aside', 'atlas-panel');
@@ -2082,9 +2097,29 @@
     dom.panelHead.hidden = true;
     dom.panelBody = el('div', 'atlas-panel-body');
     dom.foot = el('p', 'atlas-foot');
-    dom.panel.append(dom.panelHead, dom.panelBody, dom.foot);
+    // Rechtes Panel der Diagramm-Ansichten: das Infofeld
+    dom.info = el('div', 'atlas-info');
+    dom.info.append(dom.panelHead, dom.panelBody, dom.foot);
 
     root.append(head, side, main, dom.panel);
+
+    // ---- Ansichten
+    // Plätze der drei Panels. Links stehen unter den Einstellungen Logo und Links der Website.
+    dom.slots = { left: side, center: main, right: dom.panel };
+    // Die Filtersätze sind Ansichten desselben Diagramms: Sie teilen sich dessen Panels.
+    Object.keys(PRESETS).forEach((name) => addPage({
+      id: name,
+      label: () => tx.presets[name],
+      hint: () => tx.presetHint[name],
+      left: sideScroll, center: dom.diagram, right: dom.info,
+      open: () => applyPreset(name),
+      active: () => matchesPreset(name),
+    }));
+    // Weitere Ansichten bringen Zusatzskripte mit (methods.js: die Entdeckungsmethoden).
+    (window.ExoAtlasPages || []).forEach((make) => addPage(make({
+      lang: lang, config: config, assets: assetBase(), back: backPage, update: syncPages,
+    })));
+    showPage(pages[0]);
     buildMarkers();
   }
 
@@ -2156,6 +2191,77 @@
     }
   }
 
+  // ================================================= Ansichten der Titelzeile
+  // Jeder Knopf der Titelzeile steht für eine Ansicht. Eine Ansicht füllt bis zu drei Panels:
+  // links Einstellungen (optional), in der Mitte die Arbeitsfläche, rechts Text und Informationen.
+  // Im Code heißt sie "page", weil "view" schon der Ausschnitt des Diagramms ist.
+  //
+  // Eine Ansicht ist ein Objekt mit
+  //   id          Kennung (für ExoAtlas.showPage)
+  //   label()     Beschriftung ihres Knopfs, hint() dessen Erklärung (beides in der aktuellen Sprache)
+  //   left        Element des linken Panels; fehlt es, nutzt die Mitte dessen Breite mit
+  //   center      Element der Mitte
+  //   right       Element des rechten Panels
+  //   open(arg)   nach einem Klick auf den Knopf (oder ExoAtlas.showPage): Die Panels sind dann schon
+  //               sichtbar, die Ansicht richtet sich ein. arg ist ein freier Wert der Ansicht.
+  //   leave()     optional: bevor die Panels einer anderen Ansicht sichtbar werden
+  //   active()    optional: ob ihr Knopf hervorgehoben ist, solange ihre Panels sichtbar sind
+  //               (Vorgabe: ja). Nötig, wenn sich mehrere Ansichten dieselben Panels teilen.
+  //   setLang(lang)      optional: Sprachwechsel
+  //   handleKey(event)   optional: Taste, solange die Ansicht sichtbar ist; true = verbraucht
+  //
+  // Ein Zusatzskript meldet eine Ansicht an, indem es eine Funktion in die Liste window.ExoAtlasPages
+  // legt. Der Atlas ruft sie mit { lang, config, assets, back(), update() } auf und erwartet das Objekt
+  // zurück: assets ist der Ordner des Atlas, back() führt zur vorherigen Ansicht, update() beschriftet
+  // die Knöpfe neu.
+  function addPage(page) {
+    page.button = button('atlas-pill', '', () => selectPage(page));
+    dom.presets.appendChild(page.button);
+    for (const slot of ['left', 'center', 'right']) {
+      const panel = page[slot];
+      if (!panel) continue;
+      panel.classList.add('atlas-page-' + slot);
+      if (panel.parentNode !== dom.slots[slot]) {
+        if (slot === 'left' && dom.site) dom.slots.left.insertBefore(panel, dom.site);
+        else dom.slots[slot].appendChild(panel);
+      }
+      panel.hidden = true;
+    }
+    pages.push(page);
+  }
+  const samePanels = (a, b) => !!a && !!b && a.center === b.center;
+  // Macht die Panels einer Ansicht sichtbar, ohne sie neu einzurichten.
+  function showPage(page) {
+    if (!samePanels(page, currentPage)) {
+      if (currentPage && currentPage.leave) currentPage.leave();
+      previousPage = currentPage;
+      for (const other of pages) {
+        for (const slot of ['left', 'center', 'right']) if (other[slot]) other[slot].hidden = other[slot] !== page[slot];
+      }
+      dom.root.classList.toggle('no-left', !page.left);
+    }
+    currentPage = page;
+    syncPages();
+  }
+  // Klick auf den Knopf einer Ansicht.
+  function selectPage(page, arg) {
+    showPage(page);
+    page.open(arg);
+    syncPages();
+  }
+  // Zurück zur vorherigen Ansicht, so wie sie verlassen wurde.
+  function backPage() {
+    showPage(previousPage && !samePanels(previousPage, currentPage) ? previousPage : pages[0]);
+  }
+  // Beschriftung und Zustand der Knöpfe: Hervorgehoben ist höchstens einer.
+  function syncPages() {
+    for (const page of pages) {
+      page.button.textContent = page.label();
+      page.button.title = page.hint();
+      page.button.setAttribute('aria-pressed', String(samePanels(page, currentPage) && (page.active ? page.active() : true)));
+    }
+  }
+
   function syncControls() {
     document.documentElement.lang = lang;
     if (config.setTitle !== false) document.title = tx.title;
@@ -2164,11 +2270,7 @@
     dom.sysGroup.hidden = state.view !== 'sys';
     dom.root.querySelectorAll('[data-tx]').forEach((n) => { n.textContent = tx[n.dataset.tx]; });
     dom.root.querySelectorAll('[data-tx-path]').forEach((n) => { n.textContent = txPath(n.dataset.txPath); });
-    dom.presetButtons.forEach((b) => {
-      b.textContent = tx.presets[b.dataset.preset];
-      b.title = tx.presetHint[b.dataset.preset];
-      b.setAttribute('aria-pressed', String(matchesPreset(b.dataset.preset)));
-    });
+    syncPages();
     dom.search.placeholder = tx.search;
     dom.search.setAttribute('aria-label', tx.search);
     const otherLang = lang === 'de' ? 'en' : 'de';
@@ -2233,6 +2335,7 @@
     tx = TEXT[lang];
     try { localStorage.setItem('atlas-lang', lang); } catch (e) { /* ohne Speicher geht es auch */ }
     dom.root.setAttribute('lang', lang);
+    pages.forEach((page) => { if (page.setLang) page.setLang(lang); });
     syncControls();
     applyFilters();
     renderPanel();
@@ -2483,6 +2586,8 @@
 
   function show(target) {
     shown = target;
+    // Eine Auswahl gehört ins Infofeld: Ist gerade eine andere Ansicht zu sehen, zurück zum Diagramm.
+    if (target && currentPage && currentPage.right !== dom.info) showPage(pages[0]);
     renderPanel();
   }
 
@@ -2886,7 +2991,7 @@
     const bar = dom.panelHead;
     bar.replaceChildren();
     bar.hidden = !shown;
-    dom.panel.classList.toggle('is-solar', !!shown && (shown.kind === 'solar' || (shown.kind === 'system' && shown.sys.solar)));
+    dom.info.classList.toggle('is-solar', !!shown && (shown.kind === 'solar' || (shown.kind === 'system' && shown.sys.solar)));
     if (!shown) {
       const box = el('div', 'atlas-guide');
       const active = Object.keys(PRESETS).find((name) => name !== 'all' && matchesPreset(name));
@@ -3286,6 +3391,8 @@
     });
     document.addEventListener('keydown', (event) => {
       const typing = /^(INPUT|TEXTAREA|SELECT)$/.test((event.target && event.target.tagName) || '');
+      if (currentPage.handleKey && document.activeElement !== dom.search && currentPage.handleKey(event)) return;
+      if (currentPage.right !== dom.info) return;   // die folgenden Tasten gelten dem Infofeld
       if (event.key === 'Escape' && document.activeElement !== dom.search) {
         if (shown) returnFocus = true;
         unpin();
@@ -3367,7 +3474,13 @@
         return !!sys;
       },
       systems: () => [SUN].concat(multiSystems), rows: () => sysRows,
-      applyPreset: applyPreset, setLang: setLang, setView: setView };
+      applyPreset: applyPreset, setLang: setLang, setView: setView,
+      // Wechselt zu einer Ansicht der Titelzeile (id wie beim Anmelden, z. B. 'earth' oder 'methods');
+      // arg reicht der Atlas an deren open() weiter.
+      showPage: (id, arg) => { const page = pages.find((x) => x.id === id); if (page) selectPage(page, arg); return !!page; },
+      // Entdeckungsmethoden mit einem bestimmten Verfahren ('transit', 'radial-velocity',
+      // 'pulsar-timing', 'microlensing').
+      showMethod: (id) => window.ExoAtlas.showPage('methods', id) };
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);

@@ -70,10 +70,7 @@ button:focus-visible, input:focus-visible, canvas:focus-visible { outline: 2px s
 }
 /* Versionsnummer des Skripts, klein hinter dem Titel. */
 .atlas-version { margin-left: 4px; font: 500 12px/1 var(--font-ui); letter-spacing: 0; color: var(--muted); font-variant-numeric: tabular-nums; }
-.atlas-sub { display: flex; align-items: baseline; gap: 10px; margin-top: 2px; }
-.atlas-count { margin: 0; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
-.atlas-reset { padding: 0; font-size: 13px; color: var(--ink); white-space: nowrap; }
-.atlas-reset[hidden] { display: none; }
+.atlas-count { margin: 2px 0 0; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
 
 .atlas-presets { display: flex; flex-wrap: wrap; gap: 8px; flex: 1; }
 .atlas-pill {
@@ -218,6 +215,14 @@ a.atlas-tool { display: inline-block; color: inherit; text-decoration: none; }
 .atlas-more-chevron { margin-left: auto; width: 7px; height: 7px; border: solid var(--ink-2); border-width: 0 1.5px 1.5px 0; transform: rotate(45deg) translateY(-2px); }
 .atlas-more-toggle[aria-expanded="true"] .atlas-more-chevron { transform: rotate(-135deg) translateY(-2px); }
 .atlas-more { display: flex; flex-direction: column; gap: 13px; }
+/* Filter zurücksetzen: letzter Knopf der Filterspalte; ausgegraut, solange kein Filter verstellt ist. */
+.atlas-reset {
+  width: 100%;
+  background: var(--btn-bg); border: 1px solid var(--btn-border); border-radius: var(--btn-radius);
+  padding: 6px 10px; font-size: 13px; color: var(--ink); cursor: pointer;
+}
+.atlas-reset:hover:enabled { border-color: #fff; }
+.atlas-reset:disabled { color: var(--muted); cursor: default; opacity: 0.6; }
 .atlas-more[hidden] { display: none; }
 
 .atlas-star-legend { display: flex; align-items: center; gap: 8px; margin-top: 7px; font-size: 12px; color: var(--muted); }
@@ -227,9 +232,24 @@ a.atlas-tool { display: inline-block; color: inherit; text-decoration: none; }
 }
 .atlas-star-legend[hidden] { display: none; }
 
+/* ------------------------------------------------------------- Ansichten */
+/* Jede Ansicht der Titelzeile füllt bis zu drei Panels (siehe "Ansichten der Titelzeile" in atlas.js):
+   links Einstellungen, in der Mitte die Arbeitsfläche, rechts Text und Informationen. Sichtbar sind
+   nur die Panels der gewählten Ansicht. */
+.atlas-page-center, .atlas-page-right { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.atlas-page-left[hidden], .atlas-page-center[hidden], .atlas-page-right[hidden] { display: none; }
+/* Ansicht ohne linkes Panel: Die Mitte nutzt dessen Breite mit. Logo und Links der einbettenden
+   Website bleiben als Zeile darunter stehen. */
+.atlas.no-left { grid-template-rows: auto minmax(0, 1fr) auto; }
+.atlas.no-left .atlas-side { grid-column: 1 / 3; grid-row: 3; border-right: 0; }
+.atlas.no-left .atlas-main { grid-column: 1 / 3; }
+.atlas.no-left .atlas-panel { grid-row: 2 / 4; }
+.atlas.no-left .atlas-site-links { flex-direction: row; flex-wrap: wrap; gap: 4px 16px; }
+
 /* -------------------------------------------------------------- Diagramm */
 .atlas-main {
   grid-column: 2; grid-row: 2;
+  position: relative;
   display: flex; flex-direction: column; min-width: 0; min-height: 0;
 }
 .atlas-chart { position: relative; flex: 1; min-height: 0; overflow: hidden; }
@@ -400,7 +420,7 @@ a.atlas-tool { display: inline-block; color: inherit; text-decoration: none; }
 .atlas-sources summary::-webkit-details-marker { display: none; }
 .atlas-sources summary:hover { color: #fff; }
 .atlas-sources[open] summary { margin-bottom: 4px; }
-.atlas-panel.is-solar .atlas-sources summary { color: #d9d0b8; }
+.atlas-info.is-solar .atlas-sources summary { color: #d9d0b8; }
 .atlas-loading { color: var(--muted); }
 
 .atlas-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin: 4px 0 10px; }
@@ -523,39 +543,39 @@ button.atlas-sys-star:hover { outline: 1.5px solid #fff; outline-offset: 2px; }
 .atlas-dot-solar { background: none; border: 2px solid var(--solar); }
 
 /* Infofeld eines Planeten unseres Sonnensystems. */
-.atlas-panel.is-solar { background: linear-gradient(180deg, #3a2f1b 0, #241d11 300px, #1a150c); }
-.atlas-panel.is-solar .atlas-foot { border-top-color: rgba(244, 241, 228, 0.2); color: #b3a98f; }
-.atlas-panel.is-solar .atlas-foot a { color: #d9d0b8; }
+.atlas-info.is-solar { background: linear-gradient(180deg, #3a2f1b 0, #241d11 300px, #1a150c); }
+.atlas-info.is-solar .atlas-foot { border-top-color: rgba(244, 241, 228, 0.2); color: #b3a98f; }
+.atlas-info.is-solar .atlas-foot a { color: #d9d0b8; }
 /* Aufnahmen der Planeten ganz zeigen, nicht beschneiden. */
-.atlas-panel.is-solar .atlas-story-content img { border: 2px solid rgba(244, 241, 228, 0.6); object-fit: contain; background: #000; }
-.atlas-panel.is-solar .atlas-story.is-compact .atlas-story-content img { height: 190px; }
-.atlas-panel.is-solar .atlas-panel-body.fit-2 .atlas-story.is-compact .atlas-story-content img { height: 150px; }
-.atlas-panel.is-solar .atlas-panel-body.fit-4 .atlas-story.is-compact .atlas-story-content img { height: 110px; }
-.atlas-panel.is-solar .atlas-story-content h2,
-.atlas-panel.is-solar .atlas-planet-name { color: var(--solar); }
-.atlas-panel.is-solar .atlas-story-content p { color: #e2dcc9; }
-.atlas-panel.is-solar .atlas-story-content .solar-badge { color: #241d11; }
-.atlas-panel.is-solar .atlas-story-content figcaption,
-.atlas-panel.is-solar .atlas-story-content .sources,
-.atlas-panel.is-solar .atlas-facts dt,
-.atlas-panel.is-solar .atlas-planet-sub { color: #b3a98f; }
-.atlas-panel.is-solar .atlas-story-content a { color: #d9d0b8; }
-.atlas-panel.is-solar .atlas-planet.has-story,
-.atlas-panel.is-solar .atlas-story-content .moons { border-top-color: rgba(244, 241, 228, 0.25); }
-.atlas-panel.is-solar .atlas-panel-head { background: #4a3d24; border-bottom-color: rgba(244, 241, 228, 0.45); }
-.atlas-panel.is-solar .atlas-nav, .atlas-panel.is-solar .atlas-close { background: rgba(244, 241, 228, 0.1); border-color: rgba(244, 241, 228, 0.35); color: var(--solar); }
-.atlas-panel.is-solar .atlas-system-name { color: var(--solar); }
-.atlas-panel.is-solar .atlas-system-title, .atlas-panel.is-solar .atlas-sys-legend, .atlas-panel.is-solar .atlas-tb .atlas-tb-note { color: #b3a98f; }
-.atlas-panel.is-solar .atlas-tb p, .atlas-panel.is-solar .atlas-sys-row { color: #e2dcc9; }
-.atlas-panel.is-solar .atlas-sys-row-name { color: var(--solar); }
-.atlas-panel.is-solar .atlas-tb { border-top-color: rgba(244, 241, 228, 0.25); }
-.atlas-panel.is-solar .atlas-tb a { color: #d9d0b8; }
-.atlas-panel.is-solar .atlas-tb-chart text { fill: #b3a98f; }
-.atlas-panel.is-solar .atlas-tb-frame { stroke: rgba(244, 241, 228, 0.25); }
-.atlas-panel.is-solar .atlas-tb-grid { stroke: rgba(244, 241, 228, 0.12); }
-.atlas-panel.is-solar .atlas-tb-band { fill: rgba(244, 241, 228, 0.14); }
-.atlas-panel.is-solar .atlas-tb-dot { stroke: #241d11; }
-.atlas-panel.is-solar .atlas-sys-line { border-top-color: rgba(244, 241, 228, 0.4); }
+.atlas-info.is-solar .atlas-story-content img { border: 2px solid rgba(244, 241, 228, 0.6); object-fit: contain; background: #000; }
+.atlas-info.is-solar .atlas-story.is-compact .atlas-story-content img { height: 190px; }
+.atlas-info.is-solar .atlas-panel-body.fit-2 .atlas-story.is-compact .atlas-story-content img { height: 150px; }
+.atlas-info.is-solar .atlas-panel-body.fit-4 .atlas-story.is-compact .atlas-story-content img { height: 110px; }
+.atlas-info.is-solar .atlas-story-content h2,
+.atlas-info.is-solar .atlas-planet-name { color: var(--solar); }
+.atlas-info.is-solar .atlas-story-content p { color: #e2dcc9; }
+.atlas-info.is-solar .atlas-story-content .solar-badge { color: #241d11; }
+.atlas-info.is-solar .atlas-story-content figcaption,
+.atlas-info.is-solar .atlas-story-content .sources,
+.atlas-info.is-solar .atlas-facts dt,
+.atlas-info.is-solar .atlas-planet-sub { color: #b3a98f; }
+.atlas-info.is-solar .atlas-story-content a { color: #d9d0b8; }
+.atlas-info.is-solar .atlas-planet.has-story,
+.atlas-info.is-solar .atlas-story-content .moons { border-top-color: rgba(244, 241, 228, 0.25); }
+.atlas-info.is-solar .atlas-panel-head { background: #4a3d24; border-bottom-color: rgba(244, 241, 228, 0.45); }
+.atlas-info.is-solar .atlas-nav, .atlas-info.is-solar .atlas-close { background: rgba(244, 241, 228, 0.1); border-color: rgba(244, 241, 228, 0.35); color: var(--solar); }
+.atlas-info.is-solar .atlas-system-name { color: var(--solar); }
+.atlas-info.is-solar .atlas-system-title, .atlas-info.is-solar .atlas-sys-legend, .atlas-info.is-solar .atlas-tb .atlas-tb-note { color: #b3a98f; }
+.atlas-info.is-solar .atlas-tb p, .atlas-info.is-solar .atlas-sys-row { color: #e2dcc9; }
+.atlas-info.is-solar .atlas-sys-row-name { color: var(--solar); }
+.atlas-info.is-solar .atlas-tb { border-top-color: rgba(244, 241, 228, 0.25); }
+.atlas-info.is-solar .atlas-tb a { color: #d9d0b8; }
+.atlas-info.is-solar .atlas-tb-chart text { fill: #b3a98f; }
+.atlas-info.is-solar .atlas-tb-frame { stroke: rgba(244, 241, 228, 0.25); }
+.atlas-info.is-solar .atlas-tb-grid { stroke: rgba(244, 241, 228, 0.12); }
+.atlas-info.is-solar .atlas-tb-band { fill: rgba(244, 241, 228, 0.14); }
+.atlas-info.is-solar .atlas-tb-dot { stroke: #241d11; }
+.atlas-info.is-solar .atlas-sys-line { border-top-color: rgba(244, 241, 228, 0.4); }
 /* Die Sonne und ihre acht Planeten, von innen nach außen. */
 .atlas-solar-strip { display: flex; align-items: center; justify-content: center; gap: 8px; flex: 1; }
 .atlas-solar-sun { flex: none; width: 20px; height: 20px; margin-right: 4px; border-radius: 50%; background: radial-gradient(circle, #fff3c4, #f5b83d 70%); box-shadow: 0 0 10px rgba(245, 184, 61, 0.7); }
@@ -619,6 +639,13 @@ button.atlas-sys-star:hover { outline: 1.5px solid #fff; outline-offset: 2px; }
 .atlas-loader { position: absolute; width: 0; height: 0; border: 0; visibility: hidden; }
 
 /* ------------------------------------------------- schmale Bildschirme */
+/* Unter dieser Breite passen die Knöpfe der Ansichten nicht mehr neben Titel und Suche:
+   Sie bekommen eine eigene Zeile darunter. */
+@media (max-width: 1600px) {
+  .atlas-head { flex-wrap: wrap; row-gap: 8px; }
+  .atlas-brand { margin-right: auto; }
+  .atlas-presets { order: 3; flex: 1 0 100%; }
+}
 @media (max-width: 1240px) {
   .atlas { grid-template-columns: 228px minmax(0, 1fr) 340px; }
   .atlas-brand { min-width: 0; }
@@ -640,4 +667,56 @@ button.atlas-sys-star:hover { outline: 1.5px solid #fff; outline-offset: 2px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .atlas-pill, .atlas-marker { transition: none; }
+}
+
+/* ------------------------------------------------- Entdeckungsmethoden */
+/* Rechtes Panel der Ansicht: Überschrift, ein Satz, Kacheln der Applets (Vorschaubild links, Name und
+   ein Satz rechts). */
+.atlas-methods-panel { display: block; overflow: hidden auto; padding: 14px 20px 10px; scrollbar-width: thin; }
+.atlas-methods-intro { margin: 2px 0 12px; color: var(--ink-2); font-size: 15px; line-height: 1.45; }
+.atlas-methods-list { display: flex; flex-direction: column; gap: 8px; }
+.atlas-methods-tile {
+  display: flex; align-items: stretch; gap: 12px; width: 100%;
+  padding: 0; overflow: hidden; text-align: left;
+  background: var(--btn-bg); border: 1px solid var(--btn-border); border-radius: var(--btn-radius);
+  color: var(--ink); cursor: pointer;
+  transition: border-color .15s, background-color .15s;
+}
+.atlas-methods-tile:hover, .atlas-methods-tile:focus-visible { border-color: #fff; }
+.atlas-methods-tile[aria-pressed="true"] { border-color: var(--ink); background: rgba(255, 255, 255, 0.1); }
+.atlas-methods-tile img { flex: none; width: 150px; aspect-ratio: 8 / 5; object-fit: cover; background: #000; }
+.atlas-methods-tile-text { display: flex; flex-direction: column; justify-content: center; gap: 3px; padding: 6px 12px 6px 0; min-width: 0; }
+.atlas-methods-tile-text strong { font-size: 15px; font-weight: 600; }
+.atlas-methods-tile-text span { font-size: 12.5px; line-height: 1.35; color: var(--ink-2); }
+
+/* Mitte der Ansicht: oben der Name des Verfahrens und der Weg zurück, darunter das Applet. */
+.atlas-methods-stage { gap: 8px; padding: 10px 16px 14px; background: #060917; }
+.atlas-methods-bar { flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
+.atlas-methods-title { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.atlas-methods-name { margin: 0; font: 700 20px/1.15 var(--font-display); letter-spacing: -0.01em; }
+/* Blättern durch die Verfahren: nur dort, wo die Kacheln nicht neben dem Applet stehen (siehe unten). */
+.atlas-methods-step {
+  display: none; flex: none; width: 32px; height: 32px; padding: 0; font-size: 18px; line-height: 1;
+  background: var(--btn-bg); border: 1px solid var(--btn-border); border-radius: var(--btn-radius);
+  color: var(--ink); cursor: pointer;
+}
+.atlas-methods-step:hover { border-color: #fff; }
+.atlas-methods-stage[hidden] { display: none; }
+.atlas-methods-applet { flex: 1; min-width: 0; min-height: 0; display: flex; align-items: center; justify-content: center; }
+.atlas-methods-applet > div { flex: 1; }
+.atlas-methods-note { color: var(--ink-2); font-size: 15px; }
+.atlas-methods-close {
+  flex: none; margin-left: auto;
+  display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; font-size: 14px;
+  background: var(--btn-bg); border: 1px solid var(--btn-border); border-radius: var(--btn-radius);
+  color: var(--ink); cursor: pointer;
+}
+.atlas-methods-close:hover { border-color: #fff; }
+@media (max-width: 980px) {
+  .atlas-methods-stage { height: 72vh; min-height: 420px; flex: none; }
+  .atlas-methods-step { display: inline-block; }
+}
+@media (max-width: 760px) {
+  .atlas-methods-stage { position: fixed; inset: 0; z-index: 8; height: auto; }
+  .atlas-methods-applet { align-items: flex-start; }
 }

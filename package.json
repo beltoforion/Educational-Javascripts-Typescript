@@ -14,7 +14,7 @@
     "build:original-magnetic-pendulum": "tsc -p originals/magnetic-pendulum",
     "build:original-simulated-evolution": "tsc -p originals/simulated-evolution",
     "build:tides": "npm --prefix applets/tides run build",
-    "test": "node --test applets/exoplanet-microlensing/test/physics.test.js applets/exoplanet-transit/test/transit.test.js applets/exoplanet-radial-velocity/test/orbit.test.js applets/exoplanet-pulsar-timing/test/pulsar.test.js applets/doppler-effect/test/wave.test.js"
+    "test": "node --test applets/exoplanet-microlensing/test/physics.test.js applets/exoplanet-transit/test/transit.test.js applets/exoplanet-radial-velocity/test/orbit.test.js applets/exoplanet-pulsar-timing/test/pulsar.test.js applets/doppler-effect/test/wave.test.js applets/exoplanet-atlas/test/methods.test.js"
   },
   "devDependencies": {
     "typescript": "4.9.5"
