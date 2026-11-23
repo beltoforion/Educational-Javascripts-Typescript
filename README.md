@@ -17,6 +17,7 @@ main folder for an overview, or the `index.html` inside an applet's folder.
 | [`applets/harmonic-oscillator`](applets/harmonic-oscillator) | Analytic solution of the damped harmonic oscillator | [Damped Harmonic Oscillator](https://beltoforion.de/en/harmonic_oscillator) | TypeScript |
 | [`applets/magnetic-pendulum`](applets/magnetic-pendulum) | Basins of attraction of a pendulum over magnets | [The Magnetic Pendulum](https://beltoforion.de/en/magnetic-pendulum) | none |
 | [`applets/planetary-disk`](applets/planetary-disk) | Dust disk around the Sun with Lagrange points and Trojans | – | none |
+| [`applets/protoplanetary-disk`](applets/protoplanetary-disk) | A cloud of gas and dust settles into a disk and forms protoplanets (WebGL2) | – | none |
 | [`applets/simulated-evolution`](applets/simulated-evolution) | Microbes evolving their movement patterns | [Simulating Evolution](https://beltoforion.de/en/simulated-evolution) | none |
 | [`applets/tides`](applets/tides) | Tidal forces of Moon and Sun | [Tides Explained](https://beltoforion.de/en/tides) | webpack |
 | [`applets/wator`](applets/wator) | Wa-Tor predator-prey simulation | [World of Wator](https://beltoforion.de/en/wator) | none |
@@ -73,6 +74,22 @@ TypeScript is pinned to 4.9 because the applets target ES5 and use the type
 definitions of Phaser 2, which newer compilers no longer accept. The common compiler
 settings are in `tsconfig.base.json`; each applet's `tsconfig.json` only lists its
 deviations.
+
+The protoplanetary disk is developed in a separate working folder and copied here
+as a whole; change it there, not in this repository. It needs WebGL2 with
+`EXT_color_buffer_float`. Gravity is summed directly over all pairs, so the cost grows
+with the square of the particle count; `?n=<count>` picks the count (64 to 65 536).
+The scripts in `js/` are plain scripts under the global namespace `Disk`, loaded in a
+fixed order by `index.html`: `experiment.js` bundles the core (initial cloud,
+`simulation.js` with the leapfrog step and merging, the clock in `sim-driver.js`,
+`diagnostics.js`) without any dependency on page, camera or picture; `renderer.js`,
+`hud.js` and the chart files draw, and only `controls.js` and `main.js` know the page's
+element ids. The simulation runs as fast as the GPU allows, independent of the frame
+rate. `headless.html?n=4096&seed=22&steps=2000` computes without a picture and prints
+the result as JSON (also with `chromium --headless --dump-dom`). In the console, `sim`
+gives access for experiments (`sim.reset(seed)`, `sim.step(n)`, `sim.diagnose()`,
+`sim.checksum()`, `sim.pauseAtStep(n)`). Different browsers may give slightly different
+numbers for the same cloud; within one browser a run is repeatable.
 
 The exoplanet atlas has its own maintenance scripts (`update-data.js`,
 `atlas/update-index.js`); see the comments at the top of `applets/exoplanet-atlas/atlas.html`.

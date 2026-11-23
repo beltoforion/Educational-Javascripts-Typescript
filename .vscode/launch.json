@@ -73,6 +73,13 @@
             "webRoot": "${workspaceFolder}"
         },
         {
+            "name": "protoplanetary-disk",
+            "type": "chrome",
+            "request": "launch",
+            "file": "${workspaceFolder}/applets/protoplanetary-disk/index.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
             "name": "simulated-evolution",
             "type": "chrome",
             "request": "launch",

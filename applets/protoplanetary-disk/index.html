@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wie eine planetare Scheibe entsteht</title>
+<link rel="stylesheet" href="disk.css">
+</head>
+<body>
+
+<canvas id="view" aria-label="Dreidimensionale Ansicht der Teilchenwolke. Ziehen dreht, Mausrad zoomt."></canvas>
+<canvas id="hud" aria-hidden="true"></canvas>
+
+<button id="toggleUi" type="button" aria-pressed="false">Regler ausblenden</button>
+
+<aside id="controls">
+  <a class="back" href="../../index.html">← Alle Applets</a>
+  <h1>Wie eine planetare Scheibe entsteht</h1>
+  <p class="lede">Eine Wolke voller zufälliger Wirbel stürzt auf ihren Protostern. Stöße gleichen die Bahnen an, bis alles in einer Ebene kreist. Welche Ebene das wird, entscheidet der Zufall. In der ruhigen Scheibe verschmelzen Teilchen dann zu Protoplaneten.</p>
+
+  <div class="actions">
+    <button id="restart" type="button" class="primary">Neu starten</button>
+    <button id="pause" type="button">Anhalten</button>
+  </div>
+
+  <fieldset>
+    <legend>Kräfte <small>wirken sofort</small></legend>
+    <div class="ctl">
+      <label for="diss">Stöße zwischen Teilchen</label><output id="dissOut"></output>
+      <input id="diss" type="range" min="0" max="40" step="1" value="12">
+      <span class="hint">0 schaltet die Stöße ab. Dann bleibt die Wolke rund.</span>
+    </div>
+    <div class="ctl">
+      <label for="md">Masse der Wolke</label><output id="mdOut"></output>
+      <input id="md" type="range" min="0" max="40" step="1" value="8">
+      <span class="hint">In Prozent der Sternmasse, gleichmäßig auf alle Teilchen verteilt. Bestimmt, wie stark sie sich gegenseitig anziehen. 0 schaltet das ab.</span>
+    </div>
+    <label class="check"><input id="merge" type="checkbox" checked> Teilchen verschmelzen zu Körpern</label>
+    <div class="ctl">
+      <label for="stick">Haftung</label><output id="stickOut"></output>
+      <input id="stick" type="range" min="0.25" max="4" step="0.25" value="1">
+      <span class="hint">Zwei Körper verschmelzen, wenn sie sich berühren und langsamer sind als dieses Vielfache ihrer gegenseitigen Fluchtgeschwindigkeit.</span>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Startwolke <small>startet neu</small></legend>
+    <div class="ctl">
+      <label for="eddy">Große Wirbel</label><output id="eddyOut"></output>
+      <input id="eddy" type="range" min="0" max="1.2" step="0.05" value="0.9">
+      <span class="hint">Zufällige Strömungen von der Größe der Wolke. Eine Drehachse ist nicht vorgegeben.</span>
+    </div>
+    <div class="ctl">
+      <label for="turb">Feine Unordnung</label><output id="turbOut"></output>
+      <input id="turb" type="range" min="0" max="1" step="0.05" value="0.3">
+      <span class="hint">Zufällige Bewegung jedes einzelnen Teilchens.</span>
+    </div>
+    <p class="note" id="spinNote"></p>
+    <div class="ctl">
+      <label for="count">Teilchen</label>
+      <select id="count">
+        <option value="32">1 024</option>
+        <option value="48">2 304</option>
+        <option value="64" selected>4 096</option>
+        <option value="96">9 216</option>
+        <option value="128">16 384</option>
+        <option value="192">36 864</option>
+        <option value="256">65 536</option>
+      </select>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Darstellung</legend>
+    <div class="ctl">
+      <label for="mode">Farbe zeigt</label>
+      <select id="mode">
+        <option value="0" selected>Bahnneigung</option>
+        <option value="1">Exzentrizität</option>
+        <option value="2">Dichte</option>
+      </select>
+    </div>
+    <div class="ramp" aria-hidden="true"></div>
+    <div class="ticks" id="ticks" aria-hidden="true"></div>
+    <div class="ctl">
+      <label for="drawEvery">Bild neu zeichnen</label>
+      <select id="drawEvery">
+        <option value="1" selected>jeden Schritt</option>
+        <option value="2">jeden 2. Schritt</option>
+        <option value="5">jeden 5. Schritt</option>
+        <option value="10">jeden 10. Schritt</option>
+        <option value="25">jeden 25. Schritt</option>
+        <option value="50">jeden 50. Schritt</option>
+        <option value="100">jeden 100. Schritt</option>
+      </select>
+      <span class="hint">Die Simulation rechnet unverändert weiter, gezeigt wird nur jeder so vielte Stand. Öfter als der Bildschirm Bilder zeigt, geht es nicht. Drehen und Zoomen zeichnen sofort neu.</span>
+    </div>
+    <label class="check"><input id="trails" type="checkbox" checked> Bahnspuren zeichnen</label>
+    <button id="topView" type="button" class="wide">Von oben auf die Scheibe blicken</button>
+    <div class="ctl">
+      <label for="co">Kamera dreht mit der Scheibe</label><output id="coOut"></output>
+      <input id="co" type="range" min="0" max="2" step="0.01" value="0">
+      <span class="hint">Die Kamera läuft so schnell um wie eine Kreisbahn bei diesem Radius. 0 schaltet das ab. In der Draufsicht wählt auch ein Klick auf die Scheibe den Radius.</span>
+    </div>
+    <label class="check"><input id="spin" type="checkbox" checked> Kamera kreist langsam</label>
+    <label class="check"><input id="axis" type="checkbox" checked> Drehimpulsachse und Ebene zeigen</label>
+  </fieldset>
+
+  <details>
+    <summary>Was hier gerechnet wird</summary>
+    <p><b>Gravitation.</b> Jedes Teilchen zieht jedes andere nach Newtons Gesetz an, Paar für Paar und ohne Näherung. Dazu kommt der Protostern in der Mitte.</p>
+    <p><b>Drehimpuls.</b> Die Wolke bekommt keine Drehachse mit, nur zufällige Wirbel. Die heben sich nie ganz auf. Der Rest an Drehimpuls geht nicht verloren und legt fest, in welcher Ebene die Scheibe liegt und wie groß sie wird. Die Linie im Bild zeigt seine Achse, gemessen aus allen Teilchen.</p>
+    <p><b>Stöße.</b> Kommen sich zwei Teilchen nahe, verlieren sie einen Teil ihrer Annäherungsgeschwindigkeit. Die Energie wird abgestrahlt, der Drehimpuls bleibt. Bewegungen quer zur Ebene und gegenläufige Bahnen heben sich so nach und nach auf.</p>
+    <p><b>Protoplaneten.</b> Berühren sich zwei Körper und sind sie dabei langsamer als ihre gegenseitige Fluchtgeschwindigkeit, verschmelzen sie. Masse, Schwerpunkt und Impuls bleiben erhalten. In der heißen Anfangsphase sind die Begegnungen dafür zu schnell, in der ruhigen Scheibe nicht mehr. Nahe am Stern reißt dessen Gezeitenkraft die Paare wieder auseinander. Gewachsene Körper werden etwas größer und heller gezeichnet; die Zahlen daneben gehören zur Liste der fünf schwersten. Zeigt die Maus auf einen gewachsenen Körper, erscheinen sein Rang und seine Masse.</p>
+    <p><b>Maßstab.</b> Hat der Stern eine Sonnenmasse, wiegt ein Teilchen bei 16 384 Teilchen und 8 % Wolkenmasse etwa 1,6 Erdmassen. Die Körper sind stark aufgebläht gerechnet, sonst würden sie sich in der Simulationszeit nie treffen. Die ganze Wolkenmasse zählt als fester Stoff, der haften kann. In echten Scheiben ist das nur etwa ein Hundertstel, deshalb werden die Körper hier viel schwerer als echte Planeten. Weniger Wolkenmasse ergibt leichtere.</p>
+    <p><b>Zeitschritt.</b> Die Bahnen werden mit dem Leapfrog-Verfahren in Kick-Drift-Kick-Form berechnet. Es hält die Bahnenergie über viele Umläufe stabil. Die Simulation rechnet so schnell, wie die Grafikkarte kann, und misst nach je 20 Schritten. Wie oft gezeichnet wird, ändert am Verlauf einer Wolke nichts. Die Zeiteinheit ergibt sich aus G = 1 und Sternmasse 1: Ein Umlauf bei Radius 1 dauert 2π, also rund 6,28.</p>
+    <p><b>Akkretion.</b> Was dem Stern zu nahe kommt, wird verschluckt und macht ihn schwerer.</p>
+  </details>
+
+  <button id="dump" type="button" class="wide" title="Speichert alle Körper, die Kennzahlen, die Liste und ein Bild als Datei, etwa um einen Fehler zu melden.">Datenabzug speichern</button>
+
+  <p class="keys">Ziehen dreht, Mausrad zoomt. Zeigt die Maus auf einen gewachsenen Körper, erscheinen Rang und Masse; ein Klick lässt die Kamera mit ihm mitlaufen. Leertaste hält an, R startet neu, O blickt von oben auf die Scheibe, H blendet die Regler aus.</p>
+</aside>
+
+<div id="side">
+<details id="bodies" class="panel" open>
+  <summary title="Ein Knopf lässt die Kamera mit diesem Körper umlaufen. Er steht dann im Bild still. Nochmal drücken löst sie wieder.">Die fünf größten Körper</summary>
+  <p class="cap" id="bodiesEmpty">Noch ist nichts verschmolzen. Sobald Körper wachsen, erscheinen hier die fünf schwersten.</p>
+  <div id="bodiesFull" hidden>
+    <div class="chartbox">
+      <canvas id="orbits" aria-label="Die fünf schwersten Körper: Umlaufgeschwindigkeit über ihrer Reihenfolge von innen nach außen"></canvas>
+      <div id="tip" hidden></div>
+    </div>
+    <p class="cap" id="bodiesNote"></p>
+    <div class="bodylist" id="bodyList"></div>
+  </div>
+</details>
+<section id="readout" class="panel" aria-live="off">
+  <dl class="major">
+    <div><dt><i class="key" style="background:var(--gold)"></i>Mittlere Bahnneigung</dt><dd id="rInc">–</dd></div>
+    <div><dt><i class="key" style="background:var(--rose)"></i>Mittlere Exzentrizität</dt><dd id="rEcc">–</dd></div>
+    <div><dt><i class="key" style="background:var(--ice)"></i>Dicke zu Radius</dt><dd id="rHr">–</dd></div>
+    <div><dt><i class="key"></i>Körper</dt><dd id="rBodies">–</dd></div>
+  </dl>
+  <canvas id="chart" title="Verlauf seit dem Start. Die Neigung ist auf 90° bezogen." aria-label="Verlauf von Bahnneigung, Exzentrizität und Scheibendicke seit dem Start"></canvas>
+  <dl class="minor">
+    <div><dt>Simulationszeit</dt><dd id="rTime">–</dd></div>
+    <div><dt>Zeitschrittweite</dt><dd id="rDt">–</dd></div>
+    <div><dt>Rechenschritte</dt><dd id="rSteps">–</dd></div>
+    <div><dt>Rechenfeld</dt><dd id="rSlots">–</dd></div>
+    <div><dt>Protoplaneten ab 100 Erdmassen</dt><dd id="rPlanets">–</dd></div>
+    <div><dt>Schwerster Körper</dt><dd id="rBig">–</dd></div>
+    <div><dt>Gesamtdrehimpuls</dt><dd id="rL">–</dd></div>
+    <div><dt>Vom Stern verschluckt</dt><dd id="rAcc">–</dd></div>
+    <div><dt>Umläufe am Scheibenrand</dt><dd id="rOrb">–</dd></div>
+    <div><dt>Rechenschritte pro Sekunde</dt><dd id="rRate">–</dd></div>
+    <div><dt>Bilder pro Sekunde</dt><dd id="rFps">–</dd></div>
+  </dl>
+</section>
+</div>
+
+<div id="fail" hidden><div id="failText"></div></div>
+
+<!-- Klassische Skripte in fester Reihenfolge, alle unter dem Namensraum Disk. Kein Build-Schritt, läuft per Doppelklick. -->
+<script src="js/format.js"></script>
+<script src="js/config.js"></script>
+<script src="js/vec.js"></script>
+<script src="js/shaders.js"></script>
+<script src="js/gl-utils.js"></script>
+<script src="js/initial-cloud.js"></script>
+<script src="js/simulation.js"></script>
+<script src="js/sim-driver.js"></script>
+<script src="js/diagnostics.js"></script>
+<script src="js/experiment.js"></script>
+<script src="js/camera.js"></script>
+<script src="js/body-tracker.js"></script>
+<script src="js/renderer.js"></script>
+<script src="js/hud.js"></script>
+<script src="js/history-chart.js"></script>
+<script src="js/orbit-chart.js"></script>
+<script src="js/readout.js"></script>
+<script src="js/snapshot-export.js"></script>
+<script src="js/pointer-input.js"></script>
+<script src="js/controls.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
